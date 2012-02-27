@@ -16,6 +16,13 @@ outlining the platform specific changes.
 Section:   New in release 0.94.2
 ----------------------------------------------------------------------
 
+Added missing newline after "no output file specified" message.
+Fixed bug in "!to" and "!sl" (colon in filename is interpreted as command
+    separator in later passes).
+Changed verbose output hex prefix from $ to 0x.
+Changed --help output
+Changed EOR to XOR in docs and comments (the ACME operator, not the 6502
+    opcode)
 
 
 ----------------------------------------------------------------------
