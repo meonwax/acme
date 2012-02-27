@@ -1,0 +1,130 @@
+
+
+                                 ACME
+
+         ...the ACME Crossassembler for Multiple Environments
+
+               --- Undocumented ("illegal") opcodes ---
+
+
+Since release 0.87, ACME contains support for some of the undocumented
+opcodes of the 6502 processor. Here they are:
+
+      |                 addressing  mode                 |
+Mnemo |   8    8,x   8,y    16   16,x  16,y  (8,x) (8),y |  performs:
+------+--------------------------------------------------+-----------
+ slo  |   07    17    --    0f    1f    1b    03    13   |  asl + ora
+ rla  |   27    37    --    2f    3f    3b    23    33   |  rol + and
+ sre  |   47    57    --    4f    5f    5b    43    53   |  lsr + eor
+ rra  |   67    77    --    6f    7f    7b    63    73   |  ror + adc
+ sax  |   87    --    97    8f    --    --    83    --   |  stx + sta
+ lax  |   a7    --    b7    af    --    bf    a3    b3   |  ldx + lda
+ dcp  |   c7    d7    --    cf    df    db    c3    d3   |  dec + cmp
+ isc  |   e7    f7    --    ef    ff    fb    e3    f3   |  inc + sbc
+
+In release 0.89, further ones were added:
+
+      |           addressing mode           |
+Mnemo | implied #8    8    8,x    16   16,x |  performs:
+------+-------------------------------------+------------------------
+ anc  |   --    2b    --    --    --    --  |  A = A & arg, then C=N
+ asr  |   --    4b    --    --    --    --  |  A = A & arg, then lsr
+ arr  |   --    6b    --    --    --    --  |  A = A & arg, then ror
+ sbx  |   --    cb    --    --    --    --  |  X = (A & X) - arg
+ dop  |   80*   80    04    14    --    --  |  skips next byte
+ top  |   0c*   --    --    --    0c    1c  |  skips next two bytes
+ jam  |   02    --    --    --    --    --  |  crash (wait for reset)
+
+Example:
+		!cpu 6510	; activate additional mnemonics...
+		lax (some_zp_label,x)	; ...and use them. No, this
+		dcp (other_zp_label),y	; example does not make sense.
+
+*) Note that "dop" and "top" can be used with implied addressing, but
+the generated opcodes are those for immediate and 16-bit absolute
+addressing, respectively. Using dop/top with x-indexed addressing
+might have its uses when timing is critical (crossing a page border
+adds a penalty cycle).
+
+There is no guarantee that these opcodes actually work on a given 6502
+(or 6510, or 8500, or 8502) CPU. But as far as I know, nobody ever
+found an unmodified C64/C128 where these illegals didn't work. That's
+why I used "6510" as the CPU keyword instead of "6502illegal" or
+something like that.
+
+These illegals will definitely *not* work on 65c02 and 65816 CPUs. But
+I really should not have to tell you that ;)
+
+Because there are no official mnemonics for these opcodes, different
+people use different names for them. I hope my choices are not too
+exotic for your taste.
+
+Just for the sake of completeness: Here are all the remaining opcodes
+(the ones ACME won't generate):
+
+Opcode|  Description
+------+--------------------------------------------------------------
+  0b  |  same as 2b               anc #8
+  12  |  same as 02 and others    jam                 CRASH
+  1a  |  same as (*legal*) ea     nop
+  22  |  same as 02 and others    jam                 CRASH
+  32  |  same as 02 and others    jam                 CRASH
+  34  |  same as 14 and others    dop 8,x
+  3a  |  same as (*legal*) ea     nop
+  3c  |  same as 1c and others    top 16,x
+  42  |  same as 02 and others    jam                 CRASH
+  44  |  same as 04               dop 8
+  52  |  same as 02 and others    jam                 CRASH
+  54  |  same as 14 and others    dop 8,x
+  5a  |  same as (*legal*) ea     nop
+  5c  |  same as 1c and others    top 16,x
+  62  |  same as 02 and others    jam                 CRASH
+  64  |  same as 04               dop 8
+  72  |  same as 02 and others    jam                 CRASH
+  74  |  same as 14 and others    dop 8,x
+  7a  |  same as (*legal*) ea     nop
+  7c  |  same as 1c and others    top 16,x
+  82  |  same as c2/e2            dop #8, but said to CRASH sometimes
+  89  |  same as 80               dop #8
+  8b  |    see notes below
+  92  |  same as 02 and others    jam                 CRASH
+  93  |    see notes below
+  9b  |    see notes below
+  9c  |    see notes below
+  9e  |    see notes below
+  9f  |    see notes below
+  ab  |    see notes below
+  b2  |  same as 02 and others    jam                 CRASH
+  bb  |    see notes below
+  c2  |  same as 82/e2            dop #8, but said to CRASH sometimes
+  d2  |  same as 02 and others    jam                 CRASH
+  d4  |  same as 14 and others    dop 8,x
+  da  |  same as (*legal*) ea     nop
+  dc  |  same as 1c and others    top 16,x
+  e2  |  same as 82/c2            dop #8, but said to CRASH sometimes
+  eb  |  same as (*legal*) e9     sbc #8
+  f2  |  same as 02 and others    jam                 CRASH
+  f4  |  same as 14 and others    dop 8,x
+  fa  |  same as (*legal*) ea     nop
+  fc  |  same as 1c and others    top 16,x
+
+
+Concerning opcodes 8b, 93, 9b, 9c, 9e, 9f, ab, bb:
+
+These opcodes are said to be unstable. For more information about what
+they do, see these documents:
+  John West, Marko Mäkelä. '64doc' file, 1994/06/03.
+  Extra Instructions Of The 65XX Series CPU, Adam Vardy, 27 Sept. 1996
+  6502 Undocumented Opcodes, by Freddy Offenga, 5/17/1997
+  AAY64 (All About Your 64)
+
+I did not see much point in assigning mnemonics for these opcodes. The
+reference documents above call them:
+  8b: ane, xaa
+  93: sha, axa, ahx
+  9b: shs, tas, xas
+  9c: shy, say, sya
+  9e: shx, xas, sxa
+  9f: sha, axa, ahx
+  ab: lxa, oal, atx
+  bb: las, lar, lae

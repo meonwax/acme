@@ -1,0 +1,380 @@
+
+
+                                 ACME
+
+         ...the ACME Crossassembler for Multiple Environments
+
+                       --- Quick  reference ---
+
+
+This file should give you a basic overview. More specialized stuff
+like forcing a specific addressing mode is discussed in extra files
+("AddrModes.txt" in this case).
+
+
+----------------------------------------------------------------------
+Section:   Example of what an ACME source code file looks like
+----------------------------------------------------------------------
+
+;--- Example code fragment, start ---
+
+		!to "tiny.o", cbm	; set output file and format
+		*= $c000		; set program counter
+
+		basout = $ffd2		; explicit global label def.
+		; a string output loop:
+		ldx #0
+		beq +			; enter loop
+
+-			jsr basout	; output character
+			inx		; advance pointer
++			lda .string,x	; get character
+			bne -		; check whether last
+		rts
+.string		!pet "Dumb example", 13, 0
+
+;--- Example code fragment, end ---
+
+
+Here's the same fragment again, now with some additional info:
+
+;--- Example code fragment, start ---
+
+		!to "tiny.o", cbm	; set output file and format
+; This is a pseudo opcode to select the output filename and format.
+; This can also be done using the command line options "-o" and "-f",
+; respectively.
+		*= $c000		; set program counter
+; This can also be done using the command line option "--setpc".
+		basout = $ffd2		; explicit global label def.
+; Now "basout" is defined as a global label having the value $ffd2.
+		; a string output loop:
+		ldx #0
+		beq +			; enter loop
+; "+" is an anonymous forward label. Other ones are "++", "+++", etc.
+; They can be used like any other label, but they always reference
+; their *NEXT* definition. This saves having to think of names for
+; unimportant labels. As the label's value is not defined yet, ACME
+; will need to perform a second pass.
+-			jsr basout	; output character
+; "-" is an anonymous backward label. Other ones are "--", "---", etc.
+; They can be used like any other label, but they always reference
+; their *PREVIOUS* definition. This saves having to think of names for
+; unimportant labels. In the line above, the value of "-" is set to
+; the current program counter.
+			inx		; advance pointer
++			lda .string,x	; get character
+; Here the value of "+" is set to the current program counter.
+; ".string" is a local label (because its name starts with a '.'
+; character), but as its value is not defined yet, ACME will need to
+; perform a second pass.
+			bne -		; check whether last
+; Here the last definition of the anonymous "-" label is referenced.
+		rts
+.string		!pet "Dumb example", 13, 0
+; Now the value of the local label ".string" is set to the current
+; program counter. All label values are defined now, so after having
+; done the second pass, the binary will be saved. The "!pet" pseudo
+; opcode stores its string argument in PetSCII encoding to memory,
+; followed by the given byte values.
+
+;--- Example code fragment, end ---
+
+As you can see, pseudo opcodes are prefixed with an exclamation mark.
+That's non-standard, but: Backwards compatibility is the root of all
+evil. :)
+
+Summary about labels:
+
+There are global labels (their names starting with a letter or an
+underscore character). These can be accessed throughout the whole
+assembly.
+Then there are local labels (their names starting with a '.'
+character). These can only be accessed from inside the macro or zone
+they were defined in (for more about macros and zones, see the file
+"AllPOs.txt").
+And then there are anonymous labels (their names being sequences of
+either '-' or '+' characters). They are also local (bound to their
+macro/zone), but in addition to that, the "-" labels can only be used
+for backward references, while the "+" labels can only be used for
+forward references.
+In contrast to global and local labels, anonymous labels can not be
+defined explicitly (as in LABEL=VALUE).
+
+Save the given example source code to a file called "tiny.a" and start
+acme by typing
+
+    acme tiny.a
+
+ACME will then parse the file and report any errors. An output file
+will only be generated if there were no errors and if an output
+filename has been given.
+
+After assembly, the example program can be run on a C64 using
+
+    LOAD "tiny.o",8,1
+    SYS 49152
+
+Note that ACME does not include any routines for transferring data to
+a C64. Such tools exist on almost every platform, and I didn't want
+ACME to become bloatware.
+
+
+----------------------------------------------------------------------
+Section:   The pseudo opcodes
+----------------------------------------------------------------------
+
+A list with information on how to use all the Pseudo Opcodes can be
+found in the file "AllPOs.txt". Here's just a short overview:
+
+!byte   !word   !24   !32   !fill   !align
+...for directly placing values into the output file.
+
+!zone   !sl
+...for defining the scope of local labels and saving global labels.
+
+!convtab   !pet   !raw   !scr   !scrxor   !text
+...for converting and outputting strings.
+
+!do   !endoffile   !for   !if   !ifdef   !ifndef   !set
+...for flow control; looping assembly and conditional assembly.
+
+!binary   !source   !to
+...for handling input and output files.
+
+!pseudopc
+...for offset assembly.
+
+!initmem   *=
+...for segment assembly.
+
+!macro   +
+...for defining and calling macros.
+
+!cpu   !al   !as   !rl   !rs
+...for CPU support, especially the 65816 processor.
+
+!warn   !error   !serious
+...for generating warnings, errors and serious errors.
+
+
+----------------------------------------------------------------------
+Section:   Command line arguments
+----------------------------------------------------------------------
+
+The command line syntax for calling acme is quite simple:
+
+    acme [options] [files]
+
+Available options are:
+    -h, --help             show this help and exit
+        This is more or less useless, because the help is also shown
+        if ACME is run without any arguments at all.
+
+    -f, --format FORMAT    select output format ("plain" or "cbm")
+    -o, --outfile FILE     select output file
+        Output filename and format can also be given using the "!to"
+        pseudo opcode. If the format is not specified, "!to" defaults
+        to "cbm", while the command line option defaults to "plain".
+
+    -l, --labeldump FILE   select label dump file
+        This can also be given using the "!sl" pseudo opcode.
+
+    --cpu CPU_TYPE         set processor type
+        This can be changed in the source code using the "!cpu" pseudo
+        opcode. Defaults to 6502.
+
+    --setpc NUMBER         set program counter
+        This can also be given in the source code using "*=NUMBER".
+
+    --initmem NUMBER       define 'empty' memory
+        This can also be given using the "!initmem" pseudo opcode.
+        Defaults to zero.
+
+    --maxerrors NUMBER     set number of errors before exiting
+        If not given, defaults to 10.
+
+    --maxdepth NUMBER      set recursion depth for macro calls and the
+        "!source" pseudo opcode. If not given, defaults to 64.
+
+    -vDIGIT                set verbosity level
+        Sets how much additional informational output is generated.
+        Higher values mean more output:
+
+            acme -v0 source.a
+            This is the default: No additional output is generated,
+            ACME will only display warnings and errors.
+
+            acme -v1 source.a
+            Now the start and end addresses of the generated output
+            file are displayed, along with its size (a CBM-style
+            "load address" is *not* counted).
+
+            acme -v2 source.a
+            In addition to the "-v1" output, ACME will announce each
+            pass, will show amount and offset of "!binary" loads, and
+            show start and end addresses and size of each segment.
+
+            acme -v3 source.a
+            In addition to the "-v2" output, ACME will now announce
+            each source file.
+
+    -DLABEL=VALUE          define global label
+        This option is useful if you build your projects using
+        Makefiles: "-DSYSTEM=64" could build the C64 version while
+        "-DSYSTEM=128" could build the C128 version of the software
+        (using conditional assembly in your source code file).
+
+    -W                     fine-tune amount and type of warnings
+        Currently only sub-option is supported: "-Wno-label-indent"
+        will switch off warnings about implicit label definitions not
+        being in the leftmost column.
+
+    --use-stdout           fix for 'Relaunch64' IDE
+        With this option, errors are written to the standard output
+        stream instead of to the standard error stream.
+
+    -V, --version          show version and exit.
+
+Platform-specific versions of ACME might offer more options.
+Since version 0.89, ACME accepts more than one top-level-filename
+given on the command line.
+
+
+----------------------------------------------------------------------
+Section:   The maths parser
+----------------------------------------------------------------------
+
+ACME has a relatively powerful maths parser. This parser is used
+whenever ACME expects to read an integer value. Supported operations
+include addition, subtraction, multiplication, divisions, comparisons,
+shifts, negation, boolean operations and some assembler-specific stuff
+like extracting the "low byte", the "high byte" or the "bank byte"
+of a value.
+Calculations are done using either signed 32-bit integer arithmetic or
+floating point arithmetic using the C "double" data type. Label values
+are stored the same way.
+
+This is a list of the operators currently known by ACME:
+
+ Priority    Example      Meaning                   Alias
+------------------------------------------------------------
+       13        !  v     Complement of             NOT
+       12     v  ^  w     To the power of
+       11        -  v     Negate
+       10     v  *  w     Multiply
+       10     v  /  w     Divide
+       10     v DIV w     Integer-Divide
+       10     v  %  w     Remainder of DIV          MOD
+        9     v  +  w     Add
+        9     v  -  w     Subtract
+        8     v <<  w     Shift left                ASL, LSL
+        8     v >>  w     Arithmetic shift right    ASR
+        8     v >>> w     Logical shift right       LSR
+        7        <  v     Lowbyte of
+        7        >  v     Highbyte of
+        7        ^  v     Bankbyte of
+        6     v <=  w     Lower or equal
+        6     v  <  w     Lower than
+        6     v >=  w     Higher or equal
+        6     v  >  w     Higher than
+        5     v !=  w     Not equal                 <>,  ><
+        4     v  =  w     Equal
+        3     v  &  w     Bit-wise AND              AND
+        2                 Bit-wise exclusive OR     XOR
+        1     v  |  w     Bit-wise OR               OR
+
+Operations with higher priority are done first. Of course you can
+change this using parentheses. If you prefer the aliases over the
+shorthand characters, note that they must be written in capital
+letters.
+Note that though there are operators to extract the "low byte", the
+"high byte" and the "bank byte", there is no operator to extract the
+fourth byte. If you want to access that, shift it down using ">>>" or
+"LSR".
+In cases where it's not clear which operator was wanted, ACME takes
+the longest possible one:
+	v<>w	...checks for "v not equal w"
+	v< >w	...checks for "v smaller than high byte of w"
+So you may have to separate operators with spaces to make sure ACME
+does what you want.
+
+Calculating 0^0 (zero to the power of zero) will give 1. If
+you don't know why I'm telling you this, ask a mathematician. :)
+
+
+This is a list of the value formats currently known by ACME:
+
+Examples        Notes
+---------------------------------------------------------------------
+128             a decimal value, integer
+128.5           a decimal value, floating point
+$d011           hexadecimal values are indicated by either
+0xffd2              leading "$" or leading "0x"
+&1701           an octal value, indicated by "&"
+%010010         binary values are indicated by "%". In binary values,
+%....#...           you can substitute the characters "0" and "1" by
+                    "." and "#" respectively. This way the values are
+                    much more readable, especially when building
+                    bitmapped objects (like C64 sprites or fonts) in
+                    your source code.
+"p"             character values are indicated by double or single
+'q'                 quotes. The actual numeric value depends on the
+                    current conversion table (none/petscii/screen),
+                    chosen using the "!ct" pseudo opcode.
+poll_joy2       a global label
+.fail           a local label, indicated by leading dot
+*               the current program counter. During offset assembly,
+                    "*" gives the value of the "Pseudo PC". Just to
+                    make sure: The value of the program counter is
+                    always the value that was valid at the start of
+                    the current statement, so
+                        !word *, *, *, *
+                    will give the same value four times. I think most
+                    assemblers do it this way.
+
+
+
+----------------------------------------------------------------------
+Section:   Almost, but not quite, entirely useless syntax
+----------------------------------------------------------------------
+
+Every ACME source code file consists of a non-negative number of
+"lines". The lines have to be separated from each other using CR, LF
+or CRLF characters.
+
+Every line consists of a non-negative number of "statements" and an
+optional comment. Statements have to be separated from each other
+using colon (":") characters, the comment has to be prefixed with a
+semicolon (";") character.
+
+Every statement consists of an optional "implicit label definition"
+and an optional "command". These are separated from each other using
+any number of SPACE or TAB characters. If an implicit label definition
+has blanks before it, a warning is given (to spot typing errors - see
+Errors.txt for more info).
+
+Every label consists of these characters: "a" to "z", "A" to "Z", "0"
+to "9", the underscore character "_" and all characters with values
+beyond 127. The first character must not be a digit though. But it can
+be a dot ("."), making the label a local one. Two other possibilities
+for label names are "all-characters-are-minus" (then it's an anonymous
+backward label) and "all-characters-are-plus" (then it's an anonymous
+forward label).
+
+Every command is one of the following:
+    An assembler opcode
+    A pseudo opcode, beginning with a "!" character
+    An explicit label definition (label=value)
+    A pc definition, beginning with a "*" character
+    A macro call, beginning with a "+" character
+...and the syntax of those things varies. :)
+
+Assembler mnemonics and pseudo opcodes are case insensitive, so
+whether you write "LDA" or "lda" or "LdA" does not make a difference.
+
+In earlier releases of ACME, arithmetic operators like MOD, XOR, LSL
+had to be written in UPPER CASE. This is no longer needed.
+
+Label names are case sensitive, so "label" and "Label" are two
+different things.

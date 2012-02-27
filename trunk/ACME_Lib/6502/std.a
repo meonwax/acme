@@ -1,0 +1,73 @@
+;ACME 0.07
+
+!ifdef Lib_6502_std_a !eof
+Lib_6502_std_a = 1
+
+; Labels and macros for plain 6502 processor
+
+cpu_nmi   = $fffa
+cpu_reset = $fffc
+cpu_irq   = $fffe
+
+; skip byte
+
+!macro bit8 {
+	!byte $24; opcode of BIT $.. command
+}
+
+; skip word
+
+!macro bit16 {
+	!byte $2c; opcode of BIT $.... command
+}
+
+; increase 16-bit counter
+
+!macro inc16 .t {
+	inc .t
+	bne .j; "*" syntax not used here because size of ".t" is unknown
+	inc .t + 1
+.j
+}
+
+; far branches
+
+!macro bcc .t {
+	bcs * + 5
+	jmp .t
+}
+
+!macro bcs .t {
+	bcc * + 5
+	jmp .t
+}
+
+!macro beq .t {
+	bne * + 5
+	jmp .t
+}
+
+!macro bne .t {
+	beq * + 5
+	jmp .t
+}
+
+!macro bmi .t {
+	bpl * + 5
+	jmp .t
+}
+
+!macro bpl .t {
+	bmi * + 5
+	jmp .t
+}
+
+!macro bvc .t {
+	bvs * + 5
+	jmp .t
+}
+
+!macro bvs .t {
+	bvc * + 5
+	jmp .t
+}

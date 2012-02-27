@@ -1,0 +1,798 @@
+;ACME 0.91
+
+!zone
+; Programm:
+mainloop
+; Cursor setzen:
+		lda posy	; screeny = posy-spry
+		sec
+		sbc scry
+		tay		; y in Y
+; ab hier X
+		lda posx	; screenx = posx-scrx
+		sec
+		sbc scrx
+		jsr crsrset	; set crsr
+; hier eigentliche Hauptroutine
+		lda nwfrm	; new frame ?
+		beq +
+		jsr newframe	; yes = >
++		lda updatewbi	; update flags?
+		beq +
+		jsr showwbi	; yes = >
++		jsr getchar	; get CHARACTER
+		tax		; & buffer
+		and #%.##.....	; command ?
+		beq +		; yes = >
+		eor #%.##.....	; command ?
+		beq +		; yes = >
+		jsr chrout	; char out
+		jmp mainloop
++		jsr execom	; execute command
+		jmp mainloop
+
+!zone
+; Pseudo-Sub: (ESC uses jmp)
+F_esc		clc		; 'ESC' on!
+		lda clraktv
+		ldx #hFlag_Escape
+		jsr setflagdata
+-		jsr getkey	; get KEY
+		beq -
+		sta byte	; & buffer
+		clc		; 'ESC' off!
+		lda clrinak
+		ldx #hFlag_Escape
+		jsr setflagdata
+		ldx byte	; get byte
+		txa		; & buffer
+		eor #%.#......	; a-z ?
+		and #%.##.....
+		bne +		; no = >
+		txa		; get byte
+		and #%...#####	; & short
+		asl		; *2 &
+		tax		; as index
+		lda etab+1,x	; get Hi
+		beq .no		; 0 = >
+		sta .m+1	; set
+		lda etab,x	; get Lo
+		sta .m		; set
+.m=*+1:		jmp MODIFIED16	; execute sequence
+.no		rts		; nothing...
++		txa		; get byte ( = FKey?)
+		bpl .no		; out = >
+		eor #%..#.....	; convert
+		and #%.##.....	; test
+		beq .no		; out = >
+		txa		; get byte
+		and #%...#####	; convert
+		cmp #$05	; test bottom border
+		bcc .no		; too low = >
+		cmp #$0d	; test upper border
+		bcs .no		; too high = >
+; here: define f-keys !
+		rts
+
+!zone
+; NMI
+nmirtn		lda #0		; clear keybuffers
+		sta ndx
+		sta kyndx
+		jmp nmiend
+
+!zone
+; Subs:
+execom		txa		; get & convert Byte
+		bpl +		; (therefore strange
+		eor #%#.#.....	; vectorlist)
++		asl
+		tax
+		lda ctab+1,x	; get Hi
+		beq noroutine	; 0 = >
+		sta .m+1	; and set
+		lda ctab,x	; get Lo
+		sta .m		; and set
+.m=*+1:		jmp MODIFIED16	; use command
+
+noroutine	rts		; not defined (fixme - could save a byte here)
+
+!zone
+F_new		jsr willblost
+		beq noroutine
+		jsr newtext
+		jsr needline
+		ldx #$0f	; use counter as "TRUE"
+		stx nwfrm
+		stx updatewbi
+		stx unnamed
+-		lda newname,x
+		sta txtname,x
+		dex
+		bpl -
+		inx
+		stx changes
+		rts
+
+!zone
+newtext		ldx #1		; '1'
+		stx scrx	; as X of screen,
+		stx anfx	; blockstart, -end &
+		stx endx	; crsr.
+		stx posx
+		stx scry	; ...as Y-Lo
+		stx anfy
+		stx endy
+		stx posy
+		dex		; '0'
+		stx scry+1	; ...as Y-Hi
+		stx anfy+1
+		stx endy+1
+		stx posy+1
+		stx zzbe	; no lines
+		stx zzbe+1	; used
+		rts
+
+!zone
+; 'key' ist der Kern, holt einen Code
+; ausm Puffer. 'char' wuerde, wenns ein
+; F-Key oder Accent ist, den Puffer
+; aendern und dann das erste Byte
+; abliefern. Hier nur das Standardprog:
+getchar		jmp getkey
+.defrag		;{check fragjob}
+
+getkey		;{check mousejob}
+		;{check clockjob}
+		ldx kyndx	; F-keys as standard
+		beq .std
+		ldy keyidx
+		lda pkydef,y
+		dec kyndx
+		inc keyidx
+		rts
+.std		ldx ndx		; chars in buffer ?
+		beq .defrag	; 0 = >
+		sei		; else
+		ldy keybuffer	; get first byte
+		ldx #255 - 8	; loop to shift other 9 chars down
+-		lda keybuffer - 255 + 9,x
+		sta keybuffer - 255 + 8,x
+		inx		; (f7 to ff)
+		bne -
+		dec ndx		; dec number
+		tya		; byte = >A
+		stx keybuffer+9	; clear lastbyte
+		cli
+		rts
+
+!zone
+getvvek		lda scry,x	; get y-Lo
+		asl		; *2
+		tay		; buffer
+		lda scry+1,x	; get y-Hi
+		rol		; *2 ( = clc)
+		sta vvek+1	; in Hi
+		tya		; get Lo
+		adc memin	; + BaseLo
+		sta vvek	; = VectorLo
+		lda vvek+1	; get Hi
+		adc memin+1	; + BaseHi
+		sta vvek+1	; = VectorHi
+		rts		; (VekVek)
+
+; stellt Vektor auf Cursor-Y
+poslvek		ldx #POS
+
+; stellt Vektor auf Zeile
+!zone
+getlvek		jsr getvvek	; get VekVek
+		ldy #0		; Y-Init
+		lda (vvek),y	; get Lo-Byte
+		sta lvek	; store
+		iny		; inc vector
+		lda (vvek),y	; get Hi-Byte
+		sta lvek+1	; store
+		rts
+
+!zone
+windowproof	lda posx	;crsr-X
+		cmp scrx	; screen(home)-X
+		bcs +		; bigger = >
+		sta scrx	; else set screen-X
+		sta nwfrm	; and NewFrame
+		bcc .UpDown
++		sbc scrx	; difference
+		cmp #scrcols	; cmp screenwidth
+		bcc .UpDown	; ok = >
+		lda posx	; else NewFrame,
+		sta nwfrm
+		sbc #scrcols-1	; set screen-X
+		sta scrx	; & store
+.UpDown		lda scry+1	; HiByte screen-
+		cmp posy+1	; Y and crsr-Y
+		bcc crsrweiter	; shorter = >
+		bne .set	; equal = >
+		lda posy	; else cmp Lo-bytes
+		cmp scry
+		bcs crsrweiter	; shorter = >
+.set		ldx posy	; get crsrpos as
+		lda posy+1	; new screenstart
+		stx scry
+		sta scry+1
+		lda #TRUE	; NewFrame
+		sta nwfrm
+		rts
+
+!zone
+crsrweiter	sec		; for sbc
+		lda posy	; calculate
+		sbc scry	; Lo-difference
+		tax		; in X
+		lda posy+1	; calculate
+		sbc scry+1	; Hi-difference
+		bne +		; if Hi = 0
+		cpx #scrlins	; & Lo ok,
+		bcc ++		; ready = >
++		lda posy+1	; else: copy Hibyte
+		sta scry+1
+		sec		; for sbc
+		lda posy	; calculate & save
+		sbc #scrlins-1	; new Hibyte
+		sta scry
+		bcs +		; ggfs. = >
+		dec scry+1	; correct Hibyte
++		lda #TRUE	; NewFrame
+		sta nwfrm
+++		rts
+; Scrollroutines missing !
+
+!zone
+; fuellt Speicher mit Zeilen
+fillmem		lda #0		; Keine Zeilen da
+		sta zzan
+		sta zzan+1
+		ldx llen	; Zeilenlaenge
+		inx		; + Info-Byte
+		stx .m1		; in SBC #$dummy
+		lda maxmem0	; holt MAX-MEM-0
+		sta txts	; und nimmt es als
+		lda maxmem0+1	; Obergrenze !
+		sta txts+1
+		lda mod_id	; Holt ID-Adresse (Lo)
+		tax		; sichern
+		lsr		; Bit 0 ins Carry
+		txa		; zurueck
+		adc #6		; +ID-2+C
+		sta memin	; wird Vektorstart (Lo)
+		lda mod_id+1	; Hi-Byte
+		adc #0		; entsprechend
+		sta memin+1	; anpassen (Auto-CLC)
+; Carry wird addiert, damit Vektoren bei
+; einer GERADEN Adresse starten!
+		lda memin	; Die VekVeks
+		adc #2		; werden ab dem
+		sta vvek	; Vektorstart+2
+		lda memin+1	; abgelegt, da es
+		adc #0		; keine nullte Zeile
+		sta vvek+1	; gibt
+.Check		lda txts	; TextstartLo
+		sec
+.m1=*+1:	sbc #MODIFIED8	; -Zeilenlänge
+		sta tmp1	; wird gepuffert
+		ldx txts+1
+		bcs +
+		dex
++		stx tmp1+1
+		cpx vvek+1	; Vektorkollision ?
+		bcc .NoLine	; Ja = > keine Zeile !
+		bne .MakeLn	; Nein = > neue Zeile !
+		ldx vvek	; Gleich: Lo-Bytes
+		inx		; vergleichen
+		cpx tmp1	; Wieder: Kollision ?
+		bcs .NoLine	; Ja = > keine Zeile !
+.MakeLn		lda tmp1	; Nein: dann temp als
+		sta txts	; Textstart und in den
+		ldy #0		; Linevektor
+		sta (vvek),y
+		lda tmp1+1	; dito, Highbyte
+		sta txts+1
+		iny
+		sta (vvek),y
+		inc vvek	; VekVek 2 Byte weiter
+		+inc16 vvek
+		inc zzan	; angelegte Zeilen
+		bne .Check	; eins hoeher
+		inc zzan+1
+		jmp .Check
+.NoLine		rts
+
+!zone
+clearline	lda #" "	; Space
+		ldy llen	; Y auf Zeilenende
+-		sta (lvek),y	; Space setzen
+		dey		; zurueck
+		bne -		; Infobyte ?
+		tya		; Dann auf
+		sta (lvek),y	; Null setzen
+		dey		; Y auf $ff fuer
+		sty nwfrm	; NewFrame
+		sty changes	; Veraendert !
+; WordWrap sinnlos !
+		rts
+
+!zone
+; stellt Zeilen zur Verfuegung oder gibt Fehlermeldung
+needline	+cmp16bit ZZA, ZZB	; vergleichen
+		beq +		; Wenn gleich, wirds gesetzte Carry 'failure'
+		+inc16 zzbe	; sonst: Zahl der genutzten Zeilen hoeher
+		ldx #ZZB
+		stx changes	; Veraendert !
+		jsr getlvek	; Holt Vektor
+		jsr clearline	; und leert Zeile
+		clc		; 'success'
+; EIGENTLICH ist das Carrybit hier schon
+; durch die beiden Subs gelöscht...
++		rts
+
+cmp16bit	lda scry+1,x	; Hi-Bytes vergleichen
+		cmp scry+1,y
+		bne +		; wenn gleich,
+		lda scry,x	; Lo-Bytes vergleichen
+		cmp scry,y
++		rts
+
+F_gcr		inc posx
+		jmp proofpos
+
+F_gcl		dec posx
+		jmp proofpos
+
+F_gcu		ldx posy
+		bne +
+		dec posy+1
++		dec posy
+		jmp proofpos
+
+F_gcd		+inc16 posy
+
+!zone
+proofpos	ldx posx	; CRSR-X
+		beq .jBack	; Null = >
+		dex		; verringern und mit
+		cpx llen	; Laenge vergl.
+		bcs jump	; zu weit rechts = >
+		lda posy+1	; CRSR-Y (Hi)
+		bmi firstline	; >32K = > 1. Zeile = >
+		ora posy	; ODERt Low-Byte
+		beq firstline	; = 0 = > 1. Zeile = >
+		+cmp16bit ZZB, POS	; vergleichen
+		bcc F_geot	; CRSR zu weit = >
+		jmp windowproof	; okay
+
+.jBack		ldx llen	; Zeilenlaenge wird
+		stx posx	; neue Position & hoch
+		jsr F_gcu
+		jsr poslvek	; LineVek holen
+		jsr findend	; Ende suchen
+		iny		; dahintersetzen
+		sty posx
+		jmp proofpos
+
+jump		jsr newline	; naechste Zeile
+		bcs +		; CRSR zu weit,
+		jsr needline	; Zeile anfordern
+		bcc +		; Bei Fehlschlag
+		jsr memfull	; Warnung zeigen
++		jmp proofpos
+
+!zone
+firstline	ldx #1		; CRSR in erste Zeile
+		stx posy
+		dex
+		stx posy+1
+		jmp windowproof
+
+F_geot		+cp16 zzbe, posy; CRSR in letzte Zeile
+		jmp windowproof
+
+!zone
+newline		lda #1		; X-Pos : = 1 & Y += 1
+		sta posx
+		+inc16 posy
+		+cmp16bit ZZB, POS	; vergleichen
+		rts
+
+!zone
+F_cs		lda #1		; CRSR 2 next linestart
+		sta posx
+		+inc16 posy
+		jmp proofpos
+
+!zone
+chrout		stx byte	; sichert Zeichen
+		jsr poslvek	; LineVek
+		ldy esca	; Autoinsert ?
+		beq +		; ggfs. kein
+		jsr insert1	; insert
++		ldy posx	; Versatz
+		lda byte	; Akku holen
+		sta (lvek),y	; und setzen
+		jsr poswrap	; Wrap ?
+		lda #TRUE	; NewFrame fordern
+		sta nwfrm
+		sta changes	; Veraendert !
+		jmp F_gcr
+
+!zone
+F_insert	jsr poslvek	; LineVek
+		jsr insert1	; insert
+		jsr poswrap	; Wrap ?
+		rts		; fixme - could save a byte here
+
+!zone
+insert1		ldy scrx,x	; X-Wert holen & in
+		sty .mod	; Immediate
+		ldy lvek+1	; Quell-Vektor =
+		ldx lvek	; aktueller Vektor-1
+		bne +
+		dey
++		dex
+		stx tmp1
+		sty tmp1+1
+		ldy llen	; Shiftstart LineEnd
+-
+.mod=*+1:	cpy #MODIFIED8	; X
+		beq +		; Ende = >
+		lda (tmp1),y	; Zeichen holen
+		sta (lvek),y	; und shiften
+		dey		; neue Pos
+		jmp -
++		lda #" "	; 'Space' an
+		sta (lvek),y	; Pos setzen
+		sta nwfrm	; NewFrame fordern
+		sta changes	; Veraendert !
+		rts
+
+!zone
+F_dcl		jsr F_gcl
+F_dcr		jsr poslvek	; LineVek
+		jsr delchr1	; Delete
+		jsr poswrap	; Wrap ?
+		jmp proofpos
+
+!zone
+delchr1		ldy scrx,x	; X-Wert in Immediate
+		sty .m
+		ldx lvek	; Zielvektor = aktueller
+		ldy lvek+1	; Vektor+1
+		inx
+		bne +
+		iny
++		stx tmp1
+		sty tmp1+1
+.m=*+1:		ldy #MODIFIED8	; X
+-		cpy llen	; Zeilenende ?
+		beq +		; Dann = >
+		lda (tmp1),y	; Zeichen holen
+		sta (lvek),y	; und shiften
+		iny		; neue Pos
+		jmp -
++		lda #" "	; Space an letzte
+		sta (lvek),y	; Pos setzen
+		lda #TRUE	; NewFrame fordern
+		sta nwfrm
+		sta changes	; Veraendert !
+		rts
+
+!zone
+; Einsprung: X = StartIndex, Y = EndIndex
+; Bewegt Zeilenbloecke: X bis Y-1 werden nach X+1 bis Y geschoben. Danach
+; liegt die Endzeile in der Startzeile
+rollfwd		jsr howmany	; Zeilenanzahl ?
+		beq ++		; ggfs Abbruch !
+		tya		; Y in X
+		tax
+		jsr getlvek	; lvek in lvek puffern
+		sec		; Quellvektor = Vektor-2
+		lda vvek
+		sbc #2
+		sta tmp1
+		lda vvek+1
+		sbc #0
+		sta tmp1+1
+		ldy #2		; Versatz 2
+-		tya		; Y pruefen
+		bne +		; ggfs
+		dec tmp1+1	; Page sichern
+		dec vvek+1
++		dey		; Versatz runter
+		lda (tmp1),y	; High-Byte oben setzen
+		sta (vvek),y
+		dey		; Versatz runter
+		lda (tmp1),y	; Low-Byte oben setzen
+		sta (vvek),y
+		inc tmpy	; Anzahl der Shifts
+		bne -		; pruefen, ggfs loop
+		inc tmpy+1
+		bne -
+		lda lvek	; alten Vektor holen
+		sta (tmp1),y	; und in letzte
+		iny		; Position setzen
+		lda lvek+1
+		sta (tmp1),y
+++		lda #TRUE	; NewFrame fordern
+		sta nwfrm
+		sta changes	; Veraendert !
+		rts
+
+!zone
+; Einsprung: X = StartIndex, Y = Endzeile
+; Bewegt Zeilenbloecke: X+1 bis Y werden nach X bis Y-1 geschoben. Danach
+; liegt die Startzeile in der Endzeile !
+rollrwd		jsr howmany	; Zeilenanzahl ?
+		beq ++		; ggfs Abbruch !
+		jsr getlvek	; lvek in lvek puffern
+		clc		; Quellvektor = Vektor+2
+		lda vvek
+		adc #2
+		sta tmp1
+		lda vvek+1
+		adc #0
+		sta tmp1+1
+		ldy #0		; Versatz 0
+-		lda (tmp1),y	; Hi-Byte unten setzen
+		sta (vvek),y
+		iny		; weiter
+		lda (tmp1),y	; Lo-Byte unten setzen
+		sta (vvek),y
+		iny		; weiter
+		bne +		; Page sichern
+		inc tmp1+1
+		inc vvek+1
++		inc tmpy	; Anzahl Shifts
+		bne -		; pruefen, ggfs loop
+		inc tmpy+1
+		bne -
+		lda lvek	; alten Vektor an die
+		sta (vvek),y	; letzte Pos setzen
+		iny
+		lda lvek+1
+		sta (vvek),y
+++		lda #TRUE	; NewFrame fordern
+		sta nwfrm
+		sta changes	; Veraendert !
+		rts
+
+!zone
+howmany		jsr cmp16bit	; Sicherheit
+		bcs +		; ggfs Abbruch = >
+		sec		; Negativ, um INC statt DEC nutzen zu können
+		lda scry,x
+		sbc scry,y
+		sta tmpy
+		lda scry+1,x
+		sbc scry+1,y
+		sta tmpy+1
+		rts
++		lda #0		; Zeilen
+		rts
+
+!zone
+movx2y		lda scrx,x	; Copy X-indexed Werte in Y-indexed Variablen
+		sta scrx,y
+		lda scry,x
+		sta scry,y
+		lda scry+1,x
+		sta scry+1,y
+		rts
+
+ESC_at		rts		; fixme - could save one byte here
+
+ESC_a		lda #TRUE	; Set AutoInsert
+		sta esca
+		sta updatewbi	; Update fordern
+		rts
+
+ESC_b		ldx #POS	; BlockEnd: = Cursorposition
+		ldy #END
+		jsr movx2y
+
+!zone
+; Block legal ? Vertauscht ggfs Zeiger
+nblck		+cmp16bit ANF, END	; Blockstart und -Ende vergleichen
+		bcc ++		; anf<end: ok
+		bne +		; anf>end: not ok
+		lda scrx,y	; Bei Gleichheit noch
+		cmp scrx,x	; X pruefen
+		bcs ++		; end> = anf: ok
++		ldy #TMP	; (Anf) in Temp
+		jsr movx2y
+		ldx #END	; Ende in Anf
+		ldy #ANF
+		jsr movx2y
+		ldx #TMP	; Temp in Ende
+		ldy #END
+		jsr movx2y
+++		lda #TRUE	; NewFrame fordern
+		sta nwfrm	; (Blockanzeige)
+		sta blockflag	; Block ein
+		rts
+
+!zone
+ESC_c		ldx #FALSE	; Clear AutoInsert
+		stx esca
+		dex		; Update fordern
+		stx updatewbi
+		rts
+
+ESC_d		ldx #POS	; Start: Cursorposition
+		jsr delline	; Zeile weg
+		jmp poswrap	; und wrap
+
+!zone
+delline		ldy #ZZB	; Ende: LastLine
+		jsr rollrwd	; runterrollen
+		lda zzbe	; Anzahl der benutzten Zeilen runter
+		bne +
+		dec zzbe+1
++		dec zzbe
+		bne +		; Low = 0 ?
+		lda zzbe+1	; Dann High pruefen und ggfs Zeile fordern
+		bne +
+		jsr needline
++		jmp proofpos
+
+!zone
+ESC_g		ldx #FALSE	; Beep On
+		stx beep
+		dex		; Update fordern
+		stx updatewbi
+		rts
+
+ESC_h		lda #TRUE	; Beep Off
+		sta beep
+		sta updatewbi	; Update fordern
+		rts
+
+!zone
+ESC_i		jsr needline	; Zeile fordern
+		+bcs memfull	; bei Fehlschlag Warnung = >
+		ldx #POS	; Start: Cursorposition
+		ldy #ZZB	; Ende: LastLine
+		jsr rollfwd	; raufrollen
+		rts		; fixme - could save a byte here
+
+!zone
+F_gsol
+ESC_j		lda #1		; Cursor-X: = 1
+		sta posx
+		jmp windowproof
+
+F_geol
+ESC_k		jsr poslvek	; LineVek
+		jsr findend	; sucht letztes Byte, dahinter steht dann Cursor
+		iny
+		sty posx
+		jmp proofpos
+
+ESC_o		lda blockflag	; toggle Flag
+		eor #$ff
+		sta blockflag
+		rts
+
+ESC_p
+ESC_q		rts		; fixme - could save a byte here
+
+ESC_t		ldx #POS	; Blockstart = Cursorposition
+		ldy #ANF
+		jsr movx2y
+		jmp nblck	; legal ?
+
+F_home		ldx scrx	; Normal HOME only,
+		ldy scry	; if CRSR not there
+		lda scry+1
+		cpx posx	; Otherwise ScreenUp
+		bne scrnhome
+		cpy posy
+		bne scrnhome
+		cmp posy+1
+		bne scrnhome
+
+!zone
+F_scrnu		lda posy	; Displaystart =
+		sec		; Displaystart
+		sbc #scrlins	; - Zeilenzahl
+		sta posy
+		bcs +
+		dec posy+1
++		lda #TRUE	; NewFrame fordern
+		sta nwfrm
+		jmp proofpos
+
+!zone
+scrnhome	stx posx	; Cursor: = Display
+		sty posy
+		sta posy+1
+		jmp proofpos
+
+F_ahome		clc		; errechnet Werte
+		lda scry	; fuer antih1
+		adc #scrlins-1	; in A, X, Y
+		tax
+		lda scry+1
+		adc #0
+		tay
+		lda scrx	; CRSR dort ?
+		cmp posx
+		bne antih1
+		cpx posy	; Nein = > dorthin
+		bne antih1
+		cpy posy+1	; Ja = > ScreenDown !
+		bne antih1
+
+!zone
+F_scrnd		lda posy	; One screen down
+		clc
+		adc #scrlins
+		sta posy
+		bcc +
+		inc posy+1
++		lda #TRUE	; NewFrame fordern
+		sta nwfrm
+		jmp proofpos
+
+!zone
+antih1		sta posx	; Cursor: = DisplayEnd
+		stx posy
+		sty posy+1
+		jmp proofpos
+
+F_gsot		ldx #1		; X = Y = 1
+		stx posx
+		stx posy
+		stx nwfrm	; NewFrame fordern
+		dex		; Y-Hi: = 0
+		stx posy+1
+		jmp proofpos
+
+!zone
+handleid	ldx #7		; 8 Byte Kennung
+-
+mod_id=*+1:	lda MODIFIED16,x; Schleife, um evtl. vorhandenen Text zu
+		cmp idtext,x
+		bne makeid	; erkennen & zu reaktivieren
+		dex
+		bpl -
+		clc		; 'OldText'
+		rts
+
+makeid		lda texttop	; Neue ID wird ans Basic-Ende gesetzt
+		sta mod_id
+		sta .m1
+		lda texttop+1
+		sta mod_id+1
+		sta .m1+1
+		ldx #7
+-		lda idtext,x
+.m1=*+1:	sta MODIFIED16,x
+		dex
+		bpl -
+		sec		; 'NewText'
+		rts
+
+F_cr		jsr F_lfeed
+		jmp jump
+
+F_c	:F_f		:F_ffeed	:F_dir
+F_fbox	:F_hlp		:F_bell		:F_tab
+F_text	:F_middle	:F_graphic
+F_fn	:F_ff		:F_un		:F_uf		:F_rn	:F_rf
+F_sf	:F_sk		:F_su		:F_st		:F_sl
+F_gld	:F_glu		:F_gad		:F_gau		:F_gpd	:F_gpu
+F_gtr	:F_gtl		:F_gwr		:F_gwl
+F_bttnn	:F_bttnf	:F_find		:F_print	:F_mode	:F_dword
+F_cut	:F_copy		:F_paste	:F_move
+F_fmtl	:F_fmtr		:F_fmtm		:F_fmtb
+
+		rts		; (yet) missing

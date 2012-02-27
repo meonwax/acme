@@ -1,0 +1,119 @@
+
+
+                                 ACME
+
+         ...the ACME Crossassembler for Multiple Environments
+
+                    --- compatibility problems ---
+
+
+If you haven't used ACME before, you don't need to read this text.
+It is only of use to people who upgraded from ACME 0.05 (or earlier)
+to ACME 0.07 (or later).
+
+You might encounter some slight incompatibilities: I have done a few
+changes to ACME's workings.
+Because backwards compatibility is the root of all evil (*g*), I did
+not include any possibility to enforce the old behaviour. If one of
+the following changes applies to your source files, assemble them with
+this new release of ACME and then compare new and old output files.
+
+Sorry for this inconvenience, but at least I think that there won't be
+any further changes in the future.
+
+
+----------------------------------------------------------------------
+Section:   Offset assembly / segment assembly
+----------------------------------------------------------------------
+
+Offset assembly is now done using a new pseudo opcode called
+"!pseudopc". Have a look at "AllPOs.txt" for further information on
+its syntax and usage.
+The old way of just redefining the program counter by using more than
+one "*= EXPRESSION" statements does something totally different now:
+Whenever the program counter is redefined, ACME will actually change
+its pointer into the output buffer, so you can write your code in
+distinct segments. These segments can be given in any order. After
+assembly, ACME stores everything from the lowest address used to the
+highest address used. Have a look at "AllPOs.txt" for an example on
+how to use this facility.
+
+
+----------------------------------------------------------------------
+Section:   Argument order of MVP/MVN
+----------------------------------------------------------------------
+
+The syntax of the 65816 opcodes MVN and MVP is usually given as
+
+    MVN source_bank, destination_bank
+
+All previous versions of ACME did it the other way round: First the
+destination bank, then the source bank. This has been fixed, ACME now
+uses the syntax given above.
+
+
+----------------------------------------------------------------------
+Section:   Typecast
+----------------------------------------------------------------------
+
+You can use leading zeros to make ACME use a bigger addressing mode
+than needed. Until now, this did not work when using labels. The
+source code
+
+	label1 = $fa
+	label2 = $00fa
+
+		lda $fa
+		lda $00fa
+		lda label1
+		lda label2
+
+was assembled to:
+
+		lda $fa
+		lda $00fa
+		lda $fa
+		lda $fa
+
+Release 0.07 of ACME now correctly assembles the given source code to:
+
+		lda $fa
+		lda $00fa
+		lda $fa
+		lda $00fa
+
+
+----------------------------------------------------------------------
+Section:   !endoffile
+----------------------------------------------------------------------
+
+Previous versions of ACME knew a pseudo opcode called "!end" that
+marks the end of a source code file. Because the word "end" doesn't
+actually specify *what* is about to end, I changed this to
+"!endoffile". You can also use a short version, called "!eof". The old
+PO "!end" no longer works.
+
+
+----------------------------------------------------------------------
+Section:   Using the BIT command without parameters
+----------------------------------------------------------------------
+
+Release 0.07 of ACME will complain if you try to assemble BIT without
+any parameter. Previous versions did just output the byte $2c - a
+commonly known trick to mask the following 2-byte command on the 6502
+processor. If you still want to do this, use
+
+		!src <6502/std.a>	; parse library file
+
+to include some standard macros. Then you can use
+
+		+bit8	; output $24 to mask following 1-byte command
+
+and
+
+		+bit16	; output $2c to mask following 2-byte command
+
+respectively.
+
+
+That's all. Again, sorry for the inconvenience...

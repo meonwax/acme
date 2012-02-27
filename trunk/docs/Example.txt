@@ -1,0 +1,31 @@
+
+
+                                 ACME
+
+         ...the ACME Crossassembler for Multiple Environments
+
+                   --- the example source codes ---
+
+
+To assemble the given example source code files, change to the
+"examples" directory and type
+
+    acme -DSYSTEM=64 ddrv.a
+    acme macedit.a
+
+ACME will parse the source code files and will then produce files
+called "ddrv64.prg" and "macedit.o". You may compare them to the files
+called "ddrv64.exp" and "macedit.exp", to make sure ACME works as it
+should do.
+
+Just in case you wonder:
+
+    "ddrv64.prg" is a joystick/mouse driver for the C64. The source
+    code is fairly well documented. Have a look at it if you need more
+    examples on how ACME works. By using "-DSYSTEM=128" instead of 
+    "-DSYSTEM=64", you can also generate "ddrv128.prg", a C128 binary.
+
+    "macedit" is an unusably bad text editor for the C128. The source
+    code is not meant to be a good example of ACME's capabilities.
+    Please *don't* look at it. :)
+

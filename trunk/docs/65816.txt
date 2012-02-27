@@ -1,0 +1,87 @@
+
+
+                                 ACME
+
+         ...the ACME Crossassembler for Multiple Environments
+
+                        --- 65816  support ---
+
+
+This text contains information about the 65816-specific features of
+ACME.
+
+
+----------------------------------------------------------------------
+Section:   Command aliases for "long" JMPs and JSRs
+----------------------------------------------------------------------
+
+In addition to the commands JMP and JSR, the 65816 processor also
+knows JML and JSL, which are JMP and JSR using new (long) addressing
+modes. ACME also accepts the new addressing modes when using the old
+mnemonics JMP and JSR, but the old addressing modes cannot be used
+with the new mnemonics JML and JSL.
+
+
+----------------------------------------------------------------------
+Section:   Argument order of MVN/MVP
+----------------------------------------------------------------------
+
+According to WDC's official syntax for 65816 assembly language, the
+argument order of the MVN and MVP instructions differs between
+assembly language and machine code.
+To copy bytes from bank $ab to bank $cd, use the following statement:
+    mvn $ab, $cd ; source bank $ab, destination bank $cd
+ACME will then produce the following machine code:
+    $54 $cd $ab  ; opcode mvn, destination bank $cd, source bank $ab
+
+ACME 0.05 and earlier did it the wrong way. Several other assemblers
+still do. Make sure your sources are correct.
+
+
+----------------------------------------------------------------------
+Section:   Register lengths
+----------------------------------------------------------------------
+
+When assembling "lda #5" for example, ACME has to know whether to
+create an 8-bit argument or a 16-bit argument. This depends on the
+current register length.
+On startup, ACME assumes all registers are 8 bits wide. You can change
+this at any time using the following pseudo opcodes:
+
+		!al	; switch to long accumulator
+		!as	; switch to short accumulator
+		!rl	; switch to long index registers
+		!rs	; switch to short index registers
+
+Please note that ACME, unlike some other assemblers, does *not* track
+SEP/REP commands: I don't like that method - it fails when
+encountering PLPs, for example. So if it doesn't work reliably in the
+first place, why use it? :)
+
+If you don't like that you always have to use a pseudo opcode
+alongside SEP/REP commands, then have a look at the file <65816/std.a>
+(in the library). There are some predefined macros that you can use.
+
+
+----------------------------------------------------------------------
+Section:   Postfixing stuff
+----------------------------------------------------------------------
+
+You can also use the postfix method (which is explained in the file
+"AddrModes.txt") to specify the immediate argument's length:
+
+		ldx+2 #5
+
+will always be assembled to a 16-bit argument, regardless of the
+currently configured index register width. Use at your own risk - this
+method obviously is not a good example on structured programming. :)
+
+
+----------------------------------------------------------------------
+Section:   Miscellaneous
+----------------------------------------------------------------------
+
+Note that ACME cannot produce more than 64 KBytes of code. Also note
+that though the 65816 CPU has an address space of 16 MB, ACME's
+program counter is only sixteen bits wide. It shouldn't be too hard to
+make any assembled code run in a non-zero bank, though.

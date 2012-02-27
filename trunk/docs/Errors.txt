@@ -1,0 +1,380 @@
+
+
+                                 ACME
+
+         ...the ACME Crossassembler for Multiple Environments
+
+                        --- error messages ---
+
+
+Here's a sorted list of all error messages ACME can give, possible
+reasons and what you can do to sort it out.
+
+
+----------------------------------------------------------------------
+Section:   Errors on startup
+----------------------------------------------------------------------
+
+Cannot open toplevel file "FILENAME".
+    Maybe you mistyped its name?
+
+Error in CLI arguments: ...
+    There are several of these errors, but they should be quite self-
+    explanatory.
+
+
+----------------------------------------------------------------------
+Section:   Warnings during assembly
+----------------------------------------------------------------------
+
+"!cbm" is deprecated; use "!ct pet" instead.
+    This is given when "!cbm" is encountered. It still works though.
+
+"!pseudopc/!realpc" is deprecated; use "!pseudopc {}" instead.
+    "!pseudopc" can now be used with a block, so it can be nested.
+    So "!realpc" is no longer needed. It still works though.
+
+"!subzone {}" is deprecated; use "!zone {}" instead.
+    "!zone" can now be used stand-alone (which just changes the
+    current zone) as well as with a block (which creates a subzone).
+    So "!subzone" is no longer needed. It still works though.
+
+!warn: ...
+    This is given when the pseudo opcode "!warn" is executed. The
+    actual message varies according to the pseudo opcode's arguments.
+
+Assembling buggy JMP($xxff) instruction
+    The original 6502 processor has a bug: When executing an indirect
+    JMP instruction where the low byte of the argument equals $ff, it
+    fetches the high byte of the jump target address not from memory
+    location ARGUMENT+1, but from ARGUMENT-255. Therefore ACME issues
+    this warning if you are about to generate such an instruction.
+    Note that this warning is only given for CPU types 6502 and 6510,
+    because 65c02 and 65816 have been fixed in this respect.
+
+Bug in ACME, code follows
+    A situation has been encountered implying there is a bug in ACME.
+    See the last section in this file.
+
+Implicit label definition not in leftmost column.
+    An implicit label definition has blanks before the label name.
+    Imagine this source code:
+		lda #00
+		imx
+		rts
+    Obviously, there's a typo in the middle line (imx instead of inx),
+    but ACME does not recognize this: It looks just like an implicit
+    label definition! Therefore releases 0.89 and higher warn you when
+    an implicit label does not start in column 1. Releases 0.94 and
+    higher support a command line option to switch off this warning
+    ("-Wno-label-indent").
+
+Label dump file already chosen.
+    The "!sl" command was given more than once (or in addition to the
+    "--labeldump" command line option). Only use it once.
+
+Label name starts with a shift-space character.
+    The name of a global label starts with a shift-space character. It
+    is highly likely that this is a typing error, therefore this
+    warning is issued.
+
+Memory already initialised.
+    The "!initmem" command was given more than once (or in addition to
+    the "--initmem" command line option). Only use it once.
+
+Offset assembly still active at end of segment.
+    There's a "*=" command inside an offset assembly block. There has
+    been some discussion on the ACME mailing list over whether this
+    should raise a warning. Future releases of ACME might not warn
+    anymore.
+
+Output file already chosen.
+    The "!to" command was given more than once (or in addition to the
+    "--outfile" command line option). Only use it once.
+
+Segment reached another one, overwriting it.
+    The program counter has just reached the start of another segment.
+    Because some people might want to assemble "onto" a binary file
+    that was loaded before, this warning can be switched off using
+    modifier keywords when changing the program counter via "*=".
+    Future versions of ACME might throw an error instead of a warning
+    in this case.
+
+Segment starts inside another one, overwriting it.
+    The given value in a "*=" command is located inside another
+    segment. Because some people might want to assemble "onto" a
+    binary file that was loaded before, this warning can be switched
+    off using modifier keywords when changing the program counter via
+    "*=".
+    Future versions of ACME might throw an error instead of a warning
+    in this case.
+
+Used "!to" without file format indicator. Defaulting to "cbm".
+    Now that "!to" can be given a file format keyword (either "plain"
+    or "cbm"), using "cbm" as default seems inappropriate. It still
+    works though.
+
+Using oversized addressing mode.
+    ACME just assembled a command using an addressing mode that was
+    larger than needed. This only happens if ACME could not work out
+    the argument's value in the first pass, therefore assuming a 16-
+    bit addressing mode. If, in a later pass, ACME finds out that the
+    argument is small enough to fit in 8 bits, then this warning is
+    shown. If you define all your zeropage labels *before* they are
+    first used, this shouldn't happen. If you know that a specific
+    argument fits in 8 bits, you can force ACME to use 8 bits
+    addressing by postfixing the command with "+1". Example:
+		lda+1 label
+    ACME will then use an 8-bit addressing mode, regardless of whether
+    the label is known or not. If the label value happens to be too
+    large to fit in 8 bits, ACME will show an error of course (To
+    always truncate a value to 8 bits, use the '<' operator).
+    More about the postfixing method can be found in "AddrModes.txt".
+
+
+----------------------------------------------------------------------
+Section:   Errors during assembly
+----------------------------------------------------------------------
+
+"ACME" environment variable not found.
+    This will be shown if the source code references any files from
+    the library, but the library location variable wasn't set. This
+    can only be given on systems using the said variable.
+
+!error: ...
+    This is given when the pseudo opcode "!error" is executed. The
+    actual message varies according to the pseudo opcode's arguments.
+
+Cannot open input file.
+    ACME had problems opening an input file ("!bin", "!convtab" or
+    "!src"). Maybe you mistyped its name.
+
+Conversion table incomplete.
+    The conversion table file is too small. It needs to be exactly 256
+    bytes in size.
+
+Division by zero.
+    Guess what - you attempted to divide by zero.
+
+Exponent is negative.
+    Using negative exponents would only give sensible results when
+    using floating point maths.
+
+File name quotes not found ("" or <>).
+    File names have to be given in quotes. Either "" quoting for files
+    located in the current directory or <> quoting for library files.
+
+Found '}' instead of end-of-file.
+    ACME encountered a '}' character when it expected the file to end
+    instead (because no blocks were open).
+
+Garbage data at end of statement.
+    There are still arguments when there should not be any more.
+
+Illegal combination of command and addressing mode.
+    The given command cannot be used with the given addressing mode on
+    the CPU you have chosen.
+
+Illegal combination of command and postfix.
+    The given command cannot be used with the addressing mode
+    indicated by the given postfix.
+
+Illegal postfix.
+    You used a postfix other than "+1", "+2" or "+3".
+
+Label already defined.
+    You defined a label that already had a different value. To change
+    a label's value, use the "!set" pseudo opcode.
+
+Macro already defined.
+    Macros can only be defined once. If you define a macro twice, ACME
+    will help you find the definitions by giving a warning for the
+    first definition and a serious error (stopping assembly) for the
+    second definition.
+
+Macro not defined (or wrong signature).
+    You tried to call a macro that either wasn't defined yet (always
+    define macros before using them) or was called with an illegal
+    argument list. There must be a 1:1 match between the definition's
+    formal parameters and the call's actual arguments.
+
+Macro parameter twice.
+    The same label name is used two (or more) times in the same macro
+    parameter list.
+
+Negative value - cannot choose addressing mode.
+    Because the argument is a negative value, ACME does not know what
+    addressing mode (8 bits, 16 bits, on a 65816 even 24 bits) to use.
+    You can overcome this problem using the postfix method. Or correct
+    your program to use positive addresses instead.
+
+No string given.
+    ACME expects a string but doesn't find it.
+
+Number out of range.
+    A value is too high or too low.
+
+Program counter is unset.
+    You didn't set the program counter, so ACME didn't know where to
+    start.
+
+Quotes still open at end of line.
+    You forgot the closing quotes.
+
+Source file contains illegal character.
+    Your source code file contained a null byte.
+
+Syntax error.
+    Guess what - there's a syntax error.
+
+Target out of range.
+    A relative addressing (branch commands or PER) only has a limited
+    range. You exceeded it.
+
+There's more than one character.
+    You used a text string in an arithmetic expression, but the string
+    contained more than a single character.
+
+Too late for postfix.
+    You can only postfix labels at the start, before they are used for
+    the first time.
+
+Too many '('.
+    A formula ends before all parentheses were closed.
+
+Too many ')'.
+    There are more closing than opening parentheses in a formula.
+
+Unknown encoding.
+    You used the "!convtab" command with a keyword ACME does not know.
+
+Unknown operator.
+    You used an arithmetic/logical operator ACME does not know.
+
+Unknown output format.
+    You used the "!to" command with a keyword ACME does not know.
+
+Unknown processor.
+    You used the "!cpu" command with a keyword ACME does not know.
+
+Unknown pseudo opcode.
+    You have mistyped a "!" command.
+
+Unknown "*=" segment modifier.
+    You used a modifier keyword ACME does not know.
+
+Value not yet defined.
+    A value could not be worked out. Maybe you mistyped a label name.
+    Whether this is given as a "normal" or as a serious error depends
+    on the currently parsed pseudo opcode.
+
+
+----------------------------------------------------------------------
+Section:   Serious errors (stopping assembly)
+----------------------------------------------------------------------
+
+!serious: ...
+    This is given when the pseudo opcode "!serious" is executed. The
+    actual message varies according to the pseudo opcode's arguments.
+
+Found end-of-file instead of '}'.
+    The file ended when ACME expected the block to be closed instead
+    (because there was at least one block left open).
+
+Loop count is negative.
+    You used the "!for" command with a negative loop count.
+
+Macro already defined.
+    Macros can only be defined once. If you define a macro twice, ACME
+    will help you find both definitions by giving a warning for the
+    first definition and a serious error (stopping assembly) for the
+    second definition.
+
+Missing '{'.
+    ACME didn't find the expected '{' character. Remember that '{'
+    characters must be given on the same line as the command they
+    belong to.
+
+Out of memory.
+    When ACME runs out of memory, it stops assembly, giving this
+    error. Free some memory and try again. It's highly unlikely anyone
+    will ever see this error, though. ;)
+
+Produced too much code.
+    The program counter reached address $10000, leaving the output
+    buffer. At the moment, ACME can only produce a maximum of 64 KB.
+
+Syntax error.
+    This is only given as a _serious_ error if it's in a "!do" loop
+    condition.
+
+Too deeply nested. Recursive macro calls?
+    The only reason for ACME to have a limit on macro call nesting
+    at all is to find infinite recursions. Current limit is 64.
+
+Too deeply nested. Recursive "!source"?
+    The only reason for ACME to still have a limit on "!source"
+    nesting at all is to find infinite recursions. Current limit is
+    64.
+
+Value not yet defined.
+    A value could not be worked out. Maybe you mistyped a label name.
+    Whether this is given as a "normal" or as a serious error depends
+    on the currently parsed pseudo opcode.
+
+
+----------------------------------------------------------------------
+Section:   Errors on closedown
+----------------------------------------------------------------------
+
+Cannot open label dump file "FILENAME".
+Cannot open output file "FILENAME".
+    Make sure the name doesn't contain wildcard characters and you
+    have write access to the directory.
+
+No output file specified (use the "-o" option or the "!to" pseudo opcode).
+    You didn't specify the output file, so ACME did not create one.
+
+
+----------------------------------------------------------------------
+Section:   Bugs in ACME
+----------------------------------------------------------------------
+
+    The warning "Bug in ACME, code follows" is always followed by a
+    serious error message, stopping assembly. The second message
+    actually gives a hint about the bug's location in the source code.
+    If you ever get this combination of warning and serious error,
+    please send me an e-mail and tell me about it. If possible,
+    include a piece of source code that triggers it.
+
+    Please don't get this wrong - there are no known bugs. I just left
+    some debugging code in place in case there is a bug I failed to
+    notice during testing. In practice, this warning is not expected
+    to be given at all. That's the reason why I want to be notified if
+    it *does* decide to show up.
+
+    The hint messages are of no real interest to the end user, but here
+    they are for completeness' sake.
+
+IllegalGroupIndex
+    The mnemonic tree contains a group that I didn't add.
+
+IllegalBlockTerminator
+    A RAM block (macro or loop) was terminated incorrectly.
+
+IllegalOperatorHandle
+    The expression parser found an operator that does not exist.
+
+OperandStackNotEmpty
+    The expression parser has finished though there are still operands
+    left to parse.
+
+OperatorStackNotEmpty
+    The expression parser has finished though there are still
+    operators left to parse.
+
+StrangeInputMode
+    The input state machine has reached a state that does not exist.
+
+StrangeParenthesis
+    The expression parser found a non-existing operator.

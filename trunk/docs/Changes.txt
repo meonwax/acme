@@ -1,0 +1,348 @@
+
+
+                                 ACME
+
+         ...the ACME Crossassembler for Multiple Environments
+
+                          --- change log ---
+
+
+This text only contains descriptions of changes independent of the
+platform used. There should be another help file in this archive
+outlining the platform specific changes.
+
+
+----------------------------------------------------------------------
+Section:   New in release 0.94.2
+----------------------------------------------------------------------
+
+
+
+----------------------------------------------------------------------
+Section:   New in release 0.94.1
+----------------------------------------------------------------------
+
+New CLI switch: "-D" allows to set global labels via the command line.
+New CLI switch: "-Wno-label-indent" switches off warnings about
+    indented implicit label definitions.
+New PO: "!ifndef" (finally a companion for "!ifdef"...)
+When setting the program counter via "*=", modifiers ("overlay" and
+    "invisible") allow to suppress warnings about segment overlap.
+Float values without leading digits are now accepted.
+
+
+----------------------------------------------------------------------
+Section:   New in release 0.93
+----------------------------------------------------------------------
+
+Change: If "Offset assembly still active at end of segment", it no
+    longer gets switched off.
+Change: Operators ASR and LSL/ASL now can also handle FP (LSR still
+    makes no sense).
+Change: Added distinction between '/' and "DIV" operators: DIV always
+    gives integer results, while '/' depends on operands.
+New functions: added int() and float() functions.
+Internal change: default fill value for !align is now CPU-specific
+    (but still 234)
+New CLI switch: "--use-stdout" prints errors to stdout instead of
+    stderr (a fix for the "Relaunch64" IDE I have nothing to do with)
+
+
+----------------------------------------------------------------------
+Section:   New in release 0.92
+----------------------------------------------------------------------
+
+Text versions of arithmetic/logic operators (XOR, DIV, MOD, etc.) no
+    longer need to be in upper case.
+Experimental support for floating point maths.
+Support for mathematical functions:
+    sin(), cos(), tan(), arcsin(), arccos(), arctan()
+New errors:
+    "Argument out of range.", "Unknown function."
+These operators always deliver ints:
+    not, and, or, xor, lowbyteof, highbyteof, bankbyteof, mod, asl,
+    lsl, asr, lsr
+
+
+----------------------------------------------------------------------
+Section:   New in release 0.91
+----------------------------------------------------------------------
+
+Added anonymous labels (- + -- ++ --- +++ etc.). Every other assembler
+    seems to support them, so I added them to ACME as well... :)
+New POs: "!warn MESSAGE", "!error MESSAGE", "!serious MESSAGE"
+New CLI option: "--maxdepth NUMBER" sets maximum recursion depth for
+    macro calls and the "!source" pseudo opcode.
+ACME now gives a warning when assembling JMP($xxff) on 6502/6510
+    because that instruction is broken on those CPUs.
+After giving the error "Target out of range", the error "Number out of
+    range" is now suppressed.
+Corrected code example in QuickRef.txt (why didn't anyone tell me? :))
+Added additional example source code.
+
+
+----------------------------------------------------------------------
+Section:   New in release 0.90
+----------------------------------------------------------------------
+
+Arithmetic shift right now has some watchdog code and should work
+    regardless of compiler.
+Corrected some typos in error messages and docs.
+New CLI option: "--cpu CPU_TYPE"
+The output file format chosen with "--format FORMAT" is now used as
+    default when "!to" is used without format keyword.
+Again: Tidier code.
+
+
+----------------------------------------------------------------------
+Section:   New in release 0.89
+----------------------------------------------------------------------
+
+Support for more undocumented ("illegal") opcodes: anc, arr, asr, sbx,
+    dop, top, jam. See Illegals.txt for more info.
+Change in shift operators: Logical shift right (">>" or "LSR") has on
+    most platforms actually been an arithmetic shift right all the
+    time! Therefore, ">>" now *officially* performs an arithmetic
+    shift right (can also be written as "ASR"), while ">>>" has been
+    added to perform a logical shift right (can also be written as
+    "LSR"). Note: This is about ACME's maths parser and has nothing to
+    do with the 6502 mnemonics "asl" and "lsr".
+Finally added a "-o" command line option to set the output file! See
+    QuickRef.txt for info on the other new CLI options (--format,
+    --labeldump, --maxerrors, --setpc, --initmem, --version).
+Fixed bug: "!align" could be used while program counter undefined.
+Fixed bug: Numbers before mnemonics are no longer skipped (or rather,
+    implicit label definitions are no longer accepted if the label
+    name starts with a digit).
+Change: Much better algorithm to compute to-the-power-of (read: it's
+    no longer braindead).
+Some more internal tidying.
+
+
+----------------------------------------------------------------------
+Section:   New in release 0.88
+----------------------------------------------------------------------
+
+Fixed architecture-dependent bug introduced in release 0.87.
+Fixed bug: Unknown !cpu keywords could cause crashes.
+Fixed bug in !ct "filename" nesting.
+
+
+----------------------------------------------------------------------
+Section:   New in release 0.87
+----------------------------------------------------------------------
+
+Support for some undocumented ("illegal") opcodes: slo, rla, sre, rra,
+    sax, lax, dcp, isc. To use these, choose the 6510 cpu.
+Two error messages gone: "Sorry, feature not yet implemented." and
+    "Chosen CPU does not support this command and/or addressing mode."
+Explanation of new error message ("There's more than one character.")
+    added to docs.
+
+
+----------------------------------------------------------------------
+Section:   New in release 0.86
+----------------------------------------------------------------------
+
+The "!convtab" pseudo opcode can now be given the file name of a
+    conversion table. The file must hold exactly 256 bytes.
+Improved docs a bit (more and better examples, more info on verbosity
+    CLI switch).
+If no "!to" pseudo opcode has been found, ACME will tell you so.
+
+
+----------------------------------------------------------------------
+Section:   New in release 0.86 beta
+----------------------------------------------------------------------
+
+Macros can now be used with call-by-reference semantics, therefore
+    allowing some kind of return value. Call-by-reference is
+    indicated by prefixing the relevant parameter(s) with a '~'
+    character. This has to be done at both the macro definition and
+    the macro call.
+Different macros are allowed to have the same name as long as their
+    parameter lists differ in size (number of arguments) or type
+    (call-by-value vs. call-by-reference)
+Macros do not have a limit on parameter count anymore.
+Macro size is unlimited now.
+The expression parser does not have a limit on recursion depth
+    anymore, so you can use as many parentheses as you like.
+Loop block size is unlimited now.
+Label name and string lengths are unlimited now.
+The recursion depth of "!source" and macro calls is set to 64. The
+    only reason there still *is* a limit is to be able to spot
+    infinite recursions.
+Offset assembly now has block support and can be nested. Using the old
+    syntax still works, but gives a warning.
+Pseudo opcodes "!convtab", "!cpu", "!al", "!as", "!rl" and "!rs" now
+    have block support and can be nested.
+Using "!to" without file format indicator now gives a warning (but
+    still works).
+Fixed bug: The statement
+	!to "outfile" ANY_SPECIAL_CHARACTER_BUT_COMMA GARBAGE
+    wasn't flagged as an error.
+Fixed bug: The statement
+	!source "a file that cannot be opened"
+    did not give an error, but was just ignored.
+If a global label starts with a shift-space character, a warning is
+    issued (because it is highly likely that it is a typing error).
+*Much* cleaner internals. *Very* *much* cleaner internals actually.
+More bug checking at runtime.
+Tree lookups should be a bit faster.
+Initialising the memory should be a bit faster.
+Writing the output file should be a bit faster.
+The expression parser now uses repeated multiplication instead of the
+    math library's pow() call, so it is no longer necessary to include
+    the C math library when compiling.
+The number of errors displayed before assembly stops was reduced from
+    20 to 10. I really should make this configurable via a CLI switch.
+
+
+----------------------------------------------------------------------
+Section:   New in release 0.85 alpha
+----------------------------------------------------------------------
+
+Fixed bug: Handling of parentheses in new expression parser was badly
+    screwed up. Thanks go to Nathan Smith for reporting that bug.
+Verbosity messages for segments and output file now contain size info.
+
+
+----------------------------------------------------------------------
+Section:   New in release 0.84 alpha
+----------------------------------------------------------------------
+
+Some changes in documentation (mainly corrected typos)
+Usage count for labels (Unused ones are marked in label dump file)
+New PO: "!8" (for 8-bit values, as "!byte" / "!by" / "!08")
+Finally removed the dreaded only-two-input-files restriction
+Improved PO: "!to" has parameter for choosing output file format
+Fixed bug: Blanks after "!for"'s "}" character stopped assembly
+Rewritten expression parser and label tree handler (should be faster)
+Generally tidied up the source.
+Skipped some version numbers to get a "less frightening" one. :)
+
+
+----------------------------------------------------------------------
+Section:   New in release 0.08 beta
+----------------------------------------------------------------------
+
+Fixed really serious bug: The 65816's indirect DP addressing caused
+    wrong opcodes to be generated. Thanks to Doc Bacardi/The Dreams
+    for reporting it.
+
+
+----------------------------------------------------------------------
+Section:   New in release 0.07 beta
+----------------------------------------------------------------------
+
+Fixed really serious bug: Indirect JMP / JSR were assembled without
+    target addresses. Thanks to YTM/Alliance for reporting that one.
+Fixed bug in value parser's handling of parentheses: Expressions like
+    "a*(b-c)+d" gave "a*((b-c)+d)", obviously not the same.
+Fixed bug: "!set LABEL = VALUE" now *really* works correctly.
+Fixed bug: ACME gave "too late for postfix" error when reading a
+    predefined label of known size. Only occurred when using macros.
+Fixed bug: Error messages given from within macro definitions used
+    truncated file names.
+Fixed bug: Calling of local macros didn't work at all.
+Fixed bug: "}" chars directly after macro calls were not found.
+Fixed bug: Spaces after ":" and "{" gave syntax errors.
+Fixed bug: Line counting inside loops was screwed up.
+Fixed bug: Changed argument order of MVP and MVN (now it's "opcode,
+    source, target")
+New PO: "!08" (for 8-bit values, as "!byte" / "!by")
+New PO: "!16" (for 16-bit values, as "!word" / "!wo")
+New PO: "!24" (for 24-bit values)
+New PO: "!32" (for *signed* 32-bit values)
+New PO: "!pseudopc" (starts offset assembly)
+New PO: "!realpc" (ends offset assembly)
+New PO: "!for LABEL, TIMES { LINES }" for easier loops.
+New PO: "!initmem BYTE" to define empty memory.
+New PO: "!endoffile" (short "!eof") replaces "!end".
+New PO: "!ifdef" (only use this if you *really* know what you are
+    doing. Otherwise, just don't use it)
+New PO: "!convtab CONVERSION" (short "!ct") selects the default
+    character conversion, making "!cbm" obsolete.
+Improved PO: "!binary" now has "skip" parameter.
+Change: "!cbm" outputs a warning when used - use "!ct pet" instead.
+Change: "!end" no longer works - use "!eof" instead.
+Change: "*=VALUE" is now segment change instead of offset assembly.
+Change: Argument order of MVN/MVP is now as is standard.
+The typecast system has been rewritten - now it works as intended.
+BIT without any parameters no longer works - use a macro instead.
+Leading zeros are stored in label structures and acted upon.
+The documentation is in several files now.
+Negative numbers are now handled much more sensibly.
+'ACME' environment variable only needed when *really* needed.
+
+
+----------------------------------------------------------------------
+Section:   New in release 0.05 beta
+----------------------------------------------------------------------
+
+Fixed bug: No more multiple error messages.
+Fixed bug: Zone names now work correctly (First char wasn't stored).
+Fixed bug: "!set label = label" now works correctly (I hope).
+Fixed bug: "stz ...,y" gave "number too big" instead of "illegal
+    combination of command and addressing mode"
+New PO: "!subzone" (short "!sz") for nested zones.
+Added support for library tree when using "!source" or "!binary".
+Single-character strings can now be given in single quotes as well.
+Real icons.
+Startup errors now exit correctly with EXIT_FAILURE code.
+Example program now includes "Expected_Output" file.
+Further tidied up the sources.
+Tidied up the general help file:
+ -Changed "Freeware" to "free software"
+ -Corrected the information given on "!align".
+ -Added examples for most of the pseudo opcodes.
+
+
+----------------------------------------------------------------------
+Section:   New in release 0.04 beta
+----------------------------------------------------------------------
+
+Corrected some small bugs.
+New PO: "!zone" (short "!zn") replaces "!module" (short "!mod")
+Tidied up the sources a lot.
+Changed bad style C code reported by lint.
+Added GNU GPL hint in every source file.
+Added startup message in verbose mode.
+Added "Error: " to startup error messages.
+Added Amiga, Linux and OS/2 versions
+
+
+----------------------------------------------------------------------
+Section:   New in release 0.03 beta
+----------------------------------------------------------------------
+
+Generally tidied up the source.
+Moved RISC OS-specific CLI options to platform file.
+Added pathname conversion from UNIX style to current platform style.
+Added context variables (enabling "!source"s and macros).
+Translated all documentation to english.
+Changed string pseudo opcodes to allow numeric values.
+Added verbose mode (CLI option "v").
+Added output buffer, removing the need for additional output pass (and
+    now the "!to" pseudo opcode can be placed anywhere).
+More than one "label = pc" definition per statement now illegal.
+Instead added possibility to have several statements on a single line
+    by using ":" as a separator character.
+Added new keywords: "!set", "!if", "else", "!do", "until", "while" and
+    "!macro"
+Added support for "!source".
+Added basic support for blocks.
+Added support for "!if {...} else {...}".
+Added support for zone titles.
+Added support for loops (endless loops are only detected if producing
+    code).
+Added support for macros (even nested definitions are possible now).
+Added DOS version.
+
+
+----------------------------------------------------------------------
+Section:   New in release 0.02 alpha
+----------------------------------------------------------------------
+
+Er, I don't know anymore. It was a bad ugly hack and it only ran on
+    RISC OS. :-)

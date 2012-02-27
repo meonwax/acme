@@ -1,0 +1,124 @@
+;ACME 0.91
+
+; Vermerk:
+	!text "MacEdit was written by Mac Bacon in 1994-97."
+	!text " This is Freeware !"
+
+; Variablen:
+stck		!byte 0		; Stackbuffer
+nmibuf		!word 0		; NMI-Buffer
+idtext		!text "MacEdV0"	; RAM-Kennung
+scratch		!byte "s"	; DOS-String
+dospre		!text "0:"
+dosname		!text "-Anleitung  .txt,p,"	; Default
+dosmode		!text "r"
+filepara	!byte 22, lf, lf, 8
+		!word dospre
+killpara	!byte 19, 15, 15, 8
+		!word scratch
+idfile		!text "FormatVersion1.0"
+; Farben:
+;		       2rufRGBI-Format
+clrcrsr		!byte %##.##..#	; Cursor
+clrback		!byte %........	; Screen (xxxxRGBI-Format)
+clraktv		!byte %#...###.	; Aktive Flags
+clrinak		!byte %#......#	; Inaktive
+clrmenu		!byte %##..##.#	; Menu
+clrmenu1	!byte %#...####	; aktives Menu
+clraktl		!byte %##..####	; Menupunkt
+clrboxs		!byte %#....###	; Menuboxen
+		!byte %#....#.#	; Dialogboxen
+		!byte %#..##..#	; Warnungen
+; Vars
+bank		!byte 0		; Bankbuffer
+memin		!word 0		; Startaddy Vektoren
+txts		!word 0		; Startaddy Text
+unnamed		!byte TRUE	; ist Text benannt ?
+changes		!byte FALSE	; Sind Changes saved ?
+nwfrm		!byte FALSE	; neues Bild ?
+blockflag	!byte FALSE	; Block definiert ?
+wrapflag	!byte TRUE	; PARWing ?
+esca		!byte TRUE	; AutoInsert ?
+updatewbi	!byte FALSE	; Flag-Redraw nötig ?
+repeatedtry	!byte FALSE	; Schon früher gestartet ?
+loadflag	!byte 0		; 0 = LOAD (/MERGE)
+txtname		!text "unbenannt   .txt"
+mrgname		!text "merge       .txt"
+newname		!text "unbenannt   .txt"
+lodname		!text "unbenannt   .txt"
+xindex		!byte 0		; Index-Puffer
+; Folgende Vars werden per x indiziert
+SCR =  0	; x-Wert
+scrx		!byte 0	; Display
+scry		!word 0
+ANF =  3	; x-Wert
+anfx		!byte 0	; Blockstart
+anfy		!word 0
+END =  6	; x-Wert
+endx		!byte 0	; Ende
+endy		!word 0
+POS =  9	; x-Wert
+posx		!byte 0	; Cursor
+posy		!word 0
+TMP = 12	; x-Wert
+tmpx		!byte 0	; temp
+tmpy		!word 0
+ZZA = 15	; x-Wert
+llen		!byte preflen	; Zeilenlaenge
+zzan		!word 0	; vorhandene Zeilen
+ZZB = 18	; x-Wert
+byte		!byte 0	; akt. Zeichen
+zzbe		!word 0	; benutzte Zeilen
+WRP = 21	; x-Wert
+wrpx		!byte 0	; Wrap
+wrpy		!word 0
+PRW = 24	; x-Wert
+prwx		!byte 0	; Parw
+prwy		!word 0
+
+; Tabs:
+etab	; ESC-Jumps
+	!word ESC_at,	ESC_a,	ESC_b,	ESC_c
+	!word ESC_d,	0,	0,	ESC_g
+	!word ESC_h,	ESC_i,	ESC_j,	ESC_k
+	!word 0,	0,	0,	ESC_o
+	!word ESC_p,	ESC_q,	0,	0
+	!word ESC_t,	0,	0,	0
+	!word 0,	0,	0,	0
+	!word 0,	0,	0,	0
+ctab	; Command-Jumps 1. Achtel
+	!word 0,	0,	F_un,		F_menu
+	!word 0,	F_c,	0,		F_bell
+	!word 0,	F_tab,	F_lfeed,	0
+	!word F_ffeed,	F_cr,	F_text,		F_fn
+	!word 0,	F_gcd,	F_rn,		F_home
+	!word F_dcl,	F_sf,	F_sk,		F_su
+	!word F_st,	F_sw,	F_sl,		F_esc
+	!word F_c,	F_gcr,	F_c,		F_c
+; 5. Achtel
+	!word F_dir,	F_c,	F_uf,		F_fbox
+	!word F_hlp,	F_f,	F_f,		F_f
+	!word F_f,	F_f,	F_f,		F_f
+	!word F_f,	F_cs,	F_graphic,	F_ff
+	!word F_c,	F_gcu,	F_rf,		F_gsot
+	!word F_insert,	F_c,	F_c,		F_c
+	!word F_c,	F_c,	F_c,		F_c
+	!word F_c,	F_gcl,	F_c,		F_c
+; 8. Achtel
+	!word F_bttnf,	F_gosys,	0,		0
+	!word F_info,	F_f,		F_f,		F_f
+	!word F_f,	F_f,		F_f,		F_f
+	!word F_f,	0,		F_geol,		F_print
+	!word F_glu,	F_gau,		F_scrnu,	F_geot
+	!word F_dword,	F_save,		F_saveas,	F_rnmtxt
+	!word F_gtl,	F_fmtl,		F_fmtr,		F_fmtm
+	!word F_fmtb,	F_gwl,		F_gpu,		0
+; 4. Achtel
+	!word F_bttnn,	F_goout,	0,		0
+	!word F_mode,	0,		0,		0
+	!word 0,	0,		0,		0
+	!word 0,	0,		F_gsol,		F_new
+	!word F_gld,	F_gad,		F_scrnd,	F_ahome
+	!word F_dcr,	F_loadas,	F_mergeas,	F_find
+	!word F_gtr,	F_cut,		F_copy,		F_paste
+	!word F_move,	F_gwr,		F_gpd,		F_middle

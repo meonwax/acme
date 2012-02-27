@@ -1,0 +1,21 @@
+
+
+                                 ACME
+
+         ...the ACME Crossassembler for Multiple Environments
+
+                         --- the  library ---
+
+
+The files in the "ACME_Lib" directory tree can be accessed from
+within ACME sources when using the pseudo opcodes "!source" or
+"!binary":
+
+If the file names are given using "..." quoting, ACME will look for
+the files in the current directory.
+If the file names are given using <...> quoting, ACME will look for
+them in the ACME_Lib directory tree however.
+
+All files in the ACME_Lib directory tree are in the public domain.
+They are *NOT* covered by the GNU General Public License, under which
+the actual ACME program is released.

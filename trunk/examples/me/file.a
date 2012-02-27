@@ -1,0 +1,286 @@
+;ACME 0.91
+
+; ChangesNotSaved.Save?
+!zone
+willblost	ldx changes
+		bne +
+		inx
+		rts		; return with X=1 ("Changes safe, go on")
+
++		jsr crsrnew
+		ldx #hWindow_DCS
+		stx menunr
+		jsr makewin
+		ldy #$0b	; y-pos of cursor in window
+		lda #$32	; x-pos
+		jsr crsrset
+wblchoice	jsr getchar
+		cmp #Char_DEL
+		beq wblchoiced
+		cmp #Char_STOP
+		beq wblchoicec
+		cmp #Char_RETURN
+		bne wblchoice
+		jsr pullscr
+		jsr crsrold
+		jsr F_saveas
+		jmp willblost
+
+wblchoiced	jsr pullscr
+		jsr crsrold
+		ldx #FALSE
+		stx changes
+		ldx #2
+		rts		; return with X=2 ("Changes discarded, go on")
+
+wblchoicec	jsr pullscr
+		jsr crsrold
+		ldx #0
+		rts		; return with X=1 ("Cancel operation !")
+
+eotflag		!byte 0		; End-Flag
+
+!zone
+F_mergeas	lda #$1f	; get Mergename
+		sta loadflag	; Mode MERGE
+		jmp +
+
+noload		rts		; fixme - could save a byte here
+
+F_loadas	jsr willblost	; Changes saved ?
+		beq noload
+		lda #0		; Mode LOAD
+		sta loadflag
+		lda #$3f	; get LOADname
++		jsr rename
+		bne load	; ggfs Abbruch
+		rts
+
+!zone
+loadalien	lda loadflag
+		bne loadfirst
+		jmp noheader
+load		lda conreg	; Bank sichern
+		pha
+		jsr crsrnew	; new copy (hidden)
+		ldx #hWindow_Load
+		stx menunr
+		jsr makewin
+		jsr copypara	; Parameter setzen
+		lda #"r"	; Lesemodus
+		sta dosmode
+		+bank15
+		jsr open	; Open File
+		ldx #lf		; File: = Input
+		jsr chkin
+		ldy #$0f	; Header pruefen
+-		jsr basin
+		cmp idfile,y
+		bne loadalien
+		dey
+		bpl -
+		ldy #$0f	; Namen holen
+-		jsr basin
+		sta dosname,y
+		dey
+		bpl -
+		lda loadflag	; Bei LOAD
+		bne loadfirst	; Name kopieren,
+		sta unnamed	; (clear Flag)
+		ldy #$0f
+-		lda dosname,y
+		sta txtname,y
+		sta lodname,y
+		dey
+		bpl -
+		sty updatewbi	; Update verlangen,
+		jsr newtext	; Defaultwerte
+loadfirst	ldy #FALSE	; Pufferstart
+		sty eotflag	; init Flag
+
+!zone
+loadline	+xbank15
+-		iny		; Eins weiter
+		lda #" "	; get Space
+		ldx status
+		bne +		; ggfs
+		jsr basin	; get Byte
++		sta linebuf,y	; und setzen
+		cpy llen
+		bne -
+		ldy #1		; Neustart
+-		lda linebuf,y
+		cmp #Char_RETURN
+		beq ++
+		cmp #"-"
+		bne +
+		sty linebuf	; Dann Pos merken
++		cmp #" "
+		bne +
+		sty linebuf	; Dann Pos merken
++		iny		; weiter
+		cpy llen
+		bne -
+		lda linebuf,y	; LineEnd = Space ?
+		cmp #" "	; Dann Grenze: = Y &
+		bne +
+		sty linebuf
+		lda status
+		beq +		; ggfs setflag
+		sta eotflag
++		ldy linebuf	; get Grenze
+		bne +
+		ldy llen
+		dey
+++		sty linebuf
++		+xram0
+		jsr needline	; fordert Zeile
+		bcs nomemleft	; ggfs Abbruch
+		ldy linebuf	; copy buffer2line
+-		lda linebuf,y
+		sta (lvek),y
+		dey
+		bne -
+		lda eotflag	; Ende ?
+		bne endoffile
+		ldx linebuf	; shift buffer
+-		cpx llen	; fertig ?
+		beq loadline	; Dann lesen !
+		inx
+		iny
+		lda linebuf,x
+		sta linebuf,y
+		jmp -
+
+nomemleft	jsr memfull	; Warnung
+endoffile	+bank15
+		lda loadflag
+		sta changes
+noheader	jsr clrchn	; Standard
+		lda #lf		; Close File
+		jsr close
+		jsr pullscr	; Win weg
+		jsr crsrold	; restore cursor
+		pla		; alte Bank
+		sta conreg
+		rts
+
+!zone
+nosave		rts		; Abbruch (fixme - could save a byte here)
+
+F_saveas	jsr F_rnmtxt	; get Textname
+		beq nosave	; ggfs Abbruch
+		lda #FALSE	; Name vorhanden
+		sta unnamed
+F_save		lda unnamed	; Name ?
+		bne F_saveas	; ggfs holen
+		ldy #$0f	; proof "?"
+-		lda txtname,y
+		cmp #"?"
+		beq F_saveas
+		cmp #"*"
+		beq F_saveas
+		cmp #","
+		beq F_saveas
+		cmp #":"
+		beq F_saveas
+		sta dosname,y
+		dey
+		bpl -
+		lda #"w"	; Schreibmodus
+		sta dosmode
+		lda conreg	; Bank sichern
+		pha
+		+bank15
+		jsr crsrnew	; new copy (hidden)
+		ldx #hWindow_Save; Save-Win
+		stx menunr
+		jsr makewin
+		jsr copykill	; Killparameter
+		jsr open	; Open CmdChannel
+		lda killpara+1	; (Scratch)
+		jsr close	; Close CC
+		jsr copypara	; Dateiparameter
+		jsr open	; Open Outputfile
+		ldx #lf
+		jsr chkout
+		ldy #$0f	; Sendet Header
+-		lda idfile,y
+		jsr basout
+		dey
+		bpl -
+		ldy #$0f	; Sendet Name
+-		lda txtname,y
+		jsr basout
+		dey
+		bpl -
+		iny		; Y: = 0, tmpy wird fuers
+		sty tmpy+1	; Speichern init.
+		tya		; A: = 0
+		iny		; Y: = 1
+		sty tmpy
+		sec		; errechnet negativen
+		sbc zzbe	; Zeilenzaehler (tmp2)
+		sta tmp2
+		lda #0
+		sbc zzbe+1
+		sta tmp2+1
+--		+xram0		; volles RAM
+		ldx #1		; mind. 1 Byte/Zeile
+		stx linebuf
+		ldx #TMP
+		jsr getlvek	; LineVek
+		ldy #1		; Versatz: = 1
+-		lda (lvek),y	; Byte in Puffer
+		cmp #" "
+		beq +
+		sty linebuf	; Pos sichern
++		sta linebuf,y
+		iny
+		cpy llen
+		bne -
+		ldx linebuf
+		lda linebuf,x	; letztes Byte
+		cmp #Char_RETURN
+		beq +
+		cmp #"-"
+		beq +
+		cmp #" "
+		beq +
+		inx		; Dann Space hinter
+		lda #" "	; die Zeile
+		sta linebuf,x
++		stx .m		; Ende speichern
+		+xbank15
+-		inx		; X = 1
+		lda linebuf,x	; Zeichen senden
+		jsr basout
+.m=*+1:		cpx #MODIFIED8	; Länge
+		bne -		; alle ?
+		+inc16 tmpy	; tmpy += 1
+		inc tmp2	; zaehler += 1
+		bne --
+		inc tmp2+1
+		bne --
+		jsr clrchn	; Standardkanaele
+		lda #lf
+		jsr close	; Close File
+		jsr pullscr	; Win weg
+		jsr crsrold	; restore cursor
+		pla		; alte Bank
+		sta conreg
+		lda #FALSE	; Changes saved !
+		sta changes
+		rts
+
+!zone
+copykill	ldy #$0b	; Scratchparameter
+		+bit16		; BIT-Trick !
+copypara	ldy #$05	; Fileparameter
+		ldx #5		; 6 Bytes
+-		lda filepara,y	; ins System
+		sta fnlen,x
+		dey
+		dex
+		bpl -
+		rts
