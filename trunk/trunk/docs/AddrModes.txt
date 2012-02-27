@@ -1,0 +1,172 @@
+
+
+                                 ACME
+
+         ...the ACME Crossassembler for Multiple Environments
+
+                       --- addressing modes ---
+
+
+If a command can be used with different addressing modes, ACME has to
+decide which one to use. Several commands of the 6502 CPU can be used
+with either "absolute" addressing or "zeropage-absolute" addressing.
+The former one means there's a 16-bit argument, the latter one means
+there's an 8-bit argument.
+And the 65816 CPU even knows some commands with 24-bit addressing...
+
+So how does ACME know which addressing mode to use?
+The simple approach is to always use the smallest possible argument,
+of course: If the argument fits in a byte, use zeropage addressing. If
+it doesn't, use absolute addressing. If it needs more than two bytes
+and the 65816 CPU is chosen, use 24-bit addressing.
+
+In most cases this works - with two exceptions. The remainder of this
+text may sound somewhat confusing now, so if you don't have any
+problems with addressing modes, then don't bother trying to understand
+everything this texts says. :)
+
+The two exceptions are:
+
+
+
+
+***   1) Labels are defined too late
+
+If ACME cannot figure out the argument value in the first pass, it
+assumes that the command uses 16-bit addressing.
+
+If it later finds out that the argument only needs 8 bits, ACME gives
+a warning ("using oversized addressing mode") and continues. However,
+if it finds out that the argument needs 24 bits, it gives an error.
+
+These problems can be solved by defining the labels *before* using
+them, so that the value can be figured out in the first pass. If this
+is not possible, you can use the postfix method, effectively exactly
+defining what addressing mode to use. The postfix method is described
+in a separate paragraph below.
+
+
+
+
+***   2) You *want* to use an oversized addressing mode
+
+On the 65816 CPU, "zeropage addressing" is called "direct page
+addressing". The difference is that the position of the "direct page"
+can be changed. Then, "lda $fa" does not necessarily access the same
+memory location as "lda $00fa" anymore. The same goes for 16- and 24-
+bit addressing: "lda $fabc" does not necessarily access the same
+memory location as "lda $00fabc", because the default bank can be set
+to something other than zero.
+But even on the plain 6502 CPU you might want to force ACME to use an
+oversized addressing mode, for example because of timing issues.
+
+Again there are two ways to solve the problem: You can define the
+target location using leading zeros. ACME will then use an addressing
+mode that is big enough even if the leading zeros would have been
+other digits:
+
+	label1 = $fb
+	label2 = $00fd
+	label3 = $0000ff
+
+		lda $fa
+		sta $00fc
+		lda $0000fe
+		sta label1
+		lda label2
+		sta label3
+
+will be assembled to
+
+  a5 fa		; lda $fa
+  8d fc 00	; sta $00fc
+  af fe 00 00	; lda $0000fe
+  85 fb		; sta $fb
+  ad fd 00	; lda $00fd
+  8f ff 00 00	; sta $0000ff
+
+The other possibility is to use the postfix method (described in the
+next paragraph).
+
+
+
+
+***   The postfix method
+
+Warning: This may sound very complicated at first, but I think that
+once you get used to it you'll agree it's useful. If you don't want to
+use this, stick to the "leading zeros" method and don't bother about
+postfixes.
+
+Still with me? Okay:
+You can force ACME to use a specific addressing mode by adding "+1",
+"+2" or "+3" to the assembler mnemonic. Each one of these postfixes
+sets the relevant "Force Bit" in ACME's result. If Force Bit 3 is set,
+ACME will use 24-bit addressing. Force Bit 2 means 16-bit addressing
+and Force Bit 1 means 8-bit addressing. Higher Force Bits have higher
+priorities.
+
+Here's an (overly complicated) example:
+
+	label1   = $fb
+	label2   = $fd
+	label3+3 = $ff	; set Force Bit 3 and store in label's flags
+
+		ldx   $fa
+		ldy+2 $fc	; set Force Bit 2 (16-bit addressing)
+		lda+3 $fe	; set Force Bit 3 (24-bit addressing)
+		stx   label1
+		sty+2 label2	; set Force Bit 2 (16-bit addressing)
+		sta   label3	; no need to set Force Bit 3 as it is
+				; already set in "label3".
+
+will be assembled to
+
+  a6 fa		; ldx $fa
+  ac fc 00	; ldy $00fc
+  af fe 00 00	; lda $0000fe
+  86 fb		; stx $fb
+  8c fd 00	; sty $00fd
+  8f ff 00 00	; sta $0000ff
+
+Postfixes given directly after the command have higher priority than
+those given to the argument. As you can see, you can add the postfix
+to the label definition as well (equivalent to leading zeros).
+
+Applying the byte extraction operators ("<" gives the low byte, ">"
+gives the high byte and "^" gives the bank byte of a value) to any
+value will clear the argument's Force Bits 2 and 3 and set Force
+Bit 1 instead. So "lda <label" will use 8-bit addressing, regardless
+of the label's Force Bits. Of course, you can change this by
+postfixing the command again... :)
+
+
+
+
+***   The algorithm to find the right addressing mode
+
+You don't need to read this paragraph just to use ACME, I only
+included it for completeness' sake. This is a description of ACME's
+strategy for finding the addressing mode to use:
+
+First, ACME checks whether the command has any postfix. If it has,
+ACME acts upon it. So postfixes have the highest priority.
+
+Otherwise, ACME checks whether the argument has any Force Bits set
+(because of leading zeros or byte extraction operators, for example)
+or references to labels that have. If any Force Bit is set, ACME acts
+upon it. This is the next priority level: Leading zeros or postfixes
+added to the label definition.
+
+Otherwise, ACME checks whether the argument could be figured out in
+the first pass. If it couldn't, ACME tries to use a default addressing
+mode (normally this will be 16-bit addressing).
+In case the value could be figured out even in the first pass, then
+everything's cool and froody: ACME just looks at the argument's value
+and uses the smallest addressing mode that matches.
+
+I admit that this algorithm sounds complicated, but it hasn't failed
+yet. :) And in everyday usage, it does exactly what one expects.
+
+If you want to take a closer look at the algorithm, examine the
+"calc_arg_size" function in the "sources/mnemo.c" file.

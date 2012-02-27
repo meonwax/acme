@@ -1,0 +1,177 @@
+
+
+                                 ACME
+
+         ...the ACME Crossassembler for Multiple Environments
+
+                             Release 0.91
+
+                          - free  software -
+
+                       (C) 1998-2006 Marco Baye
+
+
+----------------------------------------------------------------------
+Section:   Copyright
+----------------------------------------------------------------------
+
+ACME - a crossassembler for producing 6502/6510/65c02/65816 code.
+Copyright (C) 1998-2006 Marco Baye
+The ACME icon was designed by Wanja "Brix" Gayk
+
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 2 of the License, or (at
+your option) any later version.
+
+This program is distributed in the hope that it will be useful, but
+WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the
+Free Software Foundation, Inc., 59 Temple Place, Suite 330,
+Boston, MA  02111-1307  USA
+
+
+----------------------------------------------------------------------
+Section:   Introduction
+----------------------------------------------------------------------
+
+ACME is a crossassembler for the 65xx range of processors. It knows
+about the standard 6502, the 65c02 and the 65816. It also supports
+the undocumented ("illegal") opcodes of the 6510 processor (a 6502-
+variant that is used in the Commodore C=64).
+
+This text and the other files in the same directory only describe the
+basic functions independent of the platform used. There should be
+another help file in this archive that outlines the features specific
+to your platform.
+
+The files in the docs directory and what they contain:
+
+    65816.txt      Stuff specific to the 65816 processor
+    AddrModes.txt  How to choose non-standard addressing modes
+    AllPOs.txt     Lists ACME's pseudo opcodes. Use as a reference.
+    Changes.txt    The change log.
+    COPYING        Version 2 of the GNU General Public License
+    Errors.txt     Lists ACME's error messages and what they mean.
+    Example.txt    Information on how to assemble the example sources.
+    Help.txt       ...is this text.
+    Illegals.txt   Support for undocumented opcodes.
+    Lib.txt        Information about the library.
+    QuickRef.txt   All the basic stuff about ACME.
+    Source.txt     How to compile ACME.
+    Upgrade.txt    Incompatibilities to earlier versions.
+
+IMPORTANT: If you upgrade from ACME 0.05 or earlier, don't forget to
+read the file "Upgrade.txt" - release 0.07 and all later ones are
+slightly incompatible to 0.05 and earlier.
+
+If you want to start using ACME right away, read the file
+"QuickRef.txt", it contains the main help text.
+
+
+----------------------------------------------------------------------
+Section:   What it can and does
+----------------------------------------------------------------------
+
+ACME is a crossassembler.
+ACME can produce code for the 6502, 6510, 65c02 and 65816 processors.
+It does this *fast*.
+It can produce at most 64 KBytes of code.
+You can use global labels, local labels and anonymous labels.
+It is fast.
+You can use global and local macros.
+You can use conditional assembly.
+You can use looping assembly (There are two ways to do this; a very
+    simple and a very flexible one).
+You can include other source files.
+You can include binary files (either whole or parts) directly into the
+    output.
+You can use offset assembly (code that is designed to run at a
+    different address).
+It is fast.
+ACME's maths parser uses operator priorities, so 1+2*3 will correctly
+    give 7 (unlike some other free assemblers that give 9 instead).
+ACME's maths parser has no problems concerning parentheses and
+    indirect addressing modes.
+ACME's maths parser knows a shit load of different operations.
+ACME supports both integer and floating point maths operations.
+You can dump the global labels into a file.
+ACME supports a library of commonly used macros and labels.
+It always takes as many passes as are needed.
+ACME exists on several platforms, meaning you can easily exchange your
+    sources with other people (preferring other OSes).
+ACME can convert its strings to PetSCII and screen code (Okay, this is
+    C64-specific).
+Did I mention that it is fast?
+
+
+----------------------------------------------------------------------
+Section:   What it can't and doesn't
+----------------------------------------------------------------------
+
+ACME cannot transfer data to a C64 or another computer.
+ACME does not produce ".o65"-format linkable object files.
+ACME cannot produce more than 64 KB (would be useful for the 65816).
+ACME cannot disassemble or relocate given code files.
+
+
+----------------------------------------------------------------------
+Section:   Platform independence
+----------------------------------------------------------------------
+
+ACME was initially developed under RISC OS. Currently there are
+platform-specific versions available for AmigaOS, DOS, Linux, Windows
+and RISC OS. The Linux sources should be ready to compile on most
+other UNIX-like systems as well. In the future there will hopefully
+also be a version that runs on the C64/128.
+Though the source code does not exactly look like it *g*, ACME was
+written with portability in mind: Some of its limitations were
+included on purpose, just to allow a C64/128 version. To successfully
+assemble multi-file source codes from other platforms, the file names
+have to be altered as little as possible. Please name all your files
+that may be distributed in a sensible way, for example by limiting
+their file names to 8+3 format. I really hate this stupid will-it-
+ever-die DOS convention, but using it is the only way to ensure
+portability of files.
+
+Please use ".a" as the file name extension of ACME source code files.
+
+All file names used inside source code files have to be given in UNIX
+style, ACME will convert them to the current host platform style if
+needed.
+
+There should be no problems concerning newline characters, ACME was
+designed to cope with CR, LF and CRLF.
+
+A minor problem is the different character tables used on different
+systems. As all predefined ACME keywords only use 7-bit ASCII, the
+assembler will work on any system that uses a superset of this
+character table: UTF-8, ANSI, ISO 8859, etc.
+Label names can contain top-bit-set characters - these may look
+strange if the sources are edited on a different platform, but ACME
+will still work.
+
+If you want to port ACME to another platform, please inform me so that
+I can add your version to the ones already present on the ACME
+homepage. As the sources are released under the GNU General Public
+License, you are not forced to do this; but it would help to make ACME
+available to other users.
+The same goes for any changes or enhancements to the sources: Please
+send me a copy so that the changes can be incorporated into the next
+"official" release on the ACME home page.
+
+
+----------------------------------------------------------------------
+Section:   Contacting the author
+----------------------------------------------------------------------
+
+The newest version of ACME can be found at the ACME homepage:
+http://home.pages.de/~mac_bacon/smorbrod/acme/
+
+If you want to report a bug or make a suggestion, then simply send
+me an email:
+mailto:marco@baye.de

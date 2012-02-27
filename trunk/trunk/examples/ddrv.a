@@ -1,0 +1,621 @@
+;ACME 0.94
+;!sl "ddrv.l"
+; Name		DuoDriver
+; Purpose	Input driver for mouse and joystick
+; Author	(c) Marco Baye, 1999
+; Licence	Free software
+; Changes:
+; 23 Apr 1999	Release 2.20. Internal info:
+;		DuoDriver v2.20 by Mac Bacon 23 Apr 1999. Freeware!
+; Somewhen	Added self-calibration, forming release 3.00. Internal info:
+;		Mac Bacon:DuoDrv3,PD
+; 21 Jul 1999	Used reverse subtraction, forming release 3.01. Internal info:
+;		Mac Bacon:DuoDrv3,PD
+;  1 Aug 1999	Release 4.00.
+;		Both 128 and 64 versions
+;		Now supports overlay-sprite mouse pointer
+;		Binary includes sprites
+;		Released in GO64 8/1999 (without release number).
+;  3 Aug 1999	Same source file for both 128 and 64 versions. Release 4.01.
+;		Apart from that, virtually identical to release 4.00.
+; 04 Feb 2003	Beautified
+; 05 Feb 2003	Added "SpriteLine" macro and made sprites inline
+; 26 May 2005	Release 4.02. All changes since release 4.00 are source-only!
+;		The resulting binaries are identical to those of release 4.00
+;		(which were included in GO64 magazine 8/1999)
+; 26 Mar 2006	Release 4.03. Adjusted source to ACME 0.91 capabilities.
+; 25 Nov 2007	Release 4.04. Adjusted source to ACME 0.94 capabilities.
+
+; This source code file uses conditional assembly
+; to decide which version to produce (C64 or C128).
+
+; Select type of binary to assemble (64 => c64, anything else => c128)
+!ifndef SYSTEM {
+	!warn "Label SYSTEM not defined. Use -DSYSTEM=64 to build C64 version, -DSYSTEM=128 to build C128 version. Will now default to C64 version."
+	SYSTEM = 64
+}
+!if SYSTEM != 64 & SYSTEM != 128 {
+	!serious "Please use either -DSYSTEM=64 or -DSYSTEM=128 when assembling this project."
+}
+
+
+; --- Configurable values
+
+; Start address, output file name and VIC location
+
+!if SYSTEM = 64 {
+	*=$c000
+	!to "ddrv64.prg", cbm
+	VIC_Base	= $d000
+}
+!if SYSTEM = 128 {
+	*=$0c00
+	!to "ddrv128.prg", cbm
+	VIC_Base	= $11d6;	Location of mirror registers
+}
+
+; Pointer's maximum coordinates
+	MaximumCoordinateX	= 319;	VIC value
+;	MaximumCoordinateX	= 639;	VDC value
+	MaximumCoordinateY	= 199
+
+; Maximum pixel step size ("speed") for joystick acceleration routine.
+	MaxStep	= $10;	(max. $7f)
+
+; Distance before acceleration starts, in pixels.
+	MaxTime	= $04;	(max. $7f)
+
+; Sprites to use for overlay pointer
+	Sprite_A	= 0
+	Sprite_B	= 1
+
+; Coordinates of "pointer pixel" within pointer sprites; adjust these
+; if you use different sprites. (0,0) is sprite's upper left pixel.
+	Sprite_HotspotX	= 1
+	Sprite_HotspotY	= 1
+
+; Locations to store button states, $ff = pressed, $00 = not pressed.
+; Mouse uses both buttons, joystick only uses "LeftButton".
+; Location to store pointer's current character coordinates.
+!if SYSTEM = 64 {
+	LeftButton	= $a4
+	RightButton	= $a5
+	CharX		= $b3
+	CharY		= $b4
+}
+!if SYSTEM = 128 {
+	LeftButton	= $fa
+	RightButton	= $ff
+	CharX		= $9b
+	CharY		= $9c
+}
+
+; Location to store pointer's current pixel coordinates. The driver
+; code relies on having *four consecutive* bytes:
+; x low, x high, y low, y high
+	Coordinates	= $fb;	$fb-$fe
+
+
+; --- System constants
+
+; Interrupt vector
+	sys_iirq	= $0314
+
+; I/O registers
+	sid_pot		= $d419
+	cia1_pra	= $dc00
+	cia1_prb	= $dc01
+	cia1_ddrb	= $dc03
+	mmu_cr		= $ff00;	c128 only
+
+
+; --- Label definitions
+
+; New names for some precalculated values, only to improve
+; readability. Don't change these.
+	PointerXnow	= Coordinates
+	PointerYnow	= Coordinates + 2
+	SpriteA_X	= VIC_Base + 2*Sprite_A
+	SpriteA_Y	= VIC_Base + 2*Sprite_A + 1
+	SpriteB_X	= VIC_Base + 2*Sprite_B
+	SpriteB_Y	= VIC_Base + 2*Sprite_B + 1
+	Sprites_OF	= VIC_Base + 16;	X Overflow
+; The character "^" in the following calculation means "to the power
+; of". It is ACME syntax - if your assembler cannot do this, you may
+; want to use hardcoded values here instead of calculations.
+	Sprites_Bitmask	= 2^Sprite_A + 2^Sprite_B
+;alternative:
+;	Sprites_Bitmask	= 1<<Sprite_A | 1<<Sprite_B
+	SpriteOffset_X	= $18 - Sprite_HotspotX
+	SpriteOffset_Y	= $32 - Sprite_HotspotY
+; In the sprite coordinate system, the graphics pixel (0,0) has the
+; coordinates ($18,$32), so these are needed for converting. Blame the
+; VIC.
+
+
+; --- Entry point
+
+; Because this routine is the first, the file can be BOOTed on a c128.
+; Initialisation code, installs driver on IRQ vector.
+; Fetch IRQ vector and write to end
+Init		lda sys_iirq
+		ldx sys_iirq+1
+		sta mod16
+		stx mod16+1
+; Let IRQ vector point to driver code
+		lda #<Entry
+		ldx #>Entry
+		php
+		sei
+		sta sys_iirq
+		stx sys_iirq+1
+		plp
+!if SYSTEM=128 {
+		lda mmu_cr
+		tay
+		and #$fe;	activate I/O chips
+		sta mmu_cr
+}
+
+; Init mouse buttons
+		lda #$11
+		sta cia1_prb
+!if SYSTEM=128 {sty mmu_cr	}
+
+!if SYSTEM = 64 {
+; Copy sprites to tape buffer
+		ldx #127
+-			lda Sprites,x
+			sta $0340,x
+			dex
+			bpl -
+		lda #Sprites_Bitmask
+; Set sprite block pointers
+		ldx #$0d
+		stx 2040+Sprite_A
+		inx
+		stx 2040+Sprite_B
+; Activate pointer sprites
+		ora VIC_Base+21
+		sta VIC_Base+21
+}
+		rts
+
+
+; --- Variables
+
+; Pixel counter before accelerating
+JoyWaittime	!byte 0
+
+
+; --- Main code
+
+Entry
+; The driver consists of several distinct parts. To minimise
+; performance wastage, you should remove all parts you don't need for
+; the specific application.
+
+
+; --- Part 0, initialisations
+
+; Make sure decimal mode is off
+		cld
+; Set button states to "not pressed", so the other parts only have to
+; deal with setting them to "pressed".
+		lda #$00
+		sta LeftButton
+		sta RightButton
+
+
+; --- Part 1, handling mouse movements
+
+; mouse x
+		ldx #$00; 0 means "x stuff"
+		jsr PotDelta
+; Now signed x movement is in A/Y. Add to current x value.
+		clc
+		adc PointerXnow
+		sta PointerXnow
+		tya
+		adc PointerXnow+1
+		sta PointerXnow+1
+; mouse y
+		ldx #$01; 1 means "y stuff"
+		jsr PotDelta
+; Now signed y movement is in A/Y. Mouse and computer use different y
+; directions, so don't add to, but subtract from current y value.
+; This is a reverse subtraction - it might be harder to understand,
+; but it is both faster and smaller than the usual way.
+		clc
+		sbc PointerYnow
+		eor #$ff
+		sta PointerYnow
+		tya
+		sbc PointerYnow+1
+		eor #$ff
+		sta PointerYnow+1
+
+
+; --- Part 2, handling mouse buttons
+
+; Prepare CIA by setting bits to input
+		ldy #$11
+		sty cia1_ddrb
+		ldx #$ff; $ff means "pressed"
+		lda #$10; check left button
+		bit cia1_prb
+		bne +
+			stx LeftButton; store state
++		lda #$01; check right button
+		bit cia1_prb
+		bne +
+			stx RightButton; store state
+; Reset CIA to normal state
++		ldy #$00
+		sty cia1_ddrb
+
+
+; --- Part 3, handling the joystick
+
+; Fetch byte holding direction flags
+		lda cia1_pra
+		tax; ...and remember it
+		; Check 'up' direction
+		ror
+		bcs ++
+		; Subtract current step size from y value if needed.
+		tay
+		sec
+		lda PointerYnow
+		sbc JoyStepsize
+		sta PointerYnow
+		bcs +
+		dec PointerYnow+1
++		tya
+		; Check 'down' direction
+++		ror
+		bcs ++
+		; Add current step size to y value if needed.
+		tay
+		;clc;	C is always clear here
+		lda PointerYnow
+		adc JoyStepsize
+		sta PointerYnow
+		bcc +
+		inc PointerYnow+1
++		tya
+		; Check 'left' direction
+++		ror
+		bcs ++
+		; Subtract current step size from x value if needed.
+		tay
+		sec
+		lda PointerXnow
+		sbc JoyStepsize
+		sta PointerXnow
+		bcs +
+		dec PointerXnow+1
++		tya
+		; Check 'right' direction
+++		ror
+		bcs ++
+		; Add current step size to x value if needed.
+		tay
+		;clc;	C is always clear here
+		lda PointerXnow
+		adc JoyStepsize
+		sta PointerXnow
+		bcc +
+			inc PointerXnow+1
++		tya
+++
+
+; --- Part 4, handling joystick button
+
+		ror
+		bcs +
+		lda #$ff;	$ff means "pressed"
+		sta LeftButton
++
+
+; --- Part 5, joystick acceleration
+
+; Restore joystick direction bits and check whether to set speed to
+; zero.
+		txa
+		and #$0f;	Clear unneeded bits
+		cmp #$0f;	Any direction bit ?
+		bne +
+; No direction was used, so reset speed and wait counter to normal.
+		lda #$01
+		sta JoyStepsize
+		lda #MaxTime
+		sta JoyWaittime
+		jmp Part5End
++
+; A direction bit was used, so check whether to accelerate: If speed
+; is already maximum speed, don't accelerate.
+JoyStepsize=*+1
+		lda #$00;	(self-modifying)
+; If the variable "JoyStepsize" would have been defined as a separate
+; location (using "!byte"), it would have taken a byte of memory. By
+; storing the value inside an LDA command's argument, we save that one
+; byte. It might make a difference. :)
+		cmp #MaxStep;	If speed is max.,
+		bcs Part5End;	don't accelerate.
+		; Speed isn't maximum yet. Check whether
+		; we have to wait before accelerating.
+		dec JoyWaittime
+		bpl Part5End
+		; Counter has underrun, so accelerate.
+		inc JoyWaittime; reset counter
+		inc JoyStepsize; increase speed
+Part5End
+
+; --- Part 6, restrict coordinate range
+
+; restrict x value
+		ldx #$00;	0 means "x stuff"
+		jsr Restrict
+; restrict y value
+		ldx #$02;	2 means "y stuff"
+		jsr Restrict
+
+; --- Part 7, positioning sprites
+
+; Set sprites' x positions
+		lda PointerXnow
+		clc
+		adc #SpriteOffset_X
+		sta SpriteA_X;	set both sprites
+		sta SpriteB_X
+		lda Sprites_OF;	get x overflow
+		bcs SetOF
+		ldx PointerXnow+1
+		bne SetOF
+		and #Sprites_Bitmask XOR $ff
+		bcc StoreOF;	C is clear here
+SetOF		ora #Sprites_Bitmask
+StoreOF		sta Sprites_OF;	set x overflow
+
+; Set sprites' y positions
+		lda PointerYnow
+		clc
+		adc #SpriteOffset_Y
+		sta SpriteA_Y
+		sta SpriteB_Y
+; The y value's high byte is useless in this case.
+
+; --- Part 8, making char coordinates
+
+; Convert x coordinate. There are different "best" routines for
+; different resolutions, so I've given the VIC and VDC routines.
+		lda PointerXnow
+		lsr
+		lsr
+		lsr
+		ldx PointerXnow+1
+		;ora OrTable,x;	VDC only (see below for data table)
+		beq +;	VIC only
+		ora #$20;	VIC only
++		sta CharX
+
+; Convert y coordinate.
+		lda PointerYnow
+		lsr
+		lsr
+		lsr
+		sta CharY
+
+; --- Add further parts here
+
+; Here you can add further routines, for example to use the button
+; states to fake keypresses etc.
+
+; --- The end
+
+; The initialisation routine sets the argument to the address of the
+; previous IRQ routine.
+mod16=*+1:	jmp $ffff;	(self-modifying)
+
+; This table is for part 8.
+;OrTable	!byte 0,32,64;	VDC only
+
+; --- "Restrict" subroutine
+
+PointerXmax	!word MaximumCoordinateX
+PointerYmax	!word MaximumCoordinateY
+; "y" word must follow directly after "x" word in memory.
+
+Restrict
+; Restrict internal coordinates to configured range. Entry conditions:
+; X is direction handle (0 = x, 2 = y)
+		lda PointerXnow+1,x
+		bmi SetTo0
+		cmp PointerXmax+1,x
+		bcc Eosr
+		bne +
+		lda PointerXmax,x
+		cmp PointerXnow,x
+		bcs Eosr
++		lda PointerXmax,x
+		ldy PointerXmax+1,x
+		jmp DefCo
+SetTo0		lda #0
+		tay
+DefCo		sta PointerXnow,x
+		sty PointerXnow+1,x
+Eosr		rts
+
+; --- "Pot" subroutine
+
+; This routine computes the mouse movements and therefore contains the
+; self-calibration stuff and the other improvements over the standard
+; 1351 driver.
+PotMax		!word 0;	max. POTs yet plus 1 !
+PotMin		!word $ffff;	lowest POTs yet
+PotOld		!word 0;	old values
+PotWidth	!word 0;	interval width
+HalfPotWidth	!word 0;	half width
+; (buffered for speed increase)
+; The above variables are not really words: The first byte is the x
+; value, the second byte is the y value respectively.
+
+
+; Compute the signed distance of mouse movement.
+; Entry conditions: X is direction handle (0 = x, 1 = y)
+; Exit conditions: A/Y are signed distance (low/high)
+
+; First, get new value and clear "recalculate signal width" flag.
+PotDelta	lda sid_pot,x
+		ldy #$00
+		; Check whether new value is lower than lowest known.
+		cmp PotMin,x
+		bcs +
+		; Store new "lowest" und set "recalculate signal width" flag.
+		sta PotMin,x
+		ldy #$ff
++		; Check whether new value is higher than highest known.
+		cmp PotMax,x
+		bcc +
+; Set "recalculate signal width" flag and store new "highest".
+		ldy #$ff
+		pha;	Remember current value
+		adc #$00;	Add one (C is set)
+		sta PotMax,x
+; Value $ff (0 after adding) means that there is no mouse connected,
+; so reset min/max in that case.
+		beq ResetMM;	Stack is untidy...
+		pla;	Restore current value
++		; If flag is set, recalculate signal width.
+		iny;	Check flag
+		bne ++
+		tay;	Buffer current value.
+		lda PotMax,x;	Get highest+1
+		sec;	Subtract lowest
+		sbc PotMin,x
+		bcc +
+		sta PotWidth,x;	Store signal
+		lsr;	width and half signal
+		sta HalfPotWidth,x;	width
++		tya;	Restore current value.
+++		; Calculate distance
+		tay;	Buffer current value.
+		sec
+		sbc PotOld,x
+		pha
+		tya
+		sta PotOld,x
+		pla
+		beq zero;	If not moved, exit.
+		bcc minus;	Negative difference
+
+; Positive difference:
+; Check whether movement caused a value wrap-around.
+		cmp HalfPotWidth,x
+		bcc Decrease
+		beq Decrease
+; It did, so calculate "real" distance and jump to exit
+		;sec;	C is always set here
+		sbc PotWidth,x;	Fix distance
+
+; We now know that the (fixed) distance is really negative, so we
+; finally wipe out that annoying bit 0 noise by incrementing the
+; value.
+Increase	;clc;	C is always clear here
+		adc #$01
+		beq zero;	If increasing gives zero, jump to zero handler.
+		ldy #$ff;	Set up high byte for negative values.
+		rts
+
+; Negative difference:
+; Check whether movement caused a value wrap-around.
+minus		eor #$ff;	Complement
+; If we would do a real negation (by adding "1"), then we would need
+; to branch using BCC *and* BEQ. So the above way might be harder to
+; understand, but it is both shorter *and* faster - which I like. :)
+		cmp HalfPotWidth,x
+		eor #$ff;	Restore value
+		bcc Increase
+; Movement caused a value wrap-around, so calculate "real" distance and exit.
+		clc
+		adc PotWidth,x;	Fix distance
+
+; We now know that the (fixed) distance is really positive, so we
+; finally wipe out that annoying bit 0 noise by decrementing the value.
+Decrease	sec
+		sbc #$01
+
+; No difference or positive difference; both need zero as the high byte.
+zero		ldy #0
+		rts
+
+; If there is no mouse, reset "lowest" ("highest" will have been reset
+; already) and return zero.
+ResetMM		tay;	Set Y to zero.
+		pla;	Tidy stack
+		lda #$ff;	Reset "lowest"
+		sta PotMin,x
+		tya;	Return with A/Y = 0
+		rts
+
+; --- Include sprites
+
+; Because the c64 version copies the sprite data into the tape buffer
+; on initialisation, the data is included right here.
+; In the c128 version, we skip memory until we reach $0e00 - this is
+; where the sprites are stored by default.
+
+!if SYSTEM = 128 {
+	!align $ffff, $e00, $0
+}
+
+!macro SpriteLine .v {
+	!by .v>>16, (.v>>8)&255, .v&255
+}
+
+Sprites		;	     765432107654321076543210
+		+SpriteLine %........................
+		+SpriteLine %.#......................
+		+SpriteLine %.##.....................
+		+SpriteLine %.###....................
+		+SpriteLine %.####...................
+		+SpriteLine %.#####..................
+		+SpriteLine %.######.................
+		+SpriteLine %.#######................
+		+SpriteLine %.########...............
+		+SpriteLine %.#########..............
+		+SpriteLine %.########...............
+		+SpriteLine %.######.................
+		+SpriteLine %.######.................
+		+SpriteLine %.##..##.................
+		+SpriteLine %.#....##................
+		+SpriteLine %......##................
+		+SpriteLine %.......##...............
+		+SpriteLine %.......##...............
+		+SpriteLine %........##..............
+		+SpriteLine %........##..............
+		+SpriteLine %........................
+		!byte 0;	pad to 64-byte block
+		;	     765432107654321076543210
+		+SpriteLine %##......................
+		+SpriteLine %###.....................
+		+SpriteLine %####....................
+		+SpriteLine %#####...................
+		+SpriteLine %######..................
+		+SpriteLine %#######.................
+		+SpriteLine %########................
+		+SpriteLine %#########...............
+		+SpriteLine %##########..............
+		+SpriteLine %###########.............
+		+SpriteLine %###########.............
+		+SpriteLine %#########...............
+		+SpriteLine %########................
+		+SpriteLine %########................
+		+SpriteLine %###..####...............
+		+SpriteLine %##...####...............
+		+SpriteLine %......####..............
+		+SpriteLine %......####..............
+		+SpriteLine %.......####.............
+		+SpriteLine %.......####.............
+		+SpriteLine %........###.............

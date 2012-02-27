@@ -1,0 +1,19 @@
+
+
+                                 ACME
+
+         ...the ACME Crossassembler for Multiple Environments
+
+                         --- source files ---
+
+
+This program is free software, released under the terms of the GNU
+General Public License. Therefore, the sources must be made publicly
+accessible. If this archive does not contain the source file tree, you
+can download it from the ACME web page at
+
+http://home.pages.de/~mac_bacon/smorbrod/acme/
+
+To build ACME, you need a recent C compiler and a "make" utility. On
+most systems, typing "make" should suffice to build the binary. See
+your platform's help file for more information.

@@ -1,0 +1,64 @@
+CFLAGS		= -O3 -Wall
+LIBS		= -lm
+CC		= gcc
+RM		= rm
+
+#SRC		=
+
+PROGS		= acme
+BINDIR		= /usr/local/bin
+USERBIN		= $(HOME)/bin
+
+all: $(PROGS)
+
+acme: acme.o alu.o basics.o cliargs.o cpu.o dynabuf.o encoding.o flow.o global.o input.o label.o macro.o mnemo.o output.o platform.o section.o tree.o
+	$(CC) $(LIBS) $(CFLAGS) -o acme acme.o alu.o basics.o cliargs.o cpu.o dynabuf.o encoding.o flow.o global.o input.o label.o macro.o mnemo.o output.o platform.o section.o tree.o
+	strip acme
+
+
+
+acme.o: config.h platform.h acme.h alu.h basics.h cpu.h dynabuf.h encoding.h flow.h global.h input.h label.h macro.h mnemo.h output.h section.h acme.h acme.c
+
+alu.o: config.h platform.h cpu.h dynabuf.h encoding.h global.h input.h label.h section.h tree.h alu.h alu.c
+
+cliargs.o: cliargs.h cliargs.c
+
+cpu.o: config.h alu.h dynabuf.h global.h input.h mnemo.h output.h tree.h cpu.h cpu.c
+
+dynabuf.o: config.h acme.h global.h input.h dynabuf.h dynabuf.c
+
+encoding.o: config.h alu.h acme.h dynabuf.h global.h output.h input.h tree.h encoding.h encoding.c
+
+flow.o: config.h acme.h alu.h dynabuf.h global.h input.h label.h macro.h mnemo.h tree.h flow.h flow.c
+
+global.o: config.h platform.h acme.h cpu.h input.h label.h macro.h section.h global.h global.c
+
+input.o: config.h dynabuf.h global.h section.h tree.h input.h input.c
+
+label.o: config.h acme.h alu.h cpu.h dynabuf.h global.h input.h mnemo.h section.h tree.h label.h label.c
+
+macro.o: config.h acme.h alu.h dynabuf.h global.h input.h label.h section.h tree.h macro.h macro.c
+
+mnemo.o: config.h alu.h cpu.h dynabuf.h global.h input.h output.h tree.h mnemo.h mnemo.c
+
+output.o: config.h acme.h alu.h cpu.h dynabuf.h global.h input.h tree.h output.h output.c
+
+platform.o: config.h platform.h platform.c
+
+section.o: config.h dynabuf.h global.h section.h tree.h section.h section.c
+
+tree.o: config.h dynabuf.h global.h label.h tree.h tree.c
+
+clean:
+	-$(RM) -f *.o $(PROGS) *~ core
+
+
+install: all
+	install -d $(BINDIR)
+	install $(PROGS) $(BINDIR)
+
+userinstall: all
+	install -d $(USERBIN)
+	install $(PROGS) $(USERBIN)
+
+# DO NOT DELETE

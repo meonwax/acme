@@ -1,0 +1,72 @@
+;ACME 0.91
+
+!macro cmp16bit .data1, .data2 {
+		ldx #.data1
+		ldy #.data2
+		jsr cmp16bit
+}
+a = 0
+x = 1
+y = 2
+
+!macro bank .r, .v {
+	!if .r = a {
+		lda #.v
+		sta conreg
+	}
+	!if .r = x {
+		ldx #.v
+		stx conreg
+	}
+	!if .r = y {
+		ldy #.v
+		sty conreg
+	}
+}
+
+CR_BANK15	= 0
+CR_RAM0_IO	= $3e
+CR_RAM0		= $3f
+
+!macro bank15 {
+		+bank a, CR_BANK15
+}
+
+!macro xbank15 {
+		+bank x, CR_BANK15
+}
+
+!macro ybank15 {
+		+bank y, CR_BANK15
+}
+
+!macro ram0io {
+		+bank a, CR_RAM0_IO
+}
+
+!macro yram0io {
+		+bank y, CR_RAM0_IO
+}
+
+!macro xram0 {
+		+bank x, CR_RAM0
+}
+
+!macro inc16x .a {
+		inc .a,x
+		bne +
+		inc .a+1,x
++
+}
+
+!macro ldax .a {
+		lda .a+1
+		ldx .a
+}
+
+!macro cp16 .s, .t {
+		ldx .s
+		lda .s+1
+		stx .t
+		sta .t+1
+}
