@@ -8,13 +8,13 @@ RM		= rm
 PROGS		= acme
 BINDIR		= /usr/local/bin
 USERBIN		= $(HOME)/bin
+OBJS		= acme.o alu.o basics.o cliargs.o cpu.o dynabuf.o encoding.o flow.o global.o input.o label.o macro.o mnemo.o output.o platform.o section.o tree.o
 
 all: $(PROGS)
 
-acme: acme.o alu.o basics.o cliargs.o cpu.o dynabuf.o encoding.o flow.o global.o input.o label.o macro.o mnemo.o output.o platform.o section.o tree.o
-	$(CC) $(LIBS) $(CFLAGS) -o acme acme.o alu.o basics.o cliargs.o cpu.o dynabuf.o encoding.o flow.o global.o input.o label.o macro.o mnemo.o output.o platform.o section.o tree.o
+acme: $(OBJS)
+	$(CC) $(CFLAGS) -o acme $(OBJS) $(LIBS)
 	strip acme
-
 
 
 acme.o: config.h platform.h acme.h alu.h basics.h cpu.h dynabuf.h encoding.h flow.h global.h input.h label.h macro.h mnemo.h output.h section.h acme.h acme.c

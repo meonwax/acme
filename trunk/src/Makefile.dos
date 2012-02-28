@@ -8,11 +8,12 @@ RM		= rm
 PROGS		= acme
 #BINDIR		= /usr/local/bin
 #USERBIN	= $(HOME)/bin
+OBJS		= acme.o alu.o cliargs.o cpu.o dynabuf.o encoding.o flow.o global.o input.o label.o macro.o mnemo.o output.o platform.o section.o tree.o
 
 all: $(PROGS)
 
-acme: acme.o alu.o cliargs.o cpu.o dynabuf.o encoding.o flow.o global.o input.o label.o macro.o mnemo.o output.o platform.o section.o tree.o
-	$(CC) $(LIBS) $(CFLAGS) -o acme.out acme.o alu.o cliargs.o cpu.o dynabuf.o encoding.o flow.o global.o input.o label.o macro.o mnemo.o output.o platform.o section.o tree.o
+acme: $(OBJS)
+	$(CC) $(CFLAGS) -o acme.out $(OBJS) $(LIBS)
 	copy /b \djgpp\bin\pmodstub.exe + acme.out acmepmod.exe
 	djp acme.exe
 	djp acmepmod.exe
