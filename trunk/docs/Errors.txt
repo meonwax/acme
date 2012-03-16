@@ -227,9 +227,11 @@ Source file contains illegal character.
 Syntax error.
     Guess what - there's a syntax error.
 
-Target out of range.
+Target out of range (N; M too far).
     A relative addressing (branch commands or PER) only has a limited
-    range. You exceeded it.
+    range. You exceeded it. N is the attempted offset, M is the difference
+    to the limit - so if you succeed in optimizing M bytes away, the code
+    would assemble.
 
 There's more than one character.
     You used a text string in an arithmetic expression, but the string

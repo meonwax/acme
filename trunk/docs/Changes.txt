@@ -13,6 +13,14 @@ outlining the platform specific changes.
 
 
 ----------------------------------------------------------------------
+Section:   New in release 0.94.3
+----------------------------------------------------------------------
+
+"Target out of range" error now includes info on how much the range was
+exceeded. Thanks to Bitbreaker/VOZ for the suggestion.
+
+
+----------------------------------------------------------------------
 Section:   New in release 0.94.2
 ----------------------------------------------------------------------
 
