@@ -137,7 +137,6 @@ SCS jump_lind[]  = {      0,      0,      0,   0xdc00,   0xdc00,        0,      
 // error message strings
 static const char	exception_illegal_combination[]	= "Illegal combination of command and addressing mode.";
 static const char	exception_highbyte_zero[]= "Using oversized addressing mode.";
-static const char	exception_too_far[]	= "Target out of range.";
 
 
 // Variables
@@ -572,6 +571,15 @@ static void group_only_implied_addressing(int opcode)
 	Input_ensure_EOS();
 }
 
+// helper function to output "Target out of range" message
+static void too_far(intval_t actual, intval_t minimum, intval_t maximum)
+{
+	char	buffer[60];	// 640K should be enough for anybody
+
+	sprintf(buffer, "Target out of range (%ld; %ld too far).", actual, actual < minimum ? minimum - actual : actual - maximum);
+	Throw_error(buffer);
+}
+
 // Mnemonics using only 8bit relative addressing (short branch instructions).
 static void group_only_relative8_addressing(int opcode)
 {
@@ -580,8 +588,8 @@ static void group_only_relative8_addressing(int opcode)
 	ALU_int_result(&result);
 	if (result.flags & MVALUE_DEFINED) {
 		result.intval -= (CPU_pc.intval + 2);
-		if ((result.intval > 127) || (result.intval < -128))
-			Throw_error(exception_too_far);
+		if ((result.intval < -128) || (result.intval > 127))
+			too_far(result.intval, -128, 127);
 	}
 	Output_byte(opcode);
 	// this fn has its own range check (see above).
@@ -600,8 +608,8 @@ static void group_only_relative16_addressing(int opcode)
 	ALU_int_result(&result);
 	if (result.flags & MVALUE_DEFINED) {
 		result.intval -= (CPU_pc.intval + 3);
-		if ((result.intval > 32767) || (result.intval < -32768))
-			Throw_error(exception_too_far);
+		if ((result.intval < -32768) || (result.intval > 32767))
+			too_far(result.intval, -32768, 32767);
 	}
 	Output_byte(opcode);
 	// this fn has its own range check (see above).
