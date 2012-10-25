@@ -19,6 +19,7 @@
 #define PLATFORM_LIBPREFIX	AnyOS_lib_prefix
 
 // setting the created files' types
+#define PLATFORM_SETFILETYPE_APPLE(a)
 #define PLATFORM_SETFILETYPE_CBM(a)
 #define PLATFORM_SETFILETYPE_PLAIN(a)
 #define PLATFORM_SETFILETYPE_TEXT(a)

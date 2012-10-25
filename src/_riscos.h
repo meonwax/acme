@@ -22,6 +22,7 @@
 #define NO_NEED_FOR_ENV_VAR
 
 // setting file types of created files
+#define PLATFORM_SETFILETYPE_APPLE(a)	RISCOS_set_filetype(a, 0xffd)	// FIXME - wrong value!
 #define PLATFORM_SETFILETYPE_CBM(a)	RISCOS_set_filetype(a, 0x064)
 #define PLATFORM_SETFILETYPE_PLAIN(a)	RISCOS_set_filetype(a, 0xffd)
 #define PLATFORM_SETFILETYPE_TEXT(a)	RISCOS_set_filetype(a, 0xfff)

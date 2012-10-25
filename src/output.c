@@ -53,10 +53,12 @@ static struct node_t	*file_format_tree	= NULL;	// tree to hold output formats
 // possible file formats
 enum out_format_t {
 	OUTPUT_FORMAT_UNSPECIFIED,	// default (uses "plain" actually)
-	OUTPUT_FORMAT_PLAIN,
-	OUTPUT_FORMAT_CBM,		// default for "!to" pseudo opcode
+	OUTPUT_FORMAT_APPLE,		// load address, length, code
+	OUTPUT_FORMAT_CBM,		// load address, code (default for "!to" pseudo opcode)
+	OUTPUT_FORMAT_PLAIN		// code only
 };
 static struct node_t	file_formats[]	= {
+	PREDEFNODE("apple",	OUTPUT_FORMAT_APPLE),
 	PREDEFNODE(s_cbm,	OUTPUT_FORMAT_CBM),
 //	PREDEFNODE("o65",	OUTPUT_FORMAT_O65),
 	PREDEFLAST("plain",	OUTPUT_FORMAT_PLAIN),
@@ -359,6 +361,15 @@ void Output_save_file(FILE *fd)
 			amount, amount, lowest_idx, highest_idx);
 	// output file header according to file format
 	switch (output_format) {
+	case OUTPUT_FORMAT_APPLE:
+		PLATFORM_SETFILETYPE_APPLE(output_filename);
+		// output 16-bit load address in little-endian byte order
+		putc(lowest_idx & 255, fd);
+		putc(lowest_idx >>  8, fd);
+		// output 16-bit length in little-endian byte order
+		putc(amount & 255, fd);
+		putc(amount >>  8, fd);
+		break;
 	case OUTPUT_FORMAT_UNSPECIFIED:
 	case OUTPUT_FORMAT_PLAIN:
 		PLATFORM_SETFILETYPE_PLAIN(output_filename);
