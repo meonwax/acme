@@ -22,6 +22,7 @@
 #define PLATFORM_LIBPREFIX	DOS_lib_prefix
 
 // setting file types of created files
+#define PLATFORM_SETFILETYPE_APPLE(a)
 #define PLATFORM_SETFILETYPE_CBM(a)
 #define PLATFORM_SETFILETYPE_PLAIN(a)
 #define PLATFORM_SETFILETYPE_TEXT(a)

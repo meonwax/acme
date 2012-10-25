@@ -20,6 +20,7 @@
 #define NO_NEED_FOR_ENV_VAR
 
 // setting file types of created files
+#define PLATFORM_SETFILETYPE_APPLE(a)
 #define PLATFORM_SETFILETYPE_CBM(a)
 #define PLATFORM_SETFILETYPE_PLAIN(a)
 #define PLATFORM_SETFILETYPE_TEXT(a)
