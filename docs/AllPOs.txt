@@ -202,6 +202,7 @@ Parameters:	FILENAME: A file name given in "..." quoting.
 		FILEFORMAT: Name of file format. Valid names are:
 			cbm	with load address (Commodore format)
 			plain	without load address
+			apple	with load address and length (Apple II)
 		If FILEFORMAT is omitted, ACME gives a warning and
 		then defaults to "cbm" (this can be changed using the
 		command line option "--format").

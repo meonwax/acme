@@ -171,7 +171,7 @@ Available options are:
         This is more or less useless, because the help is also shown
         if ACME is run without any arguments at all.
 
-    -f, --format FORMAT    select output format ("plain" or "cbm")
+    -f, --format FORMAT    select output format ("plain", "cbm" or "apple")
     -o, --outfile FILE     select output file
         Output filename and format can also be given using the "!to"
         pseudo opcode. If the format is not specified, "!to" defaults
