@@ -1,0 +1,74 @@
+;ACME 0.94.4
+
+!ifdef lib_cbm_basic3_5_a !eof
+lib_cbm_basic3_5_a = 1
+
+; Macros for inserting BASIC commands. Note that "#" and "$" characters in
+; BASIC keywords have been converted to "_" in the macro names.
+; *All* function macros already include the '(' character.
+
+!source <cbm/basic2.a>	; from 0x80 to $cb
+!macro b_RGR		{!by $cc:!pet '('}
+!macro b_RCLR		{!by $cd:!pet '('}
+; if this file gets included via "cbm/basic7.a" or "cbm/basic10.a", do not define RLUM
+; (because v7 and higher use $ce as prefix byte for additional functions):
+!ifndef lib_cbm_basic7_a {
+	!ifndef lib_cbm_basic10_a {
+		!macro b_RLUM	{!by $ce:!pet '('}
+	}
+}
+!macro b_JOY		{!by $cf:!pet '('}
+!macro b_RDOT		{!by $d0:!pet '('}
+!macro b_DEC		{!by $d1:!pet '('}
+!macro b_HEX_		{!by $d2:!pet '('}	; HEX$(
+!macro b_ERR_		{!by $d3:!pet '('}	; ERR$(
+!macro b_INSTR		{!by $d4:!pet '('}
+!macro b_ELSE		{!by $d5}
+!macro b_RESUME		{!by $d6}
+!macro b_TRAP		{!by $d7}
+!macro b_TRON		{!by $d8}
+!macro b_TROFF		{!by $d9}
+!macro b_SOUND		{!by $da}
+!macro b_VOL		{!by $db}
+!macro b_AUTO		{!by $dc}
+!macro b_PUDEF		{!by $dd}
+!macro b_GRAPHIC	{!by $de}
+!macro b_PAINT		{!by $df}
+!macro b_CHAR		{!by $e0}
+!macro b_BOX		{!by $e1}
+!macro b_CIRCLE		{!by $e2}
+; if this file gets included via "cbm/basic10.a", do not define GSHAPE/SSHAPE/DRAW
+; (because in v10, they are called PASTE/CUT/LINE):
+!ifndef lib_cbm_basic10_a {
+	!macro b_GSHAPE		{!by $e3}
+	!macro b_SSHAPE		{!by $e4}
+	!macro b_DRAW		{!by $e5}
+}
+!macro b_LOCATE		{!by $e6}
+!macro b_COLOR		{!by $e7}
+!macro b_SCNCLR		{!by $e8}
+!macro b_SCALE		{!by $e9}
+!macro b_HELP		{!by $ea}
+!macro b_DO		{!by $eb}
+!macro b_LOOP		{!by $ec}
+!macro b_EXIT		{!by $ed}
+; if this file gets included via "cbm/basic10.a", do not define DIRECTORY
+; (because in v10, it is called DIR):
+!ifndef lib_cbm_basic10_a {
+	!macro b_DIRECTORY	{!by $ee}
+}
+!macro b_DSAVE		{!by $ef}
+!macro b_DLOAD		{!by $f0}
+!macro b_HEADER		{!by $f1}
+!macro b_SCRATCH	{!by $f2}
+!macro b_COLLECT	{!by $f3}
+!macro b_COPY		{!by $f4}
+!macro b_RENAME		{!by $f5}
+!macro b_BACKUP		{!by $f6}
+!macro b_DELETE		{!by $f7}
+!macro b_RENUMBER	{!by $f8}
+!macro b_KEY		{!by $f9}
+!macro b_MONITOR	{!by $fa}
+!macro b_USING		{!by $fb}
+!macro b_UNTIL		{!by $fc}
+!macro b_WHILE		{!by $fd}

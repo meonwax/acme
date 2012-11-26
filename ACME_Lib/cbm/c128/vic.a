@@ -1,0 +1,10 @@
+;ACME 0.94.4
+
+!ifdef lib_cbm_c128_vic_a !eof
+lib_cbm_c128_vic_a = 1
+
+!source <cbm/c64/vic.a>	; registers 0..2e
+
+; registers only present in the C128 variant of this chip:
+vic_keyboard	= $d02f
+vic_clock	= $d030
