@@ -1,0 +1,26 @@
+;ACME 0.94.4
+
+!ifdef lib_cbm_c128_mmu_a !eof
+lib_cbm_c128_mmu_a = 1
+
+; mirrored registers, available in every configuration:
+mmu_cr		= $ff00
+mmu_lcra	= $ff01
+mmu_lcrb	= $ff02
+mmu_lcrc	= $ff03
+mmu_lcrd	= $ff04
+
+; "normal" registers, only available when accessing i/o space:
+
+;mmu_cr   = $d500; need not be defined: If $d500 works, $ff00 does as well.
+mmu_pcra	= $d501
+mmu_pcrb	= $d502
+mmu_pcrc	= $d503
+mmu_pcrd	= $d504
+mmu_mcr		= $d505
+mmu_rcr		= $d506
+mmu_p0l		= $d507
+mmu_p0h		= $d508
+mmu_p1l		= $d509
+mmu_p1h		= $d50a
+mmu_vr		= $d50b

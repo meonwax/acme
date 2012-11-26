@@ -1,0 +1,156 @@
+;ACME 0.94.4
+
+!ifdef lib_cbm_c128_vdc_a !eof
+lib_cbm_c128_vdc_a = 1
+
+; access macros
+
+!macro vdc_lda {
+-			bit vdc_state
+			bpl -
+		lda vdc_data
+}
+
+!macro vdc_sta {
+-			bit vdc_state
+			bpl -
+		sta vdc_data
+}
+
+!macro vdc_ldx {
+-			bit vdc_state
+			bpl -
+		ldx vdc_data
+}
+
+!macro vdc_stx {
+-			bit vdc_state
+			bpl -
+		stx vdc_data
+}
+
+!macro vdc_ldy {
+-			bit vdc_state
+			bpl -
+		ldy vdc_data
+}
+
+!macro vdc_sty {
+-			bit vdc_state
+			bpl -
+		sty vdc_data
+}
+
+; color codes
+
+; These are the colors officially available on the C128 - the same names as if
+; using a C64's VIC, but different codes of course.
+
+; color name	   RGBI	  VIC equivalent
+vdccolor_BLACK	= %....	; 0
+vdccolor_WHITE	= %####	; 15
+vdccolor_RED	= %#...	; 8
+vdccolor_CYAN	= %.###	; 7
+vdccolor_PURPLE	= %#.##	; 11
+vdccolor_GREEN	= %.#..	; 4
+vdccolor_BLUE	= %..#.	; 2
+vdccolor_YELLOW	= %##.#	; 13
+vdccolor_ORANGE	= %#.#.	; 10 (on VDC, this is in fact a dark shade of purple)
+vdccolor_BROWN	= %##..	; 12
+vdccolor_LRED	= %#..#	; 9
+vdccolor_GRAY1	= %.##.	; 6 (on VDC, this is in fact a dark shade of cyan)
+vdccolor_GRAY2	= %...#	; 1 (this is almost, but not quite, entirely black)
+vdccolor_LGREEN	= %.#.#	; 5
+vdccolor_LBLUE	= %..##	; 3
+vdccolor_GRAY3	= %###.	; 14
+
+; The following alternative names are much easier to remember when you're used
+; to writing programs for the VDC: There are eight main colors, and each one is
+; available in a light and a dark shade - even black and white!
+
+; primary colors   RGBI code
+vdccolor_DRED	= %#...
+vdccolor_DGREEN	= %.#..
+vdccolor_DBLUE	= %..#.
+vdccolor_LRED	= %#..#
+vdccolor_LGREEN	= %.#.#
+vdccolor_LBLUE	= %..##
+
+; secondary colors	   RGBI code
+vdccolor_LCYAN		= %.###
+vdccolor_LMAGENTA	= %#.##
+vdccolor_LYELLOW	= %##.#
+vdccolor_DCYAN		= %.##.
+vdccolor_DMAGENTA	= %#.#.
+vdccolor_DYELLOW	= %##..
+
+; black & white    RGBI code
+vdccolor_DBLACK	= %....
+vdccolor_LBLACK	= %...#
+vdccolor_LWHITE	= %####
+vdccolor_DWHITE	= %###.
+
+; if you don't like the concept of shaded black/white, then use these:
+
+; gray level       RGBI code
+vdccolor_BLACK	= %....	; "dark black"  => "black"
+vdccolor_DGRAY	= %...#	; "light black" => "dark grey"
+vdccolor_LGRAY	= %###.	; "dark white"  => "light grey"
+vdccolor_WHITE	= %####	; "light white" => "white"
+
+; attribute flags (2rufRGBI)
+vdcattr_2ND	= %#.......	; second character set
+vdcattr_REVS	= %.#......	; reverse mode
+vdcattr_UL	= %..#.....	; underline
+vdcattr_FLASH	= %...#....	; flash
+vdcattr_R	= %....#...	; red
+vdcattr_G	= %.....#..	; green
+vdcattr_B	= %......#.	; blue
+vdcattr_I	= %.......#	; intensity
+
+; direct registers
+vdc_state	= $d600	; 1b "ready", 1b "lightpen", 1b "rescan", 5b "version"
+vdc_reg		= $d600
+vdc_data	= $d601
+
+; indirect registers
+vdcr_htotal		= $00	; card columns (total), minus one
+vdcr_columns		= $01	; card columns actually displayed
+vdcr_hdisp		= $01
+vdcr_hsync_pos		= $02	; card to send horizontal sync in
+vdcr_syncwidth		= $03	; 4b vertical, 4b horizontal
+vdcr_vtotal		= $04	; card lines (total), minus one
+vdcr_vadjust		= $05	; additionally scan lines
+vdcr_lines		= $06	; card lines actually displayed
+vdcr_vdisp		= $06
+vdcr_vsync_pos		= $07	; card line to send vertical sync in
+vdcr_interlace		= $08	; interlace mode
+vdcr_cardheight		= $09	; 5b total, minus one
+vdcr_crsr_start		= $0a	; 2b mode, 5b scanline
+vdcr_crsr_end		= $0b	;          5b scanline
+vdcr_display_hi		= $0c	; RAM address of display buffer
+vdcr_display_lo		= $0d
+vdcr_crsr_hi		= $0e	; RAM address of cursor
+vdcr_crsr_lo		= $0f
+vdcr_lp_y		= $10	; y position of light pen
+vdcr_lp_x		= $11	; x position
+vdcr_ram_hi		= $12	; RAM address of register $1f
+vdcr_ram_lo		= $13
+vdcr_attr_hi		= $14	; RAM address of attribute buffer
+vdcr_attr_lo		= $15
+vdcr_cardwidth_charwidth	= $16; 4b total, 4b displayed
+vdcr_charheight		= $17	; 5b displayed, minus one
+vdcr_control_v		= $18	; vertical scroll and much other stuff
+vdcr_control_h		= $19	; horizontal scroll and much other stuff
+vdcr_color		= $1a	; 4b foreground, 4b background
+vdcr_row_inc		= $1b	; Address increment per row
+vdcr_charset		= $1c	; 3b charset pointer, 1b RAM type, 4b unused
+vdcr_underline		= $1d	; 5b scanline
+vdcr_cycles		= $1e	; number of write- or copy-cycles. 0 means 256.
+vdcr_access		= $1f	; RAM content of address r$12/13
+vdcr_source_hi		= $20	; RAM address of cycle start
+vdcr_source_lo		= $21
+vdcr_enable_start	= $22	; column to enable display in
+vdcr_enable_end		= $23	; column to disable display in
+vdcr_dram_refresh	= $24	; RAM refresh rate
+vdcr_sync_polarity	= $25	; only in type 2 VDCs
