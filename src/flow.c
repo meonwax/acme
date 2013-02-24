@@ -127,7 +127,11 @@ static enum eos_t PO_do(void)	// Now GotByte = illegal char
 	char		*loop_body;
 	int		go_on,
 			loop_start;	// line number of loop pseudo opcode
-
+	// Init
+	condition2.type = ID_UNTIL;
+	condition2.body = NULL;
+	condition1.body = NULL;
+	
 	// Read head condition to buffer
 	SKIPSPACE();
 	store_condition(&condition1, CHAR_SOB);

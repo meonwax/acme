@@ -78,7 +78,7 @@ void Input_new_file(const char *filename, FILE *fd)
 // Deliver source code from current file (!) in shortened high-level format
 static char get_processed_from_file(void)
 {
-	int	from_file;
+	int	from_file = 0;
 
 	for (;;) {
 		switch (Input_now->state) {
