@@ -1,38 +1,38 @@
-;ACME 0.91
+;ACME 0.94.4
 
 ; Konstanten:
-	FALSE	= 0	; Das Programm verläßt sich an etlichen Stellen
-	TRUE	= $ff	; darauf, daß genau diese Werte zugewiesen wurden.
-	MODIFIED8	= $ff	; Defaultwerte für
+	FALSE	= 0	; Das Programm verlÃ¤ÃŸt sich an etlichen Stellen
+	TRUE	= $ff	; darauf, daÃŸ genau diese Werte zugewiesen wurden.
+	MODIFIED8	= $ff	; Defaultwerte fÃ¼r
 	MODIFIED16	= $ffff	; Selbstmodifikationen
 
-	Char_NUL	= $00
-	Char_STOP	= $03
-	Char_RETURN	= $0d
-	Char_CursorDown	= $11
-	Char_HOME	= $13
-	Char_DEL	= $14
-	Char_ESCAPE	= $1b
-	Char_CursorRight= $1d
-	Char_At		= $40
-	CharOwn_Delete	= $74
-	Char_ShiftRETURN= $8d
-	Char_CursorUp	= $91	; Diese Werte waren früher als Strings angegeben.
-	Char_CLEAR	= $93
-	Char_INST	= $94
-	Char_Grey2	= $98
-	Char_BlueL	= $9a
-	Char_Grey3	= $9b
-	Char_CursorLeft	= $9d
-	_ = 1	; Dieser Code steht für das unsichtbare Space in den Windows.
+	Char_NUL		= $00
+	Char_STOP		= $03
+	Char_RETURN		= $0d
+	Char_CursorDown		= $11
+	Char_HOME		= $13
+	Char_DEL		= $14
+	Char_ESCAPE		= $1b
+	Char_CursorRight	= $1d
+	Char_At			= $40
+	CharOwn_Delete		= $74
+	Char_ShiftRETURN	= $8d
+	Char_CursorUp		= $91	; Diese Werte waren frÃ¼her als Strings angegeben.
+	Char_CLEAR		= $93
+	Char_INST		= $94
+	Char_Grey2		= $98
+	Char_BlueL		= $9a
+	Char_Grey3		= $9b
+	Char_CursorLeft		= $9d
+	_ = 1	; Dieser Code steht fÃ¼r das unsichtbare Space in den Windows.
 
-	ä = $bb	; Werte um Umlaute verwenden zu können.
-	ö = $bc
-	ü = $bd
-	ß = $be
-	Ä = $db
-	Ö = $dc
-	Ü = $dd
+	Ã¤ = $bb	; Werte um Umlaute verwenden zu kÃ¶nnen.
+	Ã¶ = $bc
+	Ã¼ = $bd
+	ÃŸ = $be
+	Ã„ = $db
+	Ã– = $dc
+	Ãœ = $dd
 
 	chrol = 104	; Fensterrahmen
 	chroo = 102
@@ -58,26 +58,26 @@
 	fnbank	= $c7	; Bank of file name
 	ndx	= $d0	; Tasten- &
 	kyndx	= $d1	; F- Buffer
-	keyidx	= $d2	; F-Zeichenzähler
+	keyidx	= $d2	; F-ZeichenzÃ¤hler
 	mode	= $d7	; Bit 7 = Cursorscreen (40/80)
 	color	= $f1	; current attribute
 	locks	= $f7	; Verhindert CBM-Shift
 	beep	= $f9	; Tastenklick
 	lftb	= $fa	; Maustasten
 	rgtb	= $fb
-	line	= $fc	; Zähler
+	line	= $fc	; ZÃ¤hler
 	col	= $fd
-	zahl	= $fe	; fürs Wrap
+	zahl	= $fe	; fÃ¼rs Wrap
 ; System:
-	nmivek	= $0318	; NMI
-	keybuffer= $034a
-	pkydef	= $100a	; Strings der F-Tasten
-	texttop	= $1210	; Basic-Ende+1
-	maxmem0	= $1212	; Ende Bank 0
-	basic	= $12fd	; Basic-IRQ
-	kernel_copyfont	= $c027	; Systemroutine, kopiert Font in VDC-RAM
-	kernel_cls	= $c142	; Systemroutine, löscht Screen
-	kernel_switchmode= $cd2e	; Systemroutine, switcht aktiven Monitor
+	nmivek		= $0318	; NMI
+	keybuffer	= $034a
+	pkydef		= $100a	; Strings der F-Tasten
+	texttop		= $1210	; Basic-Ende+1
+	maxmem0		= $1212	; Ende Bank 0
+	basic		= $12fd	; Basic-IRQ
+	kernel_copyfont		= $c027	; Systemroutine, kopiert Font in VDC-RAM
+	kernel_cls		= $c142	; Systemroutine, lÃ¶scht Screen
+	kernel_switchmode	= $cd2e	; Systemroutine, switcht aktiven Monitor
 	takt	= $d030	; 2 MHz ; register (**mark**)
 	vdc	= $d600	; VDC
 	reg	= $d601

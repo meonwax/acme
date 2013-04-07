@@ -1,4 +1,4 @@
-;ACME 0.94
+;ACME 0.94.4
 ; ist der komplette Sourcecode von MacEdit
 ; (80-Zeichen-Version)
 ; Version 0.7
@@ -37,38 +37,40 @@ linebuf
 
 	!eof
 
-ƒnderungen von Version 0.6 zu Version 0.7:
+√Ñnderungen von Version 0.6 zu Version 0.7:
     Das DCS-Window wurde implementiert, dadurch wurde auch ein Unterschied zwischen "Beenden" und "Basic" eingebaut (Bei ersterem erfolgt die DCS-Abfrage).
     Die Strings der Windows liegen jetzt nicht mehr als Screencodes vor, sondern als PetSCII-Werte; die Routine ".makewin" konvertiert dies also.
     Die Bedeutung des Flags "unnamed" wurde invertiert.
 
-Sp‰tere ƒnderungen am Source:
+Sp√§tere √Ñnderungen am Source:
 
     19. 4.1997: Durch Weiterentwicklung von V0.6 erzeugt (kommentarlos)
-    24. 9.1998: Kommentare von V0.6 wieder hinzugef¸gt
+    24. 9.1998: Kommentare von V0.6 wieder hinzugef√ºgt
     25. 9.1998: Umformatierung auf ACME-Syntax
     10.10.1998: Ersetzen von "{" und "}" in Labels durch "_" und "__"
     12.10.1998: Unterschiede zu v0.6 dokumentiert.
     30.10.1998: "+ =" wieder zu "+=" korrigiert.
      1.11.1998: Alle Labels wieder globalisiert.
      2.11.1998: Tabulatorlayout wieder korrigiert und "~" durch "___" ersetzt.
-     3.11.1998: Label "notmany!" durch "notmany" ersetzt. Wo kam das bloﬂ her ?
-     4.11.1998: Zwei fehlerhafte Auskommentierungen entsorgt. Die Stellen wurden mit "**mark**" gekennzeichnet. Wo kam das bloﬂ her ? Auﬂerdem wurde "< = >" in einem Textstring wieder zu "<=>" korrigiert. Das ist wohl beim automatischen Layout passiert.
-     4.11.1998: Top-Bit-Set-Zeichen aus Textstrings enfernt und byteweise eingef¸gt, z.B. auch "Cursor up/down/left/right"-Werte. Auﬂerdem alle Filenamen angepaﬂt.
+     3.11.1998: Label "notmany!" durch "notmany" ersetzt. Wo kam das blo√ü her ?
+     4.11.1998: Zwei fehlerhafte Auskommentierungen entsorgt. Die Stellen wurden mit "**mark**" gekennzeichnet. Wo kam das blo√ü her ? Au√üerdem wurde "< = >" in einem Textstring wieder zu "<=>" korrigiert. Das ist wohl beim automatischen Layout passiert.
+     4.11.1998: Top-Bit-Set-Zeichen aus Textstrings enfernt und byteweise eingef√ºgt, z.B. auch "Cursor up/down/left/right"-Werte. Au√üerdem alle Filenamen angepa√üt.
      5.11.1998: Auch die Umlaute nun zu Bytewerten gewandelt.
-    19.11.1998: "!cbm" eingef¸gt, da ge‰nderte ACME-Funktion "!text".
+    19.11.1998: "!cbm" eingef√ºgt, da ge√§nderte ACME-Funktion "!text".
     24.11.1998: Filenamen bei "!to" und "!bin" auf UNIX-Stil gebracht.
-    27.11.1998: Aufeinanderfolgende "!tx" und "!by" gemerged, BIT-Trick benutzt, Hexzahlen auf lowercase gebracht, Bin‰rzahlen auf Spezialformat gebracht, Einr¸ckungen dezimiert, Zahlen durch Label ersetzt, "firsttry" in "repeatedtry" umbenannt (war vorher unlogisch).
+    27.11.1998: Aufeinanderfolgende "!tx" und "!by" gemerged, BIT-Trick benutzt, Hexzahlen auf lowercase gebracht, Bin√§rzahlen auf Spezialformat gebracht, Einr√ºckungen dezimiert, Zahlen durch Label ersetzt, "firsttry" in "repeatedtry" umbenannt (war vorher unlogisch).
     28.11.1998: Auf Benutzung von Modulen und lokalen Labels umgestellt.
-    30.11.1998: Alle "!module" durch "!zone" ersetzt (wegen ACME-ƒnderung).
-     1.12.1998: Mehrere Labels pro Zeile entzerrt (wegen ACME-ƒnderung).
-     2.12.1998: Multifile-Version, ƒnderungstext ans Ende verschoben.
+    30.11.1998: Alle "!module" durch "!zone" ersetzt (wegen ACME-√Ñnderung).
+     1.12.1998: Mehrere Labels pro Zeile entzerrt (wegen ACME-√Ñnderung).
+     2.12.1998: Multifile-Version, √Ñnderungstext ans Ende verschoben.
     10.12.1998: Makros eingebaut.
-     8. 1.1999: Library benutzt und daher Branch-Makros gelˆscht, auﬂerdem BIT-Trick durch Makroaufruf ersetzt.
-    24. 8.1999: An die leicht ge‰nderte Syntax von ACME 007 angepaﬂt.
+     8. 1.1999: Library benutzt und daher Branch-Makros gel√∂scht, au√üerdem BIT-Trick durch Makroaufruf ersetzt.
+    24. 8.1999: An die leicht ge√§nderte Syntax von ACME 007 angepa√üt.
 
 04 Jun 2005:
 	Adjusted to ACME 0.86 syntax (added output file format indicator).
 26 Mar 2006:
 	Adjusted to ACME 0.91 syntax (anonymous labels)
 	Now throws serious error if the library file could not be loaded.
+ 7 Apr 2013:
+	Converted to UTF-8

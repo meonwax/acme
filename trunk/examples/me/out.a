@@ -1,4 +1,4 @@
-;ACME 0.91
+;ACME 0.94.4
 
 !zone
 F_info		ldx #hWindow_InfoBox
@@ -28,8 +28,8 @@ F_sw		lda wrapflag	; Toggle Flag
 
 F_lfeed		jsr poslvek	; LineVek
 		jsr insert1	; immer insert
-		lda #Char_RETURN; 'CR' an Cursorpos
-		sta (lvek),y
+		lda #Char_RETURN	; 'CR' an Cursorpos
+		sta (lvek), y
 		sta nwfrm	; NewFrame fordern
 		sta changes	; Veraendert !
 		jsr posparw	; PARW ?
@@ -38,8 +38,8 @@ F_lfeed		jsr poslvek	; LineVek
 		beq poswrap	; Nein: Wrap
 		lda posy	; Zeile in wrap
 		sta wrpy
-		lda posy+1
-		sta wrpy+1
+		lda posy + 1
+		sta wrpy + 1
 		jsr found	; und runterwrap
 		rts
 
@@ -56,25 +56,25 @@ cancelwrp	jmp memfull	; Zeilen alle
 !zone
 poswrap		ldx #POS
 		stx xindex	; sichern
-		lda scry,x	; Zahl umkopieren
+		lda scry, x	; Zahl umkopieren
 		sta wrpy
-		lda scry+1,x
-		sta wrpy+1
+		lda scry + 1, x
+		sta wrpy + 1
 		jsr posparw	; PARW ?
 		bcs proofparw	; Dann kein WRAP
 		ldy llen	; LineEnd = Space ?
-		lda (lvek),y
+		lda (lvek), y
 		cmp #" "
 		beq proofparw	; Ja = > PARW
--		dey		; sonst zurueck bis zu
-		beq linefull	; Space, "-", CR oder
-		lda (lvek),y	; LineStart (bekommt
-		cmp #" "	; Sonderbehandlung)
-		beq found
-		cmp #"-"
-		beq found
-		cmp #Char_RETURN
-		bne -
+-			dey		; sonst zurueck bis zu
+			beq linefull	; Space, "-", CR oder
+			lda (lvek), y	; LineStart (bekommt
+			cmp #" "	; Sonderbehandlung)
+			beq found
+			cmp #"-"
+			beq found
+			cmp #Char_RETURN
+			bne -
 
 !zone
 found		sty wrpx	; puffert Y und addiert
@@ -82,9 +82,9 @@ found		sty wrpx	; puffert Y und addiert
 		clc		; gut geshiftet wird
 		adc lvek
 		sta tmp2
-		lda lvek+1
+		lda lvek + 1
 		adc #0
-		sta tmp2+1
+		sta tmp2 + 1
 		lda llen	; errechnet Anzahl zu
 		sec		; shiftender Bytes
 		sbc wrpx	; als 'zahl'
@@ -97,29 +97,29 @@ found		sty wrpx	; puffert Y und addiert
 		jsr rollfwd
 		ldy zahl	; Anzahl Bytes
 		ldx #" "	; Space
--		lda (tmp2),y	; holt Byte und setzt
-		sta (lvek),y
-		txa		; loescht Quelle
-		sta (tmp2),y
-		dey
-		bne -
+-			lda (tmp2), y	; holt Byte und setzt
+			sta (lvek), y
+			txa		; loescht Quelle
+			sta (tmp2), y
+			dey
+			bne -
 		ldx xindex	; errechnet neue
-		lda scrx,x	; Variablenwerte
+		lda scrx, x	; Variablenwerte
 		sec		; Sind nur relevant,
 		sbc wrpx	; wenn Location
 		beq proofparw	; mitgewrapped wurde.
 		bmi proofparw
-		sta scrx,x
+		sta scrx, x
 		+inc16x scry
 
 !zone
 proofparw	ldx wrapflag	; Wrap erlaubt ?
 		beq +		; Nein = > Ende
-.pl		jsr incwrp	; naechste Zeile
-		ldx #WRP
-		jsr getlvek	; LineVek
-		jsr parw	; PARWen
-		bcs .pl		; ggfs Schleife
+.pl			jsr incwrp	; naechste Zeile
+			ldx #WRP
+			jsr getlvek	; LineVek
+			jsr parw	; PARWen
+			bcs .pl		; ggfs Schleife
 +		ldx xindex	; Restore LineVek
 		jsr getlvek
 		rts
@@ -133,9 +133,9 @@ posparw		clc
 		ldx #POS	; Cursor-Index
 		lda wrapflag	; Wrap erlaubt ?
 		beq +		; ggfs Ende
-		jsr parw	; PARWed
-		bcc +		; ggfs Variablen
-		jsr moveloc	; angleichen
+			jsr parw	; PARWed
+			bcc +		; ggfs Variablen
+				jsr moveloc	; angleichen
 +		php		; C sichern
 		ldx xindex	; Restore LineVek
 		jsr getlvek
@@ -151,36 +151,36 @@ parw		stx xindex	; Sichert Index
 		jsr cmp16bit
 		bcc .no		; kleiner = > Abbruch
 		ldx xindex	; X zurueck
-		lda scry+1,x	; holt Vektor und
-		ldy scry,x	; zaehlt runter
+		lda scry + 1, x	; holt Vektor und
+		ldy scry, x	; zaehlt runter
 		bne +
-		sec
-		sbc #1
-+		sta prwy+1	; Hi speichern
+			sec
+			sbc #1
++		sta prwy + 1	; Hi speichern
 		dey		; Lo runter & speichern
 		sty prwy
 		ora prwy	; Vorige Zeile = 0 ?
 		beq .no		; Dann Ende !
 		lda lvek	; lvek in tmp2
 		sta tmp2
-		lda lvek+1
-		sta tmp2+1
+		lda lvek + 1
+		sta tmp2 + 1
 		ldx #PRW	; lvek auf vorige Zeile
 		jsr getlvek
 		jsr findend	; sucht Zeilenende
 		bne +		; Zeile leer ?
-		jsr delline	; loescht Zeile und
-		lda llen	; stellt Werte ein,
-		sta zahl	; die die Location
-		lda #0		; entsprechend
-		sta prwx	; verschieben
-		sec		; C = 1 < = > gePARWt
-		rts
-+		cmp #Char_RETURN; letztes Zeichen CR ?
+			jsr delline	; loescht Zeile und
+			lda llen	; stellt Werte ein,
+			sta zahl	; die die Location
+			lda #0		; entsprechend
+			sta prwx	; verschieben
+			sec		; C = 1 < = > gePARWt
+			rts
++		cmp #Char_RETURN	; letztes Zeichen CR ?
 		beq .no		; Dann Ende !
 		cmp #"-"
 		beq +		; Dann kein Space
-		iny		; reservieren
+			iny		; reservieren
 +		sty prwx	; Y auf LastByte
 		lda llen	; errechnet Versatz,
 		sec		; bei dem Suche
@@ -191,25 +191,25 @@ parw		stx xindex	; Sichert Index
 		clc		; besser zu shiften
 		adc lvek
 		sta lvek
-		lda lvek+1
+		lda lvek + 1
 		adc #0
-		sta lvek+1
-		lda (tmp2),y	; 1. Quellbyte holen
--		cmp #" "
-		beq +
-		dey
-		beq .no		; LineStart = > Abbruch
-		lda (tmp2),y	; next Quellbyte
-		cmp #"-"
-		beq +
-		cmp #Char_RETURN
-		bne -
+		sta lvek + 1
+		lda (tmp2), y	; 1. Quellbyte holen
+-			cmp #" "
+			beq +
+				dey
+				beq .no		; LineStart = > Abbruch
+				lda (tmp2),y	; next Quellbyte
+				cmp #"-"
+				beq +
+					cmp #Char_RETURN
+					bne -
 +		sty zahl	; Anzahl sichern
--		sta (lvek),y	; Zielbyte setzen
-		dey
-		beq +
-		lda (tmp2),y	; Quellbyte holen
-		jmp -		; Schleife
+-			sta (lvek), y	; Zielbyte setzen
+			dey
+			beq +
+			lda (tmp2), y	; Quellbyte holen
+			jmp -		; Schleife
 +		lda llen	; Zeilenlaenge minus
 		sec		; 'zahl' Bytes muessen
 		sbc zahl	; noch shifted werden
@@ -218,52 +218,51 @@ parw		stx xindex	; Sichert Index
 		clc		; wieder Vektor
 		adc zahl	; aendern
 		sta lvek
-		lda tmp2+1
+		lda tmp2 + 1
 		adc #0
-		sta lvek+1
+		sta lvek + 1
 ; Y noch 0 !
--		iny		; Y weiter
-		lda (lvek),y	; holt & setzt Byte
-		sta (tmp2),y
-.m=*+1:		cpy #MODIFIED8	; Anzahl Bytes
-		bne -
+-			iny		; Y weiter
+			lda (lvek), y	; holt & setzt Byte
+			sta (tmp2), y
+.m = * + 1:		cpy #MODIFIED8	; Anzahl Bytes
+			bne -
 		lda #" "
--		iny		; new line damit
-		sta (tmp2),y	; auffuellen
-		cpy llen	; bis Ende
-		bne -
+-			iny		; new line damit
+			sta (tmp2), y	; auffuellen
+			cpy llen	; bis Ende
+			bne -
 		sec		; C = 1 < = > PARWed
 		rts
 
 moveloc		ldx xindex
 		lda zahl	; X-Pos vor PARWgrenze?
-		cmp scrx,x
+		cmp scrx, x
 		bcc inline	; Dann Pos += Anzahl
 		clc
-		lda scrx,x
+		lda scrx, x
 		adc prwx
-		sta scrx,x
+		sta scrx, x
 		lda prwy	; verringerten Y-Wert
-		sta scry,x	; einkopieren
-		lda prwy+1
-		sta scry+1,x
+		sta scry, x	; einkopieren
+		lda prwy + 1
+		sta scry + 1, x
 		sec		; C = 1
 		rts
 
-inline		lda scrx,x	; (C = 1)
+inline		lda scrx, x	; (C = 1)
 		sbc zahl	; setzt Cursor zurueck
 		adc #0		; +Carry
-		sta scrx,x
+		sta scrx, x
 		rts		; (C = 0)
 
 !zone
 findend		ldy llen	; Versatz auf Ende
--		lda (lvek),y	; holt Zeichen bis
-		cmp #" "	; Zeilenstart oder
-		bne endfound	; nicht-Space
-		dey
-		bne -
-
+-			lda (lvek), y	; holt Zeichen bis
+			cmp #" "	; Zeilenstart oder
+			bne endfound	; nicht-Space
+			dey
+			bne -
 endfound	rts		; Z = 1 = > Zeile leer (fixme - save a byte)
 
 ; Menuevariablen
@@ -278,7 +277,7 @@ changewin	beq lp19	; kein Nachbar = > Ende
 		tax		; prueft ob Menupunkt
 		stx menunr	; beibehalten werden
 		lda menupoint	; kann. Ggfs auf 1
-		cmp winhe,x	; setzen
+		cmp winhe, x	; setzen
 		bcc menuloop
 		lda #1
 		sta menupoint
@@ -299,20 +298,20 @@ lp19		jsr getchar	; Auf Zeichen warten
 		;beq mouselft	; =>
 		cmp #Char_CursorUp
 		bne +
-		dey		; Punkt hoch & wech
-		jmp prfpoint
+			dey		; Punkt hoch & wech
+			jmp prfpoint
 +		cmp #Char_CursorDown
 		bne +
-		iny		; Punkt runter & wech
-		jmp prfpoint
+			iny		; Punkt runter & wech
+			jmp prfpoint
 +		cmp #Char_CursorLeft
 		bne +
-		lda lftwin,x	; Nachbar holen & wech
-		jmp changewin
+			lda lftwin, x	; Nachbar holen & wech
+			jmp changewin
 +		cmp #Char_CursorRight
 		bne +
-		lda rgtwin,x	; Nachbar holen & wech
-		jmp changewin
+			lda rgtwin, x	; Nachbar holen & wech
+			jmp changewin
 +		cmp #Char_STOP
 		bne lp19	; Nein = > Schleife
 menuend		jsr pullscr	; sonst restaurieren
@@ -324,19 +323,19 @@ menucom		pha		; CR/CS sichern, dazu
 		pha		; und den Menupunkt
 		tya
 		pha
-		lda winadlo,x	; stellt Zeiger auf
+		lda winadlo, x	; stellt Zeiger auf
 		sta tmp1	; Menutexte
-		lda winadhi,x
-		sta tmp1+1
+		lda winadhi, x
+		sta tmp1 + 1
 		ldy #0		; Versatz Null
 		jmp +		; in die Schleife
--		iny		; naechstes Byte holen
-		lda (tmp1),y
-		bne -		; sucht Ende-Null
-		iny		; Versatz auf Command
-+		lda (tmp1),y	; Command holen
-		dec menupoint	; richtiger Punkt ?
-		bne -		; Nein = > erneut
+-			iny		; naechstes Byte holen
+			lda (tmp1), y
+			bne -		; sucht Ende-Null
+			iny		; Versatz auf Command
++			lda (tmp1), y	; Command holen
+			dec menupoint	; richtiger Punkt ?
+			bne -		; Nein = > erneut
 		tax		; Ja = > Command !
 		jsr execom
 		jsr crsroff	; Sicherheitshalber...
@@ -357,39 +356,38 @@ menucom		pha		; CR/CS sichern, dazu
 !zone
 prfpoint	tya		; Wenn Punkt = 0,
 		bne ++		; dann Punkt: = Letzter
-		ldy winhe,x
-		dey
-		jmp +
-
-++		cmp winhe,x	; Wenn Punkt zu gross,
+			ldy winhe, x
+			dey
+			jmp +
+++		cmp winhe, x	; Wenn Punkt zu gross,
 		bcc +		; dann Punkt: = 1
-		ldy #1
-+		sty menupoint+1	; neuen Punkt sichern
-		jsr calcpoint	; alten berechnen und
-		lda clrboxs	; mit WinFarbe faerben
+			ldy #1
++		sty menupoint + 1	; neuen Punkt sichern
+		jsr calcpoint		; alten berechnen und
+		lda clrboxs		; mit WinFarbe faerben
 		jsr changeflg
-		ldy menupoint+1	; neuen Punkt holen,
-		sty menupoint	; wird aktueller
+		ldy menupoint + 1	; neuen Punkt holen,
+		sty menupoint		; wird aktueller
 		jmp pointloop
 
 ; errechnet Adresse des Menupunkts
 !zone
 calcpoint	ldx menunr	; holt Nummer & damit
-		lda winhi,x	; Screen-Addy
-		sta tmp1+1	; Hi setzen
-		lda winlo,x
+		lda winhi, x	; Screen-Addy
+		sta tmp1 + 1	; Hi setzen
+		lda winlo, x
 		ldx menupoint	; holt Punkt
 		sec		; +1 (Rand weg)
--		adc #scrcols	; addiert Zeile
-		bcc +		; Page sichern
-		inc tmp1+1
-		clc
-+		dex		; ggfs
-		bne -		; Schleife
+-			adc #scrcols	; addiert Zeile
+			bcc +		; Page sichern
+				inc tmp1 + 1
+				clc
++			dex		; ggfs
+			bne -		; Schleife
 		sta tmp1	; Lo setzen
 		sec		; Erledigt Arbeit fuer
 		ldx menunr	; aufrufende Routinen,
-		ldy winwi,x	; da X, Y, C richtig
+		ldy winwi, x	; da X, Y, C richtig
 		dey		; belegt werden
 		rts
 
@@ -423,7 +421,7 @@ info	!text 0,_,_,_,_,_,_,_,_, "---MacEdit---", 0
 	!text 0,_,_,_,_,_,_,_,_,_,_,_,_, "Mac",_, "Bacon/TekLords",0
 	!text 0,_,_,_,_,_, "Dies",_, "ist",_, "Freeware",_, "!",0
 	!byte 0, 0
-	!text 0,_,_,_, "Bitte",_, "eine",_, "Taste",_, "dr",ü, "cken", 0
+	!text 0,_,_,_, "Bitte",_, "eine",_, "Taste",_, "dr",Ã¼, "cken", 0
 datei	!text $6f, "Neu", 0
 	!text $75, "Laden", 0
 	!text $76, "Nachladen", 0
@@ -453,7 +451,7 @@ nomem	!byte 0	; Auch 'hilfe'-Ende
 	!text "---",_,_,_,_, "Achtung",_, "!",_,_,_, "---", 0
 	!text 0, "Der",_, "Speicher",_, "ist",_, "voll",_, "!", 0
 	!byte 0, 0
-	!text 0, "Bitte",_, "eine",_, "Taste",_, "dr", ü, "cken"
+	!text 0, "Bitte",_, "eine",_, "Taste",_, "dr", Ã¼, "cken"
 namewin	!byte 0	; Auch 'nomem'-Ende
 	!text "Bitte",_, "Filenamen",_, "eingeben", 0
 	!byte 0, 0
@@ -461,7 +459,7 @@ namewin	!byte 0	; Auch 'nomem'-Ende
 	!byte 0	; Rest unten
 dcswin	!byte 0, 0	; Auch fuer 'namewin'
 	!byte 0	; Auch fuer 'namewin'
-	!text _,_, "Ungespeicherte",_, Ä, "nderungen",_, "!",_,_, 0
+	!text _,_, "Ungespeicherte",_, Ã„, "nderungen",_, "!",_,_, 0
 	!byte 0, 0
 	!byte 0, 0
 	!text 0,_, "[DEL]",_,_,_,_, "Verwerfen...", 0
@@ -491,15 +489,15 @@ swin	!byte 0	; Auch fuer 'lwin'
 !zone
 init		ldx repeatedtry	; first start ?
 		bne +
-		sta repeatedtry
+			sta repeatedtry
 +		tsx		; buffer stack, bank &
 		stx stck	; NMI for end
 		ldx conreg
 		stx bank
 		ldy nmivek
-		ldx nmivek+1
+		ldx nmivek + 1
 		sty nmibuf
-		stx nmibuf+1
+		stx nmibuf + 1
 		+xbank15
 		inx		; X = 1 => 2 MHz
 		stx takt
@@ -514,7 +512,7 @@ init		ldx repeatedtry	; first start ?
 		stx $11e7
 		lda mode	; which mode ?
 		bmi +		; if 40 then
-		jsr kernel_switchmode; switch mode
+			jsr kernel_switchmode	; switch mode
 +		lda #111	; DIN on
 		sta D8502
 		lda #%..##..##
@@ -522,21 +520,21 @@ init		ldx repeatedtry	; first start ?
 		jsr kernel_copyfont
 		lda #47		; DIN off
 		sta D8502
-		lda #<addfont1_start; adjust font...
+		lda #<addfont1_start	; adjust font...
 		sta tmp1
 		lda #>addfont1_start
-		sta tmp1+1
-		lda #>addfont1_target; Hi
-		ldx #<addfont1_target; Lo
-		ldy #addfont1_end-addfont1_start-1; length
+		sta tmp1 + 1
+		lda #>addfont1_target	; Hi
+		ldx #<addfont1_target	; Lo
+		ldy #addfont1_end - addfont1_start - 1	; length
 		jsr ram2vdc	; copy first part
 		lda #<addfont2_start
 		sta tmp1
 		lda #>addfont2_start
-		sta tmp1+1
-		lda #>addfont2_target; Hi
-		ldx #<addfont2_target; Lo
-		ldy #addfont2_end-addfont2_start-1; length
+		sta tmp1 + 1
+		lda #>addfont2_target	; Hi
+		ldx #<addfont2_target	; Lo
+		ldy #addfont2_end - addfont2_start - 1	; length
 		jsr ram2vdc	; copy second part
 		lda clrmenu	; set attribute
 		sta color
@@ -560,37 +558,36 @@ init		ldx repeatedtry	; first start ?
 		lda #26		; Backgroundcolor
 		sta vdc
 		lda clrback
--		bit vdc		; get ready
-		bpl -
+		+wait_for_vdc
 		sta reg
 		lda #<nmirtn	; new NMI
 		ldx #>nmirtn
 		sta nmivek
-		stx nmivek+1
-		sta conreg+1	; full RAM
+		stx nmivek + 1
+		sta conreg + 1	; full RAM
 		ldx #$0b	; loop for new
--		lda keyb,x	; keyboard-tabs
-		sta $033e,x
-		dex
-		bpl -
+-			lda keyb, x	; keyboard-tabs
+			sta $033e, x
+			dex
+			bpl -
 		jsr handleid	; old ID ?
 		bcc +		; then ok !
-		jsr fillmem	; else fill memory
-		jsr newtext	; defaults
-		jsr needline	; wanting line
-		ldx #FALSE
-		stx changes
+			jsr fillmem	; else fill memory
+			jsr newtext	; defaults
+			jsr needline	; wanting line
+			ldx #FALSE
+			stx changes
 +		jsr F_info	; credits
 		lda #TRUE	; update screen
 		sta nwfrm
 		sta updatewbi	; update flags
 		ldx repeatedtry	; first start ?
 		bne +		; then load defaulttext
-		dec repeatedtry
-		jsr load
+			dec repeatedtry
+			jsr load
 +		jmp mainloop
 
-addfont1_target=$35f1
+addfont1_target = $35f1
 addfont1_start
 	!byte %.#######
 	!byte %.#####.#
@@ -731,7 +728,7 @@ addfont1_start
 	!byte %....#...
 	!byte %....#...
 addfont1_end
-addfont2_target=$3ff0
+addfont2_target = $3ff0
 addfont2_start
 	!byte %........
 	!byte %........
@@ -753,9 +750,9 @@ F_gosys		+bank15
 		sta $0ac5	; 'ASC/DIN' on
 		sta basic	; 'Basic-IRQ' on
 		lda nmibuf	; restore NMI
-		ldx nmibuf+1
+		ldx nmibuf + 1
 		sta nmivek
-		stx nmivek+1
+		stx nmivek + 1
 		ldx bank	; restore bank & stack
 		stx conreg
 		ldx stck
@@ -771,7 +768,7 @@ newframe	+ybank15
 		lda #scrhi	; textstart on screen
 		ldx #scrlo
 		jsr ramaccess	; set vdc
-		sty conreg+1	; full RAM
+		sty conreg + 1	; full RAM
 		ldx #SCR
 		jsr getvvek	; set VekVek
 		stx nwfrm	; clear jobflag
@@ -779,10 +776,10 @@ newframe	+ybank15
 		sec		; screen ?
 		sbc scry	; calculates both
 		tay		; numbers
-		lda zzbe+1
-		sbc scry+1
+		lda zzbe + 1
+		sbc scry + 1
 		bne bigtext
-		cpy #scrlins-1
+		cpy #scrlins - 1
 		bcs bigtext
 		iny		; Base 1
 		sty .m1
@@ -794,42 +791,40 @@ newframe	+ybank15
 !zone
 m61		sta tmp2	; Leerzeilen
 		sty line	; zu zeigende Zeilen
----		ldy #0		; Low-Byte
-		lda (vvek),y	; holen
-		sta lvek	; & speichern
-		iny		; High-Byte
-		lda (vvek),y	; holen
-		sta lvek+1	; & speichern
-		lda #scrcols	; darzustellende
-		sta col		; Spalten
-		ldy scrx	; x-Versatz holen
---		lda (lvek),y	; Zeichen holen
-		+xbank15
-		tax		; & in Screencode
-		lda atst,x	; konvertieren
--		bit vdc		; get ready
-		bpl -
-		sta reg		; in VDC
-		sta conreg+1	; full RAM
-		iny		; Versatz erhoehen
-		dec col		; naechste Spalte
-		bne --		; schon alle = >
-		inc vvek	; naechster Vektor (2 Byte !)
-		+inc16 vvek
-		dec line	; naechste Zeile
-		bne ---		; schon alle ? = >
+--			ldy #0		; Low-Byte
+			lda (vvek), y	; holen
+			sta lvek	; & speichern
+			iny		; High-Byte
+			lda (vvek), y	; holen
+			sta lvek + 1	; & speichern
+			lda #scrcols	; darzustellende
+			sta col		; Spalten
+			ldy scrx	; x-Versatz holen
+-				lda (lvek), y	; Zeichen holen
+				+xbank15
+				tax		; & in Screencode
+				lda atst,x	; konvertieren
+				+wait_for_vdc
+				sta reg		; in VDC
+				sta conreg + 1	; full RAM
+				iny		; Versatz erhoehen
+				dec col		; naechste Spalte
+				bne -		; schon alle = >
+			inc vvek	; naechster Vektor (2 Byte !)
+			+inc16 vvek
+			dec line	; naechste Zeile
+			bne --		; schon alle ? = >
 		+bank15
 		lda #" "
---		dec tmp2	; Anzahl runter
-		bmi +		; ggfs Ende
-		ldy #scrcols	; Spaltenzahl
--		bit vdc		; get ready
-		bpl -
-		sta reg		; Space setzen
-		dey		; alle Spalten ?
-		bne -
-		jmp --
-+		sta conreg+1	; full RAM
+--			dec tmp2	; Anzahl runter
+			bmi +		; ggfs Ende
+			ldy #scrcols	; Spaltenzahl
+-				+wait_for_vdc
+				sta reg		; Space setzen
+				dey		; alle Spalten ?
+				bne -
+			jmp --
++		sta conreg + 1	; full RAM
 		rts
 
 ; Folgende Routine aendert ScreenFlag,
@@ -840,31 +835,30 @@ m61		sta tmp2	; Leerzeilen
 ; Einsprung changeflg:
 ;-Y = Laenge
 ;-tmp1 = Vektor auf Position
-setflagdata	ldy flgadr,x	; Setzt Adresse (Lo)
+setflagdata	ldy flgadr, x	; Setzt Adresse (Lo)
 		sty tmp1
 		ldy #scrhi
-		sty tmp1+1
-		ldy flglen,x	; Holt Laenge
+		sty tmp1 + 1
+		ldy flglen, x	; Holt Laenge
 
 !zone
 changeflg	sta .m3		; buffer color
 		sty .m2		; buffer length
-		lda #attrhi-scrhi
+		lda #attrhi - scrhi
 		clc		; bend vector to
-		adc tmp1+1	; attributes
-		sta tmp1+1
+		adc tmp1 + 1	; attributes
+		sta tmp1 + 1
 		ldy conreg	; buffer bank
 		sty .m1
 		+ybank15
 		jsr tmpaccess	; set vdc
-.m3=*+1:	lda #MODIFIED8	; attribute
-.m2=*+1:	ldy #MODIFIED8	; length
--		bit vdc		; get ready
-		bpl -
-		sta reg		; set attributes
-		dey		; count
-		bne -
-.m1=*+1:	ldy #MODIFIED8	; bank
+.m3 = * + 1:	lda #MODIFIED8	; attribute
+.m2 = * + 1:	ldy #MODIFIED8	; length
+-			+wait_for_vdc
+			sta reg		; set attributes
+			dey		; count
+			bne -
+.m1 = * + 1:	ldy #MODIFIED8	; bank
 		sty conreg
 		rts
 
@@ -883,23 +877,23 @@ flglen	!byte   6,  10,  10,  10,  10,  10,  10,   1,   1,   1
 showwbi		lda clraktv	; Aktiv-Farbe
 		ldy wrapflag	; Flag pruefen
 		bne +		; ggfs andere Farbe
-		lda clrinak
+			lda clrinak
 +		ldx #hFlag_Wrap
 		jsr setflagdata	; Farbe setzen
 		lda clraktv	; Ab hier Wiederholung
 		ldy beep
 		beq +
-		lda clrinak
+			lda clrinak
 +		ldx #hFlag_Beep
 		jsr setflagdata
 		lda clraktv
 		ldy esca
 		bne +
-		lda clrinak
+			lda clrinak
 +		ldx #hFlag_Insert
 		jsr setflagdata
 		lda #>txtname	; set vector
-		sta tmp1+1
+		sta tmp1 + 1
 		lda #<txtname
 		sta tmp1
 		lda #>flnmpos	; show filename
@@ -918,14 +912,13 @@ ram2vdc		sta vimm4	; buffer all
 ram2vdc1	lda conreg	; buffer bank
 		sta .m1
 		jsr vdcprep	; prepare vdc
---		iny		; next
-		lda (tmp1),y	; get byte
--		bit vdc		; get ready
-		bpl -
-		sta reg		; set byte
-.m2=*+1:	cpy #MODIFIED8	; length
-		bne --
-.m1=*+1:	lda #MODIFIED8	; bank
+-			iny		; next
+			lda (tmp1), y	; get byte
+			+wait_for_vdc
+			sta reg		; set byte
+.m2 = * + 1:		cpy #MODIFIED8	; length
+			bne -
+.m1 = * + 1:	lda #MODIFIED8	; bank
 		sta conreg
 		rts
 
@@ -937,24 +930,23 @@ copystr		sta vimm4	; buffer all
 copystr1	lda conreg	; buffer bank
 		sta .m1
 		jsr vdcprep	; prepare vdc
---		iny		; next
-		lda (tmp1),y	; get byte
-		tax		; convert
-		lda atst,x
--		bit vdc		; get ready
-		bpl -
-		sta reg		; set byte
-vimm6=*+1:	cpy #MODIFIED8	; length
-		bne --
-.m1=*+1:	lda #MODIFIED8	; bank
+-			iny		; next
+			lda (tmp1), y	; get byte
+			tax		; convert
+			lda atst, x
+			+wait_for_vdc
+			sta reg		; set byte
+vimm6 = * + 1:		cpy #MODIFIED8	; length
+			bne -
+.m1 = * + 1:	lda #MODIFIED8	; bank
 		sta conreg
 		rts
 
 ; preparations for ram2vdc & copystr
 !zone
 vdcprep		+bank15
-vimm4=*+1:	lda #MODIFIED8	; High
-vimm5=*+1:	ldx #MODIFIED8	; Low
+vimm4 = * + 1:	lda #MODIFIED8	; High
+vimm5 = * + 1:	ldx #MODIFIED8	; Low
 		jsr ramaccess
 		ldy #$ff	; pre-index
 		rts
@@ -968,11 +960,11 @@ F_rnmtxt
 rename		pha		; sichert Namepointer
 		tay
 		ldx #$0f	; copy Filename
--		lda txtname,y
-		sta dosname,x
-		dey
-		dex
-		bpl -
+-			lda txtname, y
+			sta dosname, x
+			dey
+			dex
+			bpl -
 		lda conreg	; Bank sichern
 		pha
 		+ram0io
@@ -988,77 +980,77 @@ rename		pha		; sichert Namepointer
 		adc #3		; +4 (C = 1)
 		sta vimm5	; set Lo
 		bcc +
-		inc tmp1+1
-+		lda tmp1+1
+			inc tmp1 + 1
++		lda tmp1 + 1
 		sta vimm4	; set Hi
 		ldy #<dosname	; set rampointer
 		sty tmp1
 		ldy #>dosname
-		sty tmp1+1
+		sty tmp1 + 1
 		ldy #$0f	; set length
 		sty vimm6
 
 !zone
 showname	jsr copystr1	; show name
---		ldy #9		; Y- und X-Wert
-		lda xpos	; errechnen
-		clc
-		adc #$20
-		jsr crsrset	; Cursor setzen
--		jsr getchar	; Byte holen und
-		tax		; sichern
-		and #%.##.....	; Command ?
-		beq +		; ggfs =>
-		eor #%.##.....
-		beq +
-		lda esca	; AutoInsert ?
-		beq ++		; ggfs
-		jsr einf1	; insert
-++		txa		; Zeichen an Position
-		ldy xpos	; setzen
-		sta dosname,y
-		jsr rechts1	; eins rechts
-		jmp showname
-+		txa		; Byte holen
-		cmp #Char_CursorRight
-		beq rechts
-		cmp #Char_CursorLeft
-		beq links
-		cmp #Char_DEL
-		beq back
-		cmp #CharOwn_Delete
-		beq dele
-		cmp #Char_INST
-		beq einf
-		cmp #Char_RETURN
-		beq +
-		cmp #Char_STOP
-		bne -		; Nein = >
-		lda #0		; Stop-
-+		sta xpos	; Flag sichern
-		jsr pullscr	; Window weg
-		jsr crsrold	; old copy
-		pla		; alte Bank
-		sta conreg
-		pla		; Y: = Namepointer
-		tay
-		lda xpos	; STOP ?
-		beq .noname	; Nein: Namen kopieren
-		ldx #$0f
--		lda dosname,x
-		sta txtname,y
-		dey
-		dex
-		bpl -
-		lda #TRUE	; und Update fordern
-		sta updatewbi
-.noname		rts		; Z = Stopflag
-rechts		jsr rechts1	; Eins weiter
-		jmp --
-links		jsr links1	; Eins zurück
-		jmp --
-back		jsr links1	; Erst zurück, dann
-dele		jsr dele1	; löschen
+--			ldy #9		; Y- und X-Wert
+			lda xpos	; errechnen
+			clc
+			adc #$20
+			jsr crsrset	; Cursor setzen
+-			jsr getchar	; Byte holen und
+			tax		; sichern
+			and #%.##.....	; Command ?
+			beq +		; ggfs =>
+				eor #%.##.....
+				beq +
+					lda esca	; AutoInsert ?
+					beq ++		; ggfs
+						jsr einf1	; insert
+++					txa		; Zeichen an Position
+					ldy xpos	; setzen
+					sta dosname, y
+					jsr rechts1	; eins rechts
+					jmp showname
++			txa		; Byte holen
+			cmp #Char_CursorRight
+			beq rechts
+			cmp #Char_CursorLeft
+			beq links
+			cmp #Char_DEL
+			beq back
+			cmp #CharOwn_Delete
+			beq dele
+			cmp #Char_INST
+			beq einf
+			cmp #Char_RETURN
+			beq +
+				cmp #Char_STOP
+				bne -		; Nein = >
+				lda #0		; Stop-
++			sta xpos	; Flag sichern
+			jsr pullscr	; Window weg
+			jsr crsrold	; old copy
+			pla		; alte Bank
+			sta conreg
+			pla		; Y: = Namepointer
+			tay
+			lda xpos	; STOP ?
+			beq .noname	; Nein: Namen kopieren
+			ldx #$0f
+-				lda dosname, x
+				sta txtname, y
+				dey
+				dex
+				bpl -
+			lda #TRUE	; und Update fordern
+			sta updatewbi
+.noname			rts		; Z = Stopflag
+rechts			jsr rechts1	; Eins weiter
+			jmp --
+links			jsr links1	; Eins zurÃ¼ck
+			jmp --
+back		jsr links1	; Erst zurÃ¼ck, dann
+dele		jsr dele1	; lÃ¶schen
 		jmp showname
 einf		jsr einf1	; Eins freimachen
 		jmp showname
@@ -1067,40 +1059,40 @@ einf		jsr einf1	; Eins freimachen
 rechts1		inc xpos	; Pos += 1 & pruefen
 		jmp +
 
-links1		dec xpos	; Pos- = 1 & pruefen
-+		lda xpos	; Negativ ?
+links1			dec xpos	; Pos- = 1 & pruefen
++		lda xpos		; Negativ ?
 		bpl +
-		lda #0		; Dann Pos 0
-+		cmp #$0c	; Ende ?
+			lda #0		; Dann Pos 0
++		cmp #$0c		; Ende ?
 		bcc +
-		lda #$0b	; Dann zum Rand
-+		sta xpos	; Pos setzen
+			lda #$0b	; Dann zum Rand
++		sta xpos		; Pos setzen
 		rts
 
 !zone
 dele1		ldy xpos	; Start bei Cursor
--		cpy #$0b	; schon am Rand ?
-		beq +		; Dann Ende !
-		lda dosname+1,y	; Sonst shiften
-		sta dosname,y
-		iny
-		jmp -
+-			cpy #$0b	; schon am Rand ?
+			beq +		; Dann Ende !
+			lda dosname + 1, y	; Sonst shiften
+			sta dosname, y
+			iny
+			jmp -
 
 +		lda #" "	; Space setzen
-		sta dosname,y
+		sta dosname, y
 		rts
 
 !zone
 einf1		ldy #$0b	; Start am Rand
--		cpy xpos	; schon fertig ?
-		beq +		; Ja = >
-		lda dosname-1,y	; Zeichen shiften
-		sta dosname,y
-		dey
-		jmp -
+-			cpy xpos	; schon fertig ?
+			beq +		; Ja = >
+			lda dosname - 1, y	; Zeichen shiften
+			sta dosname, y
+			dey
+			jmp -
 
 +		lda #" "	; Space an Pos
-		sta dosname,y
+		sta dosname, y
 		rts
 
 !zone
@@ -1113,8 +1105,7 @@ wsold		+ldax wsback
 +		ldy #24		; VDC (Vscroll)
 		sty vdc
 		ldy #$a0	; 'block-copy'
--		bit vdc		; get ready
-		bpl -
+		+wait_for_vdc
 		sty reg		; set
 		jmp ramaccess
 
@@ -1127,13 +1118,13 @@ makewin		inc manywins	; eins mehr !
 		+ram0io
 		ldx menunr	; Holt Nummer
 		beq +		; Ist das Window ein
-		cpx #hWindow_FirstAfterMenu	; Menu-Window, wird
-		bcs +		; das Flag aktiviert
-		lda clrmenu1
-		jsr setflagdata
+			cpx #hWindow_FirstAfterMenu	; Menu-Window, wird
+			bcs +		; das Flag aktiviert
+				lda clrmenu1
+				jsr setflagdata
 +		jsr wsnew	; macht VDC zum Stack
-		ldy wsback+1	; alter end-pointer
-		sta wsback+1	; wird zu neuem
+		ldy wsback + 1	; alter end-pointer
+		sta wsback + 1	; wird zu neuem
 		lda wsback	; last-pointer
 		stx wsback
 		jsr stashbt	; buffer last pointer
@@ -1142,32 +1133,32 @@ makewin		inc manywins	; eins mehr !
 		ldx menunr	; get Win-Nr
 		txa
 		jsr stashbt	; wird gestacked
-		lda winlo,x	; Holt mit X die
+		lda winlo, x	; Holt mit X die
 		sta tmp1	; anderen Parameter
 		sta tmp2
-		lda winhi,x
-		sta tmp1+1
+		lda winhi, x
+		sta tmp1 + 1
 		clc
-		adc #attrhi-scrhi
-		sta tmp2+1
-		ldy winwi,x	; get width
+		adc #attrhi - scrhi
+		sta tmp2 + 1
+		ldy winwi, x	; get width
 		sty .m1		; for colorate
 		iny		; convert
 		sty mWidth	; for push
-		lda winclr,x	; get colorcode
+		lda winclr, x	; get colorcode
 		tay		; convert
-		lda clrboxs,y	; get color
+		lda clrboxs, y	; get color
 		sta .m2		; in Immediate
 		jsr scrn2stck	; push chars
 		lda tmp2	; attrib-vector
 		sta tmp1
-		lda tmp2+1
-		sta tmp1+1
+		lda tmp2 + 1
+		sta tmp1 + 1
 		jsr scrn2stck	; push attributes
 		ldy #18		; VDC (access Hi)
 		sty vdc
 		jsr fetchbt	; get pointerHi
-		sta wspntr+1	; set pointerHi
+		sta wspntr + 1	; set pointerHi
 		iny		; VDC (access Lo)
 		sty vdc
 		jsr fetchbt	; get pointerLo
@@ -1177,38 +1168,38 @@ makewin		inc manywins	; eins mehr !
 		sty vdc
 		lda #$20	; 'block-write'
 		jsr stashbt
-		lda winhe,x	; get height
+		lda winhe, x	; get height
 		sta line
--		+ldax tmp2	; get target
-		jsr ramaccess	; set vdc
-.m2=*+1:	lda #MODIFIED8	; attribute
-		jsr stashbt	; set attribute
-		dey		; VDC (counter)
-		sty vdc
-.m1=*+1:	lda #MODIFIED8	; width
-		jsr stashbt	; start write
-		lda #scrcols	; address for next row
-		clc
-		adc tmp2
-		sta tmp2
-		bcc +
-		inc tmp2+1
-+		dec line	; alle Zeilen ?
-		bpl -		; Nein = >
+-			+ldax tmp2	; get target
+			jsr ramaccess	; set vdc
+.m2 = * + 1:		lda #MODIFIED8	; attribute
+			jsr stashbt	; set attribute
+			dey		; VDC (counter)
+			sty vdc
+.m1 = * + 1:		lda #MODIFIED8	; width
+			jsr stashbt	; start write
+			lda #scrcols	; address for next row
+			clc
+			adc tmp2
+			sta tmp2
+			bcc +
+				inc tmp2 + 1
++			dec line	; alle Zeilen ?
+			bpl -		; Nein = >
 ; bisher Backup und Faerben, jetzt Win
 		ldx menunr	; get Win-Nr
-		lda winlo,x	; get location, width,
+		lda winlo, x	; get location, width,
 		sta tmp1	; heigth & textvector
-		lda winhi,x
-		sta tmp1+1
-		lda winwi,x
+		lda winhi, x
+		sta tmp1 + 1
+		lda winwi, x
 		sta col
-		lda winhe,x
+		lda winhe, x
 		sta line
-		lda winadlo,x
+		lda winadlo, x
 		sta tmp2
-		lda winadhi,x
-		sta tmp2+1
+		lda winadhi, x
+		sta tmp2 + 1
 ; hier oberer Rand
 		jsr tmpaccess	; set vdc
 		ldx col		; get width &
@@ -1216,9 +1207,9 @@ makewin		inc manywins	; eins mehr !
 		lda #chrol	; 'Oben Links'
 		jsr stashbt	; set
 		lda #chroo	; 'Oben'
--		jsr stashbt	; set
-		dex
-		bne -
+-			jsr stashbt	; set
+			dex
+			bne -
 		lda #chror	; 'Oben Rechts'
 		jsr stashbt	; set
 		dec line	; naechste Zeile
@@ -1228,26 +1219,26 @@ makewin		inc manywins	; eins mehr !
 		adc tmp1	; naechste Zeile
 		sta tmp1	; um
 		bcc +
-		inc tmp1+1
+			inc tmp1 + 1
 +		jsr tmpaccess	; set vdc
 		ldy #1		; textindex 1
 		lda #chrll	; 'Links'
 		jsr stashbt	; set
--		lda (tmp2),y	; get char
-		beq +		; end ? if not then
-		tax		; convert to screencode
-		lda atst,x
-		jsr stashbt	; output
-		iny		; next column
-		jmp -
+-			lda (tmp2), y	; get char
+			beq +		; end ? if not then
+			tax		; convert to screencode
+			lda atst, x
+			jsr stashbt	; output
+			iny		; next column
+			jmp -
 +		tya		; if string has ended then
 		tax		; remember memory offset in x
--		cpy col		; finished ?
-		beq +		; if not then
-		lda #chrmm	; output inner space
-		jsr stashbt
-		iny		; next column
-		jmp -
+-			cpy col		; finished ?
+			beq +		; if not then
+			lda #chrmm	; output inner space
+			jsr stashbt
+			iny		; next column
+			jmp -
 +		lda #chrrr	; when finished, output right border
 		jsr stashbt
 		txa		; calculate new memory pointer
@@ -1255,7 +1246,7 @@ makewin		inc manywins	; eins mehr !
 		adc tmp2	; line
 		sta tmp2
 		bcc +
-		inc tmp2+1
+			inc tmp2 + 1
 +		dec line	; schon alle Zeilen ?
 		bne .field	; ggfs Schleife
 ; jetzt der Unterrand
@@ -1264,16 +1255,16 @@ makewin		inc manywins	; eins mehr !
 		adc tmp1
 		sta tmp1
 		bcc +
-		inc tmp1+1
+			inc tmp1 + 1
 +		jsr tmpaccess	; set vdc
 		ldx col		; get width &
 		dex		; convert
 		lda #chrul	; 'Unten Links'
 		jsr stashbt	; set
 		lda #chruu	; 'Unten'
--		jsr stashbt	; set
-		dex
-		bne -
+-			jsr stashbt	; set
+			dex
+			bne -
 		lda #chrur	; 'Unten Rechts'
 		jsr stashbt	; set
 		pla		; alte Bank
@@ -1293,28 +1284,28 @@ winlo	!byte 152, 80, 92, 104, 116, 128, 140, 235, 235, 151, 146, 144
 winhi	!byte   2,  0,  0,   0,   0,   0,   0,   2,   2,   2,   3,   3
 
 !zone
-scrn2stck	lda winhe,x	; get height
+scrn2stck	lda winhe, x	; get height
 		sta line
--		ldy #32		; VDC (source Hi)
-		sty vdc
-		lda tmp1+1
-		jsr stashbt	; set sourceHi
-		iny		; VDC (source Lo)
-		sty vdc
-		lda tmp1
-		jsr stashbt	; set sourceLo
-		ldy #30		; VDC (counter)
-		sty vdc
-mWidth=*+1:	lda #MODIFIED8	; width
-		jsr stashbt	; start copy
-		lda #scrcols	; address for next row
-		clc
-		adc tmp1
-		sta tmp1
-		bcc +
-		inc tmp1+1
-+		dec line	; alle Zeilen ?
-		bpl -		; Nein = >
+-			ldy #32		; VDC (source Hi)
+			sty vdc
+			lda tmp1 + 1
+			jsr stashbt	; set sourceHi
+			iny		; VDC (source Lo)
+			sty vdc
+			lda tmp1
+			jsr stashbt	; set sourceLo
+			ldy #30		; VDC (counter)
+			sty vdc
+mWidth = * + 1:		lda #MODIFIED8	; width
+			jsr stashbt	; start copy
+			lda #scrcols	; address for next row
+			clc
+			adc tmp1
+			sta tmp1
+			bcc +
+				inc tmp1 + 1
++			dec line	; alle Zeilen ?
+			bpl -		; Nein = >
 		rts
 
 !zone
@@ -1322,23 +1313,23 @@ pullscr		lda conreg	; Bank sichern
 		pha
 		+ram0io
 		jsr wsold	; init stack for read
-		sta wspntr+1	; new write-start
+		sta wspntr + 1	; new write-start
 		stx wspntr	; new write-start
 		jsr fetchbt	; get old laststart
 		sta wsback	; and use
 		jsr fetchbt
-		sta wsback+1
+		sta wsback + 1
 		jsr fetchbt	; get handle from stack
 		tax
-		lda winlo,x	; Holt mit X die
+		lda winlo, x	; Holt mit X die
 		sta tmp1	; anderen Parameter
 		sta tmp2
-		lda winhi,x
-		sta tmp1+1
+		lda winhi, x
+		sta tmp1 + 1
 		clc
-		adc #attrhi-scrhi
-		sta tmp2+1
-		ldy winwi,x	; get width
+		adc #attrhi - scrhi
+		sta tmp2 + 1
+		ldy winwi, x	; get width
 		iny		; convert
 		sty .m1
 		ldy #18		; VDC (access Hi)
@@ -1356,41 +1347,41 @@ pullscr		lda conreg	; Bank sichern
 		jsr stck2scrn	; pull chars
 		lda tmp2	; attrib-vector
 		sta tmp1
-		lda tmp2+1
-		sta tmp1+1
+		lda tmp2 + 1
+		sta tmp1 + 1
 		jsr stck2scrn	; pull attributes
 		txa		; if menu-window,
 		beq +		; then deactivate flag
-		cmp #7
-		bcs +
-		lda clrmenu
-		jsr setflagdata
+			cmp #7
+			bcs +
+				lda clrmenu
+				jsr setflagdata
 +		dec manywins	; minus one win
 		pla		; restore bank
 		sta conreg
 		rts
-stck2scrn	lda winhe,x	; get height
+stck2scrn	lda winhe, x	; get height
 		sta line
--		ldy #18		; VDC (access Hi)
-		sty vdc
-		lda tmp1+1
-		jsr stashbt	; set targetHi
-		iny		; VDC (access Lo)
-		sty vdc
-		lda tmp1
-		jsr stashbt	; set targetLo
-		ldy #30		; VDC (counter)
-		sty vdc
-.m1=*+1:	lda #MODIFIED8	; width
-		jsr stashbt	; start copy
-		lda #scrcols	; address for next row
-		clc
-		adc tmp1
-		sta tmp1
-		bcc +
-		inc tmp1+1
-+		dec line	; alle Zeilen ?
-		bpl -		; Nein = >
+-			ldy #18		; VDC (access Hi)
+			sty vdc
+			lda tmp1 + 1
+			jsr stashbt	; set targetHi
+			iny		; VDC (access Lo)
+			sty vdc
+			lda tmp1
+			jsr stashbt	; set targetLo
+			ldy #30		; VDC (counter)
+			sty vdc
+.m1 = * + 1:		lda #MODIFIED8	; width
+			jsr stashbt	; start copy
+			lda #scrcols	; address for next row
+			clc
+			adc tmp1
+			sta tmp1
+			bcc +
+				inc tmp1 + 1
++			dec line	; alle Zeilen ?
+			bpl -		; Nein = >
 		rts
 
 wspntr	!word wsstart		; win-stackpointer
@@ -1399,7 +1390,7 @@ wsback	!word wsstart		; last pointer
 F_menu		lda #<wsstart	; init win-stack
 		sta wspntr
 		lda #>wsstart
-		sta wspntr+1
+		sta wspntr + 1
 		jsr crsrnew	; new copy
 		ldx #0		; yet no windows
 		stx manywins
@@ -1416,24 +1407,20 @@ tmpaccess	+ldax tmp1
 !zone
 ramaccess	ldy #18		; VDC (access Hi)
 		sty vdc
--		bit vdc		; get ready
-		bpl -
+		+wait_for_vdc
 		sta reg		; set Hi
 		iny		; VDC (access Lo)
 		sty vdc
--		bit vdc		; get ready
-		bpl -
+		+wait_for_vdc
 		stx reg		; set Lo
 		ldy #31		; VDC (ram data)
 		sty vdc
 		rts
 
-fetchbt		bit vdc		; get ready
-		bpl fetchbt
+fetchbt		+wait_for_vdc
 		lda reg		; fetch byte
 		rts
 
-stashbt		bit vdc		; get ready
-		bpl stashbt
+stashbt		+wait_for_vdc
 		sta reg		; stash byte
 		rts

@@ -1,4 +1,4 @@
-;ACME 0.91
+;ACME 0.94.4
 
 ; ab hier liegt die Cursorsteuerung
 ; A = screenx, Y = screeny
@@ -10,50 +10,48 @@ crsrset		sta .m		; buffer x
 		sty .n		; buffer y
 		jsr crsroff
 		lda #0		; clear Hi
-		sta vtemp+1
-.n=*+1:		lda #MODIFIED8	; y
+		sta vtemp + 1
+.n = * + 1:	lda #MODIFIED8	; y
 		asl		; *2
 		asl		; *4
-		rol vtemp+1
+		rol vtemp + 1
 		asl		; *8
-		rol vtemp+1
+		rol vtemp + 1
 		asl		; *16
-		rol vtemp+1
+		rol vtemp + 1
 		sta vtemp	; stash Lo
-		ldy vtemp+1	; copy Hi
-		sty vtemp+2
+		ldy vtemp + 1	; copy Hi
+		sty vtemp + 2
 		asl		; *32
-		rol vtemp+2
+		rol vtemp + 2
 		asl		; *64
-		rol vtemp+2
+		rol vtemp + 2
 		adc vtemp	; + 16er-Lo
 		sta vtemp	; 80er-Lo in vtemp
 		bcc +		; page
-		inc vtemp+1
-		clc
+			inc vtemp + 1
+			clc
 +
-.m=*+1:		adc #MODIFIED8	; x
+.m = * + 1:	adc #MODIFIED8	; x
 		sta vtemp	; store Lo
-		lda vtemp+1	; get 16er-Hi
-		adc vtemp+2	; add 64er-Hi
+		lda vtemp + 1	; get 16er-Hi
+		adc vtemp + 2	; add 64er-Hi
 		adc #attrhi	; add base
-		sta vtemp+1	; store Hi
+		sta vtemp + 1	; store Hi
 
 !zone
 crsron		lda conreg	; buffert CR
 		sta .m
 		+bank15
 		jsr vpntcrsr	; set address
--		bit vdc		; get ready
-		bpl -
+		+wait_for_vdc
 		lda reg		; get attribute
 		sta tcolor	; buffer it
 		jsr vpntcrsr	; set address
 		lda clrcrsr	; get crsr
--		bit vdc		; get ready
-		bpl -
+		+wait_for_vdc
 		sta reg		; set crsr
-.m=*+1:		lda #MODIFIED8	; bank
+.m = * + 1:	lda #MODIFIED8	; bank
 		sta conreg	; restore CR
 		rts
 
@@ -63,10 +61,9 @@ crsroff		lda conreg	; buffer CR
 		+bank15
 		jsr vpntcrsr	; set address
 		lda tcolor	; get attribute
--		bit vdc		; get ready
-		bpl -
+		+wait_for_vdc
 		sta reg		; set attribute
-.m=*+1:		lda #MODIFIED8	; bank
+.m = * + 1:	lda #MODIFIED8	; bank
 		sta conreg	; restore CR
 		rts
 
@@ -74,9 +71,9 @@ crsroff		lda conreg	; buffer CR
 !zone
 crsrnew		ldx crsrheap	; get stackpointer
 		lda vtemp	; get low
-		sta crsrheap,x	; push
-		lda vtemp+1	; get high
-		sta crsrheap+1,x; push
+		sta crsrheap, x	; push
+		lda vtemp + 1	; get high
+		sta crsrheap + 1, x	; push
 		inx		; inc stackpointer
 		inx
 		stx crsrheap	; set stackpointer
@@ -84,7 +81,7 @@ crsrnew		ldx crsrheap	; get stackpointer
 
 !zone
 crsrhide	ldx #$3f	; place cursor
-		stx vtemp+1	; outside visible
+		stx vtemp + 1	; outside visible
 		ldx #$ff	; area
 		stx vtemp
 		rts
@@ -93,10 +90,10 @@ crsrhide	ldx #$3f	; place cursor
 crsrold		ldx crsrheap	; get stackpointer
 		dex		; previous entry !
 		dex
-		lda crsrheap,x	; get lo
+		lda crsrheap, x	; get lo
 		sta vtemp	; set lo
-		lda crsrheap+1,x; get hi
-		sta vtemp+1	; set hi
+		lda crsrheap + 1, x	; get hi
+		sta vtemp + 1	; set hi
 		stx crsrheap	; set stackpointer
 		jmp crsron
 
