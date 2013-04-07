@@ -1,6 +1,6 @@
 ;ACME 0.93
 	!to "trigono.o", plain
-	*=$c000
+	* = $c000
 
 	PI = 3.14159265358979323846
 
@@ -8,7 +8,7 @@
 !align $f, 0, 0	; make output file look better in hex editor :)
 
 	!for x, 256 {
-		!byte cos(float(x-1) / 255 * PI/2) * 255 + 0.5
+		!byte cos(float(x - 1) / 255 * PI/2) * 255 + 0.5
 	}
 	; "x-1" converts interval [1,256] to interval [0,255]
 	; "float()" makes sure this calculation is done in float mode now
@@ -22,7 +22,7 @@
 !align $f, 0, 0
 
 	!for x, 1024 {
-		!32 sin(float(x-513) / 1024 * PI) * 65536 + 0.5
+		!32 sin(float(x - 513) / 1024 * PI) * 65536 + 0.5
 	}
 
 	;undefined = 0.0 / 0.0	; throws error when active
