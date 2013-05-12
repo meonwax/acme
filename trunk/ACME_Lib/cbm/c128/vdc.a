@@ -154,3 +154,12 @@ vdcr_enable_start	= $22	; column to enable display in
 vdcr_enable_end		= $23	; column to disable display in
 vdcr_dram_refresh	= $24	; RAM refresh rate
 vdcr_sync_polarity	= $25	; only in type 2 VDCs
+
+; the c128 ROMs contain look-up tables to convert vic color values to vdc color
+; values and vice-versa:
+; rom4_* needs "low rom area" enabled ($4000..$7fff)
+; rom8_* needs "middle rom area" enabled ($8000..$bfff)
+; romc_* needs "high rom area" enabled ($c000..$ffff)
+rom4_vic_to_vdc_color_table	= $6a4c ; 00 0f 08 07 0b 04 02 0d 0a 0c 09 06 01 05 03 0e
+rom8_vdc_to_vic_color_table	= $81f3 ; 00 0c 06 0e 05 0d 0b 03 02 0a 08 04 09 07 0f 01
+romc_vic_to_vdc_color_table	= $ce5c ; 00 0f 08 07 0b 04 02 0d 0a 0c 09 06 01 05 03 0e
