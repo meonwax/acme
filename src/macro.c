@@ -78,7 +78,7 @@ void Macro_init(void)
 // Read macro zone and title. Title is read to GlobalDynaBuf and then copied
 // over to internal_name DynaBuf, where ARG_SEPARATOR is added.
 // In user_macro_name DynaBuf, the original name is reconstructed (even with
-// '.' prefix) so a copy can be linked to the resulting macro struct.
+// LOCAL_PREFIX) so a copy can be linked to the resulting macro struct.
 static zone_t get_zone_and_title(void)
 {
 	zone_t	macro_zone;
@@ -89,7 +89,7 @@ static zone_t get_zone_and_title(void)
 	DYNABUF_CLEAR(user_macro_name);
 	DYNABUF_CLEAR(internal_name);
 	if (macro_zone != ZONE_GLOBAL)
-		DynaBuf_append(user_macro_name, '.');
+		DynaBuf_append(user_macro_name, LOCAL_PREFIX);
 	DynaBuf_add_string(user_macro_name, GLOBALDYNABUF_CURRENT);
 	DynaBuf_add_string(internal_name, GLOBALDYNABUF_CURRENT);
 	DynaBuf_append(user_macro_name, '\0');
@@ -168,7 +168,7 @@ void Macro_parse_definition(void)	// Now GotByte = illegal char after "!macro"
 	// now GotByte = first non-space after title
 	DYNABUF_CLEAR(GlobalDynaBuf);	// prepare to hold formal parameters
 	// GlobalDynaBuf = "" (will hold formal parameter list)
-	// user_macro_name = ['.'] MacroTitle NUL
+	// user_macro_name = [LOCAL_PREFIX] MacroTitle NUL
 	// internal_name = MacroTitle ARG_SEPARATOR (grows to signature)
 	// Accept n>=0 comma-separated formal parameters before CHAR_SOB ('{').
 	// Valid argument formats are:
@@ -187,9 +187,9 @@ void Macro_parse_definition(void)	// Now GotByte = illegal char after "!macro"
 				DynaBuf_append(GlobalDynaBuf, REFERENCE_CHAR);
 				GetByte();
 			}
-			// handle prefix for local labels ('.')
-			if (GotByte == '.') {
-				DynaBuf_append(GlobalDynaBuf, '.');
+			// handle prefix for local labels (LOCAL_PREFIX, normally '.')
+			if (GotByte == LOCAL_PREFIX) {
+				DynaBuf_append(GlobalDynaBuf, LOCAL_PREFIX);
 				GetByte();
 			}
 			// handle label name

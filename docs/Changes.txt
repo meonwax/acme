@@ -13,6 +13,28 @@ outlining the platform specific changes.
 
 
 ----------------------------------------------------------------------
+Section:   New in release 0.94.5
+----------------------------------------------------------------------
+
+Fixed bug: wrap-around branches (from $ff80+ to zp and back) were
+    reported as errors. Thanks to Bitbreaker for reporting this.
+Fixed bug: left-shifting float values went wrong for large shifts.
+New error message: "Target not in bank (0xTARGET)" for branches.
+Fixed example program to get it to assemble with current library.
+Streamlined "Floats.txt" docs.
+
+Changes in library files:
+<cbm/basicWHATEVER.a> files now contain opcode_* constants in addition
+    to macros.
+Added <cbm/mflpt.a>, containing a macro to store a float value in the
+    five-byte format used by CBM basic (and while writing that macro,
+    found the left-shift-float bug mentioned above, so the macro needs
+    this fixed version to work).
+Added <cbm/c64/float.a>, containing definitions for using the BASIC
+    interpreter's float functions and constants.
+
+
+----------------------------------------------------------------------
 Section:   New in release 0.94.4
 ----------------------------------------------------------------------
 

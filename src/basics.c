@@ -189,6 +189,7 @@ static enum eos_t throw_string(const char prefix[], void (*fn)(const char *))
 
 
 ////
+//static enum eos_t PO_debug(void)
 //static enum eos_t PO_info(void)
 //static enum eos_t PO_print(void)
 //{
@@ -233,6 +234,7 @@ static struct node_t	pseudo_opcodes[]	= {
 	PREDEFNODE("binary",	PO_binary),
 	PREDEFNODE("fi",	PO_fill),
 	PREDEFNODE("fill",	PO_fill),
+//	PREDEFNODE("debug",	PO_debug),
 //	PREDEFNODE("info",	PO_info),
 //	PREDEFNODE("print",	PO_print),
 	PREDEFNODE("warn",	PO_warn),

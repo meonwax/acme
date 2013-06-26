@@ -11,6 +11,8 @@
 #include <stdlib.h>
 #include "config.h"
 
+#define PSEUDO_OPCODE_PREFIX	'!'	// FIXME - this is not yet used consistently!
+#define LOCAL_PREFIX		'.'	// FIXME - this is not yet used consistently!
 
 // Constants
 

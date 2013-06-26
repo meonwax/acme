@@ -625,6 +625,7 @@ static void expect_operand_or_monadic_operator(void)
 		// Now GotByte = char after closing quote
 		goto now_expect_dyadic;
 
+// FIXME - find a way to tell decimal point and LOCAL_PREFIX apart!
 	case '.':	// Local label or fractional part of float value
 		GetByte();	// start after '.'
 		// check for fractional part of float value
@@ -995,7 +996,7 @@ static void try_to_reduce_stacks(int *open_parentheses)
 
 // monadic operators
 	case OPHANDLE_NOT:
-		// different operations for fp and int
+		// fp becomes int
 		if (RIGHT_FLAGS & MVALUE_IS_FP)
 			right_fp_to_int();
 		RIGHT_INTVAL = ~(RIGHT_INTVAL);
@@ -1141,7 +1142,7 @@ static void try_to_reduce_stacks(int *open_parentheses)
 		if (RIGHT_FLAGS & MVALUE_IS_FP)
 			right_fp_to_int();
 		if (LEFT_FLAGS & MVALUE_IS_FP)
-			LEFT_FPVAL *= (1 << RIGHT_INTVAL);
+			LEFT_FPVAL *= pow(2.0, RIGHT_INTVAL);
 		else
 			LEFT_INTVAL <<= RIGHT_INTVAL;
 		goto handle_flags_and_dec_stacks;
@@ -1156,6 +1157,7 @@ static void try_to_reduce_stacks(int *open_parentheses)
 		goto handle_flags_and_dec_stacks;
 
 	case OPHANDLE_LSR:
+		// fp become int
 		if ((RIGHT_FLAGS | LEFT_FLAGS) & MVALUE_IS_FP)
 			both_ensure_int(TRUE);
 		LEFT_INTVAL = ((uintval_t) LEFT_INTVAL) >> RIGHT_INTVAL;
@@ -1216,6 +1218,7 @@ static void try_to_reduce_stacks(int *open_parentheses)
 		goto handle_flags_and_dec_stacks;
 
 	case OPHANDLE_AND:
+		// fp become int
 		if ((RIGHT_FLAGS | LEFT_FLAGS) & MVALUE_IS_FP)
 			both_ensure_int(TRUE);
 		LEFT_INTVAL &= RIGHT_INTVAL;
@@ -1225,12 +1228,14 @@ static void try_to_reduce_stacks(int *open_parentheses)
 		Throw_first_pass_warning("\"EOR\" is deprecated; use \"XOR\" instead.");
 		/*FALLTHROUGH*/
 	case OPHANDLE_XOR:
+		// fp become int
 		if ((RIGHT_FLAGS | LEFT_FLAGS) & MVALUE_IS_FP)
 			both_ensure_int(TRUE);
 		LEFT_INTVAL ^= RIGHT_INTVAL;
 		goto handle_flags_and_dec_stacks;
 
 	case OPHANDLE_OR:
+		// fp become int
 		if ((RIGHT_FLAGS | LEFT_FLAGS) & MVALUE_IS_FP)
 			both_ensure_int(TRUE);
 		LEFT_INTVAL |= RIGHT_INTVAL;

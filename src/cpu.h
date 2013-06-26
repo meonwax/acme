@@ -36,7 +36,7 @@ extern void CPUtype_init(void);
 extern void CPU_init(void);
 // set default values for pass
 extern void CPU_passinit(struct cpu_t *cpu_type);
-// set program counter to defined value
+// set program counter to defined value (FIXME - allow undefined!)
 extern void CPU_set_pc(intval_t new_pc);
 // try to find CPU type held in DynaBuf. Returns whether succeeded.
 extern int CPU_find_cpu_struct(struct cpu_t **target);

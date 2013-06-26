@@ -5,12 +5,17 @@ lib_cbm_basic10_a = 1
 
 !source <cbm/basic7.a>	; from 0x80 to 0xff, 0xce 0x02 to 0xce 0x0a, 0xfe 0x02 to 0xfe 0x26
 
-; GSHAPE/SSHAPE/DRAW have new names:
-!macro b_PASTE	{!by $e3}
-!macro b_CUT	{!by $e4}
-!macro b_LINE	{!by $e5}
-; DIRECTORY has a new name:
-!macro b_DIR	{!by $ee}
+; token values
+token_PASTE	= $e3	; was called GSHAPE in basic v7
+token_CUT	= $e4	; was called SSHAPE in basic v7
+token_LINE	= $e5	; was called DRAW in basic v7
+token_DIR	= $ee	; was called DIRECTORY in basic v7
+
+; Macros for inserting BASIC commands
+!macro b_PASTE	{!by token_PASTE}	; aka GSHAPE
+!macro b_CUT	{!by token_CUT}		; aka SSHAPE
+!macro b_LINE	{!by token_LINE}	; aka DRAW
+!macro b_DIR	{!by token_DIR}		; aka DIRECTORY
 
 ; STASH/FETCH/SWAP are all decoded to DMA:
 !macro b_DMA	{!by $fe, $1f}

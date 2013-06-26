@@ -571,53 +571,65 @@ static void group_only_implied_addressing(int opcode)
 	Input_ensure_EOS();
 }
 
-// helper function to output "Target out of range" message
-static void too_far(intval_t actual, intval_t minimum, intval_t maximum)
+// helper function to output "Target not in bank" message
+static void not_in_bank(intval_t target)
 {
 	char	buffer[60];	// 640K should be enough for anybody
 
-	sprintf(buffer, "Target out of range (%ld; %ld too far).", actual, actual < minimum ? minimum - actual : actual - maximum);
+	sprintf(buffer, "Target not in bank (0x%lx).", target);
 	Throw_error(buffer);
 }
 
 // Mnemonics using only 8bit relative addressing (short branch instructions).
 static void group_only_relative8_addressing(int opcode)
 {
-	struct result_int_t	result;
+	struct result_int_t	target;
+	intval_t		offset	= 0;	// dummy value, to not throw more errors than necessary
 
-	ALU_int_result(&result);
-	if (result.flags & MVALUE_DEFINED) {
-		result.intval -= (CPU_pc.intval + 2);
-		if ((result.intval < -128) || (result.intval > 127))
-			too_far(result.intval, -128, 127);
+	ALU_int_result(&target);
+	if (CPU_pc.flags & target.flags & MVALUE_DEFINED) {
+		if ((target.intval | 0xffff) != 0xffff) {
+			not_in_bank(target.intval);
+		} else {
+			offset = (target.intval - (CPU_pc.intval + 2)) & 0xffff;	// clip to 16 bit offset
+			// fix sign
+			if (offset & 0x8000)
+				offset -= 0x10000;
+			// range check
+			if ((offset < -128) || (offset > 127)) {
+				char	buffer[60];	// 640K should be enough for anybody
+
+				sprintf(buffer, "Target out of range (%ld; %ld too far).", offset, offset < -128 ? -128 - offset : offset - 127);
+				Throw_error(buffer);
+			}
+		}
 	}
 	Output_byte(opcode);
 	// this fn has its own range check (see above).
 	// No reason to irritate the user with another error message,
 	// so use Output_byte() instead of Output_8b()
-	//Output_8b(result.value);
-	Output_byte(result.intval);
+	//Output_8b(offset);
+	Output_byte(offset);
 	Input_ensure_EOS();
 }
 
 // Mnemonics using only 16bit relative addressing (BRL and PER).
 static void group_only_relative16_addressing(int opcode)
 {
-	struct result_int_t	result;
+	struct result_int_t	target;
+	intval_t		offset	= 0;	// dummy value, to not throw more errors than necessary
 
-	ALU_int_result(&result);
-	if (result.flags & MVALUE_DEFINED) {
-		result.intval -= (CPU_pc.intval + 3);
-		if ((result.intval < -32768) || (result.intval > 32767))
-			too_far(result.intval, -32768, 32767);
+	ALU_int_result(&target);
+	if (CPU_pc.flags & target.flags & MVALUE_DEFINED) {
+		if ((target.intval | 0xffff) != 0xffff) {
+			not_in_bank(target.intval);
+		} else {
+			offset = (target.intval - (CPU_pc.intval + 3)) & 0xffff;
+			// no further checks necessary, 16-bit branches can access whole bank
+		}
 	}
 	Output_byte(opcode);
-	// this fn has its own range check (see above).
-	// No reason to irritate the user with another error message,
-	// so use Output_byte() instead of Output_16b()
-	//Output_16b(result.value);
-	Output_byte(result.intval);
-	Output_byte(result.intval >> 8);
+	Output_16b(offset);
 	Input_ensure_EOS();
 }
 

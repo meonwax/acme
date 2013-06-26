@@ -246,7 +246,7 @@ Section:   The maths parser
 ----------------------------------------------------------------------
 
 ACME has a relatively powerful maths parser. This parser is used
-whenever ACME expects to read an integer value. Supported operations
+whenever ACME expects to read a numerical value. Supported operations
 include addition, subtraction, multiplication, divisions, comparisons,
 shifts, negation, boolean operations and some assembler-specific stuff
 like extracting the "low byte", the "high byte" or the "bank byte"

@@ -9,8 +9,8 @@
 	*= $1300
 	!ct pet
 	!source <6502/std.a>
-	!ifndef Lib_6502_std_a {
-		!serious "To assemble this program, you need to install the ACME library."
+	!ifndef lib_6502_std_a {
+		!serious "To assemble this program, you need to install the current ACME library."
 	}
 	!source "me/macros.a"
 	!source "me/const.a"
@@ -74,3 +74,5 @@ Spätere Änderungen am Source:
 	Now throws serious error if the library file could not be loaded.
  7 Apr 2013:
 	Converted to UTF-8
+27 Jun 2013:
+	Adjusted to change in library.

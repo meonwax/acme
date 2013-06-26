@@ -4,11 +4,11 @@
 
          ...the ACME Crossassembler for Multiple Environments
 
-                             Release 0.91
+                            Release 0.94.5
 
                           - free  software -
 
-                       (C) 1998-2006 Marco Baye
+                       (C) 1998-2013 Marco Baye
 
 
 ----------------------------------------------------------------------
@@ -54,16 +54,17 @@ The files in the docs directory and what they contain:
     65816.txt      Stuff specific to the 65816 processor
     AddrModes.txt  How to choose non-standard addressing modes
     AllPOs.txt     Lists ACME's pseudo opcodes. Use as a reference.
-    Changes.txt    The change log.
+    Changes.txt    The change log
     COPYING        Version 2 of the GNU General Public License
     Errors.txt     Lists ACME's error messages and what they mean.
     Example.txt    Information on how to assemble the example sources.
+    Floats.txt     About the support for floating-point values
     Help.txt       ...is this text.
-    Illegals.txt   Support for undocumented opcodes.
-    Lib.txt        Information about the library.
-    QuickRef.txt   All the basic stuff about ACME.
-    Source.txt     How to compile ACME.
-    Upgrade.txt    Incompatibilities to earlier versions.
+    Illegals.txt   Support for undocumented opcodes
+    Lib.txt        Information about the library
+    QuickRef.txt   All the basic stuff about ACME
+    Source.txt     How to compile ACME
+    Upgrade.txt    Incompatibilities to earlier versions
 
 IMPORTANT: If you upgrade from ACME 0.05 or earlier, don't forget to
 read the file "Upgrade.txt" - release 0.07 and all later ones are
@@ -170,7 +171,7 @@ Section:   Contacting the author
 ----------------------------------------------------------------------
 
 The newest version of ACME can be found at the ACME homepage:
-http://home.pages.de/~mac_bacon/smorbrod/acme/
+http://sourceforge.net/p/acme-crossass/
 
 If you want to report a bug or make a suggestion, then simply send
 me an email:
