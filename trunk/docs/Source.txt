@@ -12,7 +12,7 @@ General Public License. Therefore, the sources must be made publicly
 accessible. If this archive does not contain the source file tree, you
 can download it from the ACME web page at
 
-http://home.pages.de/~mac_bacon/smorbrod/acme/
+http://sourceforge.net/p/acme-crossass/
 
 To build ACME, you need a recent C compiler and a "make" utility. On
 most systems, typing "make" should suffice to build the binary. See

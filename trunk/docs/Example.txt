@@ -28,4 +28,3 @@ Just in case you wonder:
     "macedit" is an unusably bad text editor for the C128. The source
     code is not meant to be a good example of ACME's capabilities.
     Please *don't* look at it. :)
-

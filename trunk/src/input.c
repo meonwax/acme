@@ -378,14 +378,14 @@ int Input_append_keyword_to_global_dynabuf(void)
 	return length;
 }
 
-// Check whether GotByte is a dot.
+// Check whether GotByte is LOCAL_PREFIX (default '.').
 // If not, store global zone value.
 // If yes, store current zone value and read next byte.
 // Then jump to Input_read_keyword(), which returns length of keyword.
 int Input_read_zone_and_keyword(zone_t *zone)
 {
 	SKIPSPACE();
-	if (GotByte == '.') {
+	if (GotByte == LOCAL_PREFIX) {
 		GetByte();
 		*zone = Section_now->zone;
 	} else {

@@ -66,8 +66,8 @@ static struct cpu_t	CPU_65816 = {
 struct cpu_t		*CPU_now;	// struct of current CPU type (default 6502)
 struct result_int_t	CPU_pc;		// (pseudo) program counter at start of statement
 int			CPU_2add;	// increase PC by this after statement
-static intval_t	current_offset;	// PseudoPC - MemIndex
-static int	uses_pseudo_pc;	// offset assembly active?
+static intval_t	current_offset;	// PseudoPC - MemIndex (FIXME - why is this needed?)
+static int	uses_pseudo_pc;	// offset assembly active?	FIXME - what is this for?
 // predefined stuff
 static struct node_t	*CPU_tree	= NULL;	// tree to hold CPU types
 static struct node_t	CPUs[]	= {
@@ -144,16 +144,17 @@ static const char	Warning_old_offset_assembly[]	=
 // start offset assembly
 static enum eos_t PO_pseudopc(void)
 {
+// future algo: remember outer memaddress and outer pseudopc
 	int		outer_state	= uses_pseudo_pc;
 	intval_t	new_pc,
 			outer_offset	= current_offset;
 	int		outer_flags	= CPU_pc.flags;
 
 	// set new
-	new_pc = ALU_defined_int();
+	new_pc = ALU_defined_int();	// FIXME - allow for undefined pseudopc!
 	current_offset = (current_offset + new_pc - CPU_pc.intval) & 0xffff;
 	CPU_pc.intval = new_pc;
-	CPU_pc.flags |= MVALUE_DEFINED;
+	CPU_pc.flags |= MVALUE_DEFINED;	// FIXME - remove!
 	uses_pseudo_pc = TRUE;
 	// if there's a block, parse that and then restore old value!
 	if (Parse_optional_block()) {
@@ -162,6 +163,7 @@ static enum eos_t PO_pseudopc(void)
 		CPU_pc.flags = outer_flags;
 		CPU_pc.intval = (outer_offset + CPU_pc.intval - current_offset) & 0xffff;
 		current_offset = outer_offset;
+// future algo: new outer pseudopc = (old outer pseudopc + (current memaddress - outer memaddress)) & 0xffff
 	} else {
 		Throw_first_pass_warning(Warning_old_offset_assembly);
 	}
@@ -181,7 +183,7 @@ static enum eos_t PO_realpc(void)
 }
 
 
-// return whether offset assembly is active
+// return whether offset assembly is active (FIXME - remove this function)
 int CPU_uses_pseudo_pc(void)
 {
 	return uses_pseudo_pc;

@@ -486,7 +486,7 @@ void Output_passinit(signed long start_addr)
 		segment_start = 0;
 	}
 	// other stuff
-	segment_max = OUTBUFFERSIZE-1;
+	segment_max = OUTBUFFERSIZE - 1;
 	segment_flags = 0;
 }
 
@@ -513,6 +513,7 @@ void Output_start_segment(void)
 		new_flags |= (int) node_body;
 	}
 
+// to allow for undefined pseudopc, this must be changed to use memaddress instead!
 	if (CPU_pc.flags & MVALUE_DEFINED) {
 		// it's a redefinition. Check some things:
 		// check whether new low

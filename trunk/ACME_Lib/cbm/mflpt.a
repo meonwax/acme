@@ -1,0 +1,79 @@
+;ACME 0.94.5
+
+!ifdef lib_cbm_mflpt_a !eof
+lib_cbm_mflpt_a = 1
+
+; here's a macro for writing floating point numbers in the "mflpt" format used by BASIC.
+; "mflpt" stands for "memory floating point", where the sign bit is packed into the mantissa.
+
+; to use it, write:
+;		+mflpt 3.1415926	; each use will take up five bytes of memory
+
+
+; now for the technical stuff (stop reading right now if you value your sanity)
+
+; five-byte layout in memory:
+;   eeeeeeee smmmmmmm mmmmmmmm mmmmmmmm mmmmmmmm	; eight bits exponent, 32 bits mantissa with sign bit overlay
+
+; exponent byte:
+;	exponent has a bias of 128 (128 means the decimal point is right before the mantissa's leading zero)
+;	if exponent is zero, number value is considered to be zero, regardless of mantissa
+;	exponents 1..128 are for values < 1
+;	exponents 129..255 are for values >= 1
+
+; mantissa:
+;	mantissa is stored big-endian(!)
+;	the mantissa's mandatory leading '1' is replaced by the sign bit
+
+; so logically, this is equivalent to:
+; + .1mmmmmmm mmmmmmmm mmmmmmmm mmmmmmmm * 2^(eeeeeeee - 128) if sign bit is 0
+; - .1mmmmmmm mmmmmmmm mmmmmmmm mmmmmmmm * 2^(eeeeeeee - 128) if sign bit is 1
+
+
+
+; this is ugly, but it gets the job done
+; (if it's stupid, but it works, then it's not stupid)
+!macro mflpt .value {
+	!set .float = float(.value)	; make sure to do passes until value is defined
+	!ifndef .float {
+		!by $ff, $ff, $ff, $ff, $ff	; place holder
+	} else {
+		; value is defined, so split up into sign and non-negative value
+		!if .float < 0 {
+			!set .sign = $80
+			!set .float = -.float
+		} else {
+			!set .sign = $00
+		}
+		!if .float = 0 {
+			!by 0, 0, 0, 0, 0	; zero is represented as all bits zero
+		} else {
+			; split up into exponent and mantissa
+			!set .exponent = 128 + 32	; 128 is cbm's bias, 32 is this algo's bias
+			; if mantissa is too large, shift right and adjust exponent
+			!do while .float >= (2.0 ^ 32.0) {
+				!set .float = .float >> 1
+				!set .exponent = .exponent + 1
+			}
+			; if mantissa is too small, shift left and adjust exponent
+			!do while .float < (2.0 ^ 31.0) {
+				!set .float = .float << 1
+				!set .exponent = .exponent - 1
+			}
+			!if .exponent < 1 {
+				!warn "MFLPT underflow, using zero instead"
+				!set .float = 0
+				!set .exponent = 0
+				!set .sign = 0
+			}
+			!if .exponent > 255 {
+				!error "MFLPT overflow"
+			}
+			!by .exponent
+			!by (127 & int(.float >> 24)) | .sign
+			!by 255 & int(.float >> 16)
+			!by 255 & int(.float >> 8)
+			!by 255 & int(.float)
+		}
+	}
+}

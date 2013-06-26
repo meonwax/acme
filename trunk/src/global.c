@@ -275,19 +275,19 @@ void Parse_until_eob_or_eof(void)
 				break;
 			case '+':
 				GetByte();
-				if ((GotByte == '.')
+				if ((GotByte == LOCAL_PREFIX)
 				|| (BYTEFLAGS(GotByte) & CONTS_KEYWORD))
 					Macro_parse_call();
 				else
 					parse_forward_anon_def(&statement_flags);
 				break;
-			case '!':
+			case PSEUDO_OPCODE_PREFIX:
 				parse_pseudo_opcode();
 				break;
 			case '*':
 				parse_pc_def();
 				break;
-			case '.':
+			case LOCAL_PREFIX:
 				parse_local_label_def(&statement_flags);
 				break;
 			default:

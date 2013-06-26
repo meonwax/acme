@@ -47,8 +47,9 @@ Assembling buggy JMP($xxff) instruction
     The original 6502 processor has a bug: When executing an indirect
     JMP instruction where the low byte of the argument equals $ff, it
     fetches the high byte of the jump target address not from memory
-    location ARGUMENT+1, but from ARGUMENT-255. Therefore ACME issues
-    this warning if you are about to generate such an instruction.
+    location ARGUMENT + 1, but from ARGUMENT - 255. Therefore ACME
+    issues this warning if you are about to generate such an
+    instruction.
     Note that this warning is only given for CPU types 6502 and 6510,
     because 65c02 and 65816 have been fixed in this respect.
 
@@ -157,8 +158,8 @@ Division by zero.
     Guess what - you attempted to divide by zero.
 
 Exponent is negative.
-    Using negative exponents would only give sensible results when
-    using floating point maths.
+    Using negative exponents only give sensible results when using
+    floating point maths.
 
 File name quotes not found ("" or <>).
     File names have to be given in quotes. Either "" quoting for files
@@ -227,11 +228,16 @@ Source file contains illegal character.
 Syntax error.
     Guess what - there's a syntax error.
 
+Target not in bank (0xTARGET).
+    You tried to branch to an address not in the 0x0000..0xffff range.
+    Relative addressing (branch commands or PER) cannot leave the
+    current code bank of 64 KiB.
+
 Target out of range (N; M too far).
-    A relative addressing (branch commands or PER) only has a limited
-    range. You exceeded it. N is the attempted offset, M is the difference
-    to the limit - so if you succeed in optimizing M bytes away, the code
-    would assemble.
+    Branch commands use relative addressing, which only has a limited
+    range. You exceeded it. N is the attempted offset, M is the
+    difference to the limit - so if you succeed in optimizing M bytes
+    away, the code would assemble.
 
 There's more than one character.
     You used a text string in an arithmetic expression, but the string

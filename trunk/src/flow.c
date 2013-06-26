@@ -25,13 +25,10 @@
 
 
 // type definitions
-enum cond_key_t {
-	ID_UNTIL,	// Handles to store instead of
-	ID_WHILE,	// the UNTIL and WHILE keywords
-};
+
 struct loop_condition {
-	enum cond_key_t	type;	// either ID_UNTIL or ID_WHILE
 	int		line;	// original line number
+	int		invert;	// actually bool (0 for WHILE, 1 for UNTIL)
 	char		*body;	// pointer to actual expression
 };
 
@@ -41,8 +38,8 @@ struct loop_condition {
 // predefined stuff
 static struct node_t	*condkey_tree	= NULL;	// tree to hold UNTIL and WHILE
 static struct node_t	condkeys[]	= {
-	PREDEFNODE("until",	ID_UNTIL),
-	PREDEFLAST("while",	ID_WHILE),
+	PREDEFNODE("until",	TRUE),	// UNTIL inverts the condition
+	PREDEFLAST("while",	FALSE),	// WHILE does not change the condition
 	//    ^^^^ this marks the last element
 };
 
@@ -62,7 +59,7 @@ static void parse_ram_block(int line_number, char *body)
 
 
 // try to read a condition into DynaBuf and store copy pointer in
-// given loopcond_t structure.
+// given loop_condition structure.
 // if no condition given, NULL is written to structure.
 // call with GotByte = first interesting character
 static void store_condition(struct loop_condition *condition, char terminator)
@@ -74,6 +71,7 @@ static void store_condition(struct loop_condition *condition, char terminator)
 	// Check for empty condition
 	if (GotByte == terminator) {
 		// Write NULL condition, then return
+		condition->invert = FALSE;
 		condition->body = NULL;
 		return;
 	}
@@ -83,10 +81,11 @@ static void store_condition(struct loop_condition *condition, char terminator)
 		// Search for new tree item
 		if (!Tree_easy_scan(condkey_tree, &node_body, GlobalDynaBuf)) {
 			Throw_error(exception_syntax);
+			condition->invert = FALSE;
 			condition->body = NULL;
 			return;
 		}
-		condition->type = (enum cond_key_t) node_body;
+		condition->invert = (int) node_body;
 		// Write given condition into buffer
 		SKIPSPACE();
 		DYNABUF_CLEAR(GlobalDynaBuf);
@@ -104,7 +103,7 @@ static int check_condition(struct loop_condition *condition)
 
 	// First, check whether there actually *is* a condition
 	if (condition->body == NULL)
-		return 1;	// non-existant conditions are always true
+		return TRUE;	// non-existing conditions are always true
 
 	// set up input for expression evaluation
 	Input_now->line_number = condition->line;
@@ -113,7 +112,7 @@ static int check_condition(struct loop_condition *condition)
 	expression = ALU_defined_int();
 	if (GotByte)
 		Throw_serious_error(exception_syntax);
-	return (condition->type == ID_UNTIL) ? !expression : !!expression;
+	return condition->invert ? !expression : !!expression;
 }
 
 
@@ -128,9 +127,10 @@ static enum eos_t PO_do(void)	// Now GotByte = illegal char
 	int		go_on,
 			loop_start;	// line number of loop pseudo opcode
 	// Init
-	condition2.type = ID_UNTIL;
-	condition2.body = NULL;
+	condition1.invert = FALSE;
 	condition1.body = NULL;
+	condition2.invert = FALSE;
+	condition2.body = NULL;
 	
 	// Read head condition to buffer
 	SKIPSPACE();

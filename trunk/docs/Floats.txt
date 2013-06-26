@@ -1,13 +1,16 @@
-Hi!
 
-This is a preliminary release of ACME. I added basic support for
-floating point maths. Consider this a special version for beta
-testers. Known bugs: Segment counting may be screwed up at the moment.
 
-New:
-The maths parser knows about floating point maths, so you can finally
-build sin/cos tables directly in ACME. But the expression parser still
-uses integer calculations per default. Here are the rules:
+                                 ACME
+
+         ...the ACME Crossassembler for Multiple Environments
+
+                    --- floating-point support ---
+
+
+In release 0.92, ACME gained some experimental support for floating-
+point maths, so you can finally build sin/cos tables directly in ACME.
+But the expression parser still uses integer calculations per default.
+Here are the rules:
 
 a) if a maths operation is useless when done with integers, it is done
 with floats and returns a float. Applies to sin(), cos(), tan(),
@@ -28,7 +31,12 @@ To force a numerical value to be flagged as being a float, just add
 a decimal point and a zero. If a decimal value ends with a
 dot character, ACME switches to using the C type "double" and keeps
 reading digits. The value is then flagged internally as being float.
-
+CAUTION: Float usage is only activated when a decimal point has been
+found, so don't expect "100000000000000000000" to work.
+"100000000000000000000.0" won't work either, because when the decimal
+point gets parsed, the integer value will have overflown already. As
+there is no support yet for the "e" format (1e20 for 1*10^20) either,
+the only way to enter this value is by writing "1.0 * 10.0 ^ 20.0".
 
 Examples:
 
@@ -46,14 +54,11 @@ You can use the new float() and int() functions to ensure the type of
 maths:
 
 	!byte a   / b   * c	; depends on a/b/c's internal flags
-	!byte float(a)/b*c	; calculation is done in FP
-	!byte int(a)/int(b)*int(c); calculation is done in integer
+	!byte float(a) / b * c	; calculation is done as float
+	!byte int(a) / int(b) * int(c)	; calculation is done as int
 
 As you will have guessed, the trigonometric functions assume radians
 for measuring angles (90 degrees equals PI/2).
 
-Have a look at the example source code, it builds some sin/cos tables.
-
-Have fun, and let me know what you think,
-
-Marco Baye
+Have a look at the example source code "trigono.a", it builds some
+sin/cos tables.
