@@ -61,7 +61,7 @@ mflpt_2_pi		= $e309	; 2 * PI (also see $e2e5)
 
 ; functions - a few points to note:
 ; fac1/2 might get clobbered even if not mentioned in the function's name,
-;	because stuff like fac1_times_memYYAA will load the value from memory
+;	because stuff like fac1_times_memAY will load the value from memory
 ;	into fac2 first.
 ; for subtraction and division, the left operand is in fac2, the right operand in fac1.
 fac1_print			= $aabc	; print string representation of contents of fac1
@@ -93,7 +93,7 @@ fac1_compare_to_memAY		= $bc5b
 fac1_to_signed32		= $bc9b
 fac1_int			= $bccc ; INT()
 fac1_print_unsignedXA		= $bdcd
-fac1_to_string			= $bddd	; string is stored at $0100 (address returned in YYAA)
+fac1_to_string			= $bddd	; string is stored at $0100 (address returned in AY)
 fac1_sqr			= $bf71	; SQR()
 fac1_fac2_to_the_power_of_memAY	= $bf78
 fac1_negate			= $bfb4
