@@ -4,10 +4,15 @@
 lib_cbm_c64_float_a = 1
 
 ; Here are some definitions to help you call the floating-point functions of the
-; C64's BASIC ROM. They work using two structures in zero page, called fac1 and
-; fac2 (floating-point accumulator 1 and 2, located at $61 and $69).
+; C64's BASIC ROM. They work on "float registers", which are actually just
+; structures in zero page:
+fac1_base	= $61	; base address of floating-point accumulator 1
+fac2_base	= $69	; base address of floating-point accumulator 2
+; There is really no need to use these addresses directly when calling the ROM
+; functions. You'd only need the addresses when using <cbm/flpt.a>.
 
-!source <cbm/mflpt.a>	; include macro to store floats in MFLPT format
+!source <cbm/flpt.a>	; include macro to store floats in six-byte FLPT format
+!source <cbm/mflpt.a>	; include macro to store floats in five-byte MFLPT format
 
 ; convenience macros:
 
@@ -72,24 +77,26 @@ fac1_read_unsignedY		= $b3a2	; convert 8 bit unsigned int to float
 fac1_read_string		= $b7b5	; $22/23 must point to string, A must be string length
 fac1_to_unsignedYA		= $b7f7	; might throw ILLEGAL QUANTITY (result is also in $14/15)
 fac1_add_point5			= $b849	; for rounding, call this before fac1_int
-fac1_memAY_minus_fac1		= $b850
+fac1_memAY_minus_fac1		= $b850	; subtract fac1 from mflpt value
 fac1_fac2_minus_fac1		= $b853
-fac1_add_memAY			= $b867
+fac1_add_memAY			= $b867	; add mflpt value
 fac1_add_fac2			= $b86a
 fac1_log			= $b9ea	; LOG()
-fac1_times_memAY		= $ba28
-fac2_read_memAY			= $ba8c	; load value from memory into fac2
+fac1_times_memAY		= $ba28	; multiply by mflpt value
+fac2_read_memAY			= $ba8c	; load mflpt value from memory into fac2
+fac2_read_mem_via0x22ptr	= $ba90	; load mflpt value from memory into fac2
 fac1_times_10			= $bae2
 fac1_divide_by_10		= $bafe
-fac1_divide_memAY_by_fac1	= $bb0f
-fac1_read_memAY			= $bba2	; load value from memory into fac1
-fac1_to_memXY			= $bbd4	; store fac1 to memory
+fac1_divide_memAY_by_fac1	= $bb0f	; divide mflpt value by fac1 value
+fac1_read_memAY			= $bba2	; load mflpt value from memory into fac1
+fac1_read_mem_via0x22ptr	= $bba6	; load mflpt value from memory into fac1
+fac1_to_memXY			= $bbd4	; store fac1 to memory as mflpt
 fac1_read_fac2			= $bbfc	; copy fac2 to fac1
 fac2_read_fac1			= $bc0c	; copy fac1 to fac2
 fac1_sign_to_A			= $bc2b	; $ff, $0, $1 for negative, zero, positive
 fac1_sgn			= $bc39 ; SGN()
 fac1_abs			= $bc58 ; ABS()
-fac1_compare_to_memAY		= $bc5b
+fac1_compare_to_memAY		= $bc5b	; compare to mflpt value in memory
 fac1_to_signed32		= $bc9b
 fac1_int			= $bccc ; INT()
 fac1_print_unsignedXA		= $bdcd
