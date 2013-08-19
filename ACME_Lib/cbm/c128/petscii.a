@@ -21,7 +21,7 @@ petscii_LRED		= 150
 petscii_GRAY1		= 151:	petscii_DCYAN		= 151
 petscii_GRAY2		= 152:	petscii_LBLACK		= 152:	petscii_DGRAY		= 152
 petscii_LGREEN		= 153
-petscii_LBUE		= 154
+petscii_LBLUE		= 154
 petscii_GRAY3		= 155:	petscii_DWHITE		= 155:	petscii_LGRAY		= 155
 
 ; switching character set
