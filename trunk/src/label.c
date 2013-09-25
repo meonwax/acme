@@ -36,15 +36,15 @@ static void dump_one_label(struct node_ra_t *node, FILE *fd)
 	fprintf(fd, "%s", node->id_string);
 	switch (label->result.flags & MVALUE_FORCEBITS) {
 	case MVALUE_FORCE16:
-		fprintf(fd, "+2=");
+		fprintf(fd, "+2\t= ");
 		break;
 	case MVALUE_FORCE16 | MVALUE_FORCE24:
 		/*FALLTHROUGH*/
 	case MVALUE_FORCE24:
-		fprintf(fd, "+3=");
+		fprintf(fd, "+3\t= ");
 		break;
 	default:
-		fprintf(fd, "  =");
+		fprintf(fd, "\t= ");
 	}
 	if (label->result.flags & MVALUE_DEFINED) {
 		if (label->result.flags & MVALUE_IS_FP)
@@ -55,9 +55,9 @@ static void dump_one_label(struct node_ra_t *node, FILE *fd)
 		fprintf(fd, " ?");
 	}
 	if (label->result.flags & MVALUE_UNSURE)
-		fprintf(fd, "; ?");
+		fprintf(fd, "\t; ?");
 	if (label->usage == 0)
-		fprintf(fd, "; unused");
+		fprintf(fd, "\t; unused");
 	fprintf(fd, "\n");
 }
 
