@@ -6,6 +6,8 @@
 // 11 Oct 2006	Improved float reading in parse_decimal_value()
 // 24 Nov 2007	Now accepts floats starting with decimal point
 // 31 Jul 2009	Changed ASR again, just to be on the safe side.
+// 14 Jan 2014	Changed associativity of "power-of" operator,
+//		so a^b^c now means a^(b^c).
 #include <stdlib.h>
 #include <math.h>	// only for fp support
 #include "platform.h"
@@ -83,54 +85,55 @@ enum operator_handle {
 };
 struct operator_t {
 	enum operator_handle	handle;
-	int			priority;
+	char			priority_and_associativity;
 };
+#define IS_RIGHT_ASSOCIATIVE(p)	((p) & 1)	// lsb of priority value signals right-associtivity
 
-// operator structs (only hold handle and priority value)
-static struct operator_t ops_end		= {OPHANDLE_END,	 0};	// special
-static struct operator_t ops_return		= {OPHANDLE_RETURN,	 1};	// special
-static struct operator_t ops_closing		= {OPHANDLE_CLOSING,	 2};	// dyadic
-static struct operator_t ops_opening		= {OPHANDLE_OPENING,	 3};	// monadic
-static struct operator_t ops_or			= {OPHANDLE_OR,		 4};	// dyadic
-static struct operator_t ops_eor		= {OPHANDLE_EOR,	 5};	//	(FIXME:remove)
-static struct operator_t ops_xor		= {OPHANDLE_XOR,	 5};	// dyadic
-static struct operator_t ops_and		= {OPHANDLE_AND,	 6};	// dyadic
-static struct operator_t ops_equals		= {OPHANDLE_EQUALS,	 7};	// dyadic
-static struct operator_t ops_notequal		= {OPHANDLE_NOTEQUAL,	 8};	// dyadic
-	// same priority for all comparison operators
-static struct operator_t ops_le			= {OPHANDLE_LE,		 9};	// dyadic
-static struct operator_t ops_lessthan		= {OPHANDLE_LESSTHAN,	 9};	// dyadic
-static struct operator_t ops_ge			= {OPHANDLE_GE,		 9};	// dyadic
-static struct operator_t ops_greaterthan	= {OPHANDLE_GREATERTHAN, 9};	// dyadic
+// operator structs (only hold handle and priority/associativity value)
+static struct operator_t ops_end		= {OPHANDLE_END,	0};	// special
+static struct operator_t ops_return		= {OPHANDLE_RETURN,	2};	// special
+static struct operator_t ops_closing		= {OPHANDLE_CLOSING,	4};	// dyadic
+static struct operator_t ops_opening		= {OPHANDLE_OPENING,	6};	// monadic
+static struct operator_t ops_or			= {OPHANDLE_OR,		8};	// dyadic
+static struct operator_t ops_eor		= {OPHANDLE_EOR,	10};	//	(FIXME:remove)
+static struct operator_t ops_xor		= {OPHANDLE_XOR,	10};	// dyadic
+static struct operator_t ops_and		= {OPHANDLE_AND,	12};	// dyadic
+static struct operator_t ops_equals		= {OPHANDLE_EQUALS,	14};	// dyadic
+static struct operator_t ops_notequal		= {OPHANDLE_NOTEQUAL,	16};	// dyadic
+	// same priority for all comparison operators (left-associative)
+static struct operator_t ops_le			= {OPHANDLE_LE,		18};	// dyadic
+static struct operator_t ops_lessthan		= {OPHANDLE_LESSTHAN,	18};	// dyadic
+static struct operator_t ops_ge			= {OPHANDLE_GE,		18};	// dyadic
+static struct operator_t ops_greaterthan	= {OPHANDLE_GREATERTHAN,18};	// dyadic
 	// same priority for all byte extraction operators
-static struct operator_t ops_lowbyteof		= {OPHANDLE_LOWBYTEOF,	10};	// monadic
-static struct operator_t ops_highbyteof		= {OPHANDLE_HIGHBYTEOF,	10};	// monadic
-static struct operator_t ops_bankbyteof		= {OPHANDLE_BANKBYTEOF,	10};	// monadic
-	// same priority for all shift operators
-static struct operator_t ops_sl			= {OPHANDLE_SL,		11};	// dyadic
-static struct operator_t ops_asr		= {OPHANDLE_ASR,	11};	// dyadic
-static struct operator_t ops_lsr		= {OPHANDLE_LSR,	11};	// dyadic
-	// same priority for "+" and "-"
-static struct operator_t ops_add		= {OPHANDLE_ADD,	12};	// dyadic
-static struct operator_t ops_subtract		= {OPHANDLE_SUBTRACT,	12};	// dyadic
-	// same priority for "*", "/" and "%"
-static struct operator_t ops_multiply		= {OPHANDLE_MULTIPLY,	13};	// dyadic
-static struct operator_t ops_divide		= {OPHANDLE_DIVIDE,	13};	// dyadic
-static struct operator_t ops_intdiv		= {OPHANDLE_INTDIV,	13};	// dyadic
-static struct operator_t ops_modulo		= {OPHANDLE_MODULO,	13};	// dyadic
+static struct operator_t ops_lowbyteof		= {OPHANDLE_LOWBYTEOF,	20};	// monadic
+static struct operator_t ops_highbyteof		= {OPHANDLE_HIGHBYTEOF,	20};	// monadic
+static struct operator_t ops_bankbyteof		= {OPHANDLE_BANKBYTEOF,	20};	// monadic
+	// same priority for all shift operators (left-associative, though they could be argued to be made right-associative :))
+static struct operator_t ops_sl			= {OPHANDLE_SL,		22};	// dyadic
+static struct operator_t ops_asr		= {OPHANDLE_ASR,	22};	// dyadic
+static struct operator_t ops_lsr		= {OPHANDLE_LSR,	22};	// dyadic
+	// same priority for "+" and "-" (left-associative)
+static struct operator_t ops_add		= {OPHANDLE_ADD,	24};	// dyadic
+static struct operator_t ops_subtract		= {OPHANDLE_SUBTRACT,	24};	// dyadic
+	// same priority for "*", "/" and "%" (left-associative)
+static struct operator_t ops_multiply		= {OPHANDLE_MULTIPLY,	26};	// dyadic
+static struct operator_t ops_divide		= {OPHANDLE_DIVIDE,	26};	// dyadic
+static struct operator_t ops_intdiv		= {OPHANDLE_INTDIV,	26};	// dyadic
+static struct operator_t ops_modulo		= {OPHANDLE_MODULO,	26};	// dyadic
 	// highest "real" priorities
-static struct operator_t ops_negate		= {OPHANDLE_NEGATE,	14};	// monadic
-static struct operator_t ops_powerof		= {OPHANDLE_POWEROF,	15};	// dyadic
-static struct operator_t ops_not		= {OPHANDLE_NOT,	16};	// monadic
+static struct operator_t ops_negate		= {OPHANDLE_NEGATE,	28};	// monadic
+static struct operator_t ops_powerof		= {OPHANDLE_POWEROF,	29};	// dyadic, right-associative
+static struct operator_t ops_not		= {OPHANDLE_NOT,	30};	// monadic
 	// function calls act as if they were monadic operators
-static struct operator_t ops_int		= {OPHANDLE_INT,	17};	// function
-static struct operator_t ops_float		= {OPHANDLE_FLOAT,	17};	// function
-static struct operator_t ops_sin		= {OPHANDLE_SIN,	17};	// function
-static struct operator_t ops_cos		= {OPHANDLE_COS,	17};	// function
-static struct operator_t ops_tan		= {OPHANDLE_TAN,	17};	// function
-static struct operator_t ops_arcsin		= {OPHANDLE_ARCSIN,	17};	// function
-static struct operator_t ops_arccos		= {OPHANDLE_ARCCOS,	17};	// function
-static struct operator_t ops_arctan		= {OPHANDLE_ARCTAN,	17};	// function
+static struct operator_t ops_int		= {OPHANDLE_INT,	32};	// function
+static struct operator_t ops_float		= {OPHANDLE_FLOAT,	32};	// function
+static struct operator_t ops_sin		= {OPHANDLE_SIN,	32};	// function
+static struct operator_t ops_cos		= {OPHANDLE_COS,	32};	// function
+static struct operator_t ops_tan		= {OPHANDLE_TAN,	32};	// function
+static struct operator_t ops_arcsin		= {OPHANDLE_ARCSIN,	32};	// function
+static struct operator_t ops_arccos		= {OPHANDLE_ARCCOS,	32};	// function
+static struct operator_t ops_arctan		= {OPHANDLE_ARCTAN,	32};	// function
 
 
 // variables
@@ -925,7 +928,15 @@ static void try_to_reduce_stacks(int *open_parentheses)
 		return;
 	}
 
-	if (operator_stack[operator_sp - 2]->priority < operator_stack[operator_sp - 1]->priority) {
+	// previous operator has lower piority than current one? then do nothing.
+	if (operator_stack[operator_sp - 2]->priority_and_associativity < operator_stack[operator_sp - 1]->priority_and_associativity) {
+		alu_state = STATE_EXPECT_OPERAND_OR_MONADIC_OPERATOR;
+		return;
+	}
+
+	// previous operator has same priority as current one? then check associativity
+	if ((operator_stack[operator_sp - 2]->priority_and_associativity == operator_stack[operator_sp - 1]->priority_and_associativity)
+	&& IS_RIGHT_ASSOCIATIVE(operator_stack[operator_sp - 1]->priority_and_associativity)) {
 		alu_state = STATE_EXPECT_OPERAND_OR_MONADIC_OPERATOR;
 		return;
 	}
