@@ -298,6 +298,7 @@ the longest possible one:
 	v< >w	...checks for "v smaller than high byte of w"
 So you may have to separate operators with spaces to make sure ACME
 does what you want.
+The "power-of" operator is right-associative, so a^b^c means a^(b^c).
 
 Calculating 0^0 (zero to the power of zero) will give 1. If
 you don't know why I'm telling you this, ask a mathematician. :)
