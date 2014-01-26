@@ -55,12 +55,15 @@ tree.o: config.h dynabuf.h global.h label.h tree.h tree.c
 
 # _dos.o: _dos.h
 
+win/resource.rc: acme.c
+	cd win; sh setRelease.sh
+
 resource.res: win/resource.rc win/logo.ico
 	cd win; windres resource.rc -O coff -o ../resource.res
 	cp -f win/logo.ico .
 
 clean:
-	-$(RM) -f *.o $(PROGS) *~ core resource.res logo.ico
+	-$(RM) -f *.o $(PROGS) *~ core resource.res logo.ico win/resource.rc
 
 
 install: all
