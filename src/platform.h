@@ -13,7 +13,7 @@
 
 // DOS, OS/2 and Windows
 #if defined(__DJGPP__) || defined(__OS2__) || defined(__Windows__) || defined(WIN32) || defined(_WIN32) || defined(__WIN32__)
-#define PLATFORM_VERSION	"DOS/OS2/Win32 version."
+#define PLATFORM_VERSION	"DOS/OS2/Win32 version. Compiled by Dirk Hoepfner"
 #include "_dos.h"
 #endif
 
