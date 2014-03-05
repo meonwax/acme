@@ -268,11 +268,11 @@ void Label_dump_all(FILE *fd)
 void Label_clear_init(void)
 {
 	struct node_ra_t	**ptr;
-	int			i;
+	int			ii;
 
 	// cut down all the trees (clear pointer table)
 	ptr = Label_forest;
-	for (i = 255; i >= 0; i--)
+	for (ii = 255; ii >= 0; ii--)
 		*ptr++ = NULL;
 }
 
