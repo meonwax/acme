@@ -4,11 +4,11 @@
 
          ...the ACME Crossassembler for Multiple Environments
 
-                            Release 0.94.5
+                            Release 0.94.7
 
                           - free  software -
 
-                       (C) 1998-2013 Marco Baye
+                       (C) 1998-2014 Marco Baye
 
 
 ----------------------------------------------------------------------
@@ -16,7 +16,7 @@ Section:   Copyright
 ----------------------------------------------------------------------
 
 ACME - a crossassembler for producing 6502/6510/65c02/65816 code.
-Copyright (C) 1998-2006 Marco Baye
+Copyright (C) 1998-2014 Marco Baye
 The ACME icon was designed by Wanja "Brix" Gayk
 
 This program is free software; you can redistribute it and/or modify

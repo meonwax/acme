@@ -15,9 +15,9 @@
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-#define RELEASE		"0.94.6"	// update before release (FIXME)
+#define RELEASE		"0.94.7"	// update before release (FIXME)
 #define CODENAME	"Zarquon"	// update before release
-#define CHANGE_DATE	"14 Jan"		// update before release
+#define CHANGE_DATE	"5 Mar"		// update before release
 #define CHANGE_YEAR	"2014"		// update before release
 //#define HOME_PAGE	"http://home.pages.de/~mac_bacon/smorbrod/acme/"	// FIXME
 #define HOME_PAGE	"http://sourceforge.net/p/acme-crossass/"	// FIXME
@@ -182,7 +182,7 @@ static void save_output_file(void)
 static int perform_pass(void)
 {
 	FILE	*fd;
-	int	i;
+	int	ii;
 
 	// call modules' "pass init" functions
 	CPU_passinit(default_cpu);	// set default cpu values (PC undefined)
@@ -193,11 +193,11 @@ static int perform_pass(void)
 	pass_undefined_count = 0;	// no "NeedValue" errors yet
 	pass_real_errors = 0;	// no real errors yet
 	// Process toplevel files
-	for (i = 0; i < toplevel_src_count; i++) {
-		if ((fd = fopen(toplevel_sources[i], FILE_READBINARY))) {
-			Parse_and_close_file(fd, toplevel_sources[i]);
+	for (ii = 0; ii < toplevel_src_count; ii++) {
+		if ((fd = fopen(toplevel_sources[ii], FILE_READBINARY))) {
+			Parse_and_close_file(fd, toplevel_sources[ii]);
 		} else {
-			fprintf(stderr, "Error: Cannot open toplevel file \"%s\".\n", toplevel_sources[i]);
+			fprintf(stderr, "Error: Cannot open toplevel file \"%s\".\n", toplevel_sources[ii]);
 			// FIXME - if "filename" starts with "-", tell user to give options FIRST, files SECOND!
 			pass_real_errors++;
 		}

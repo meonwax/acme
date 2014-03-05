@@ -5,6 +5,7 @@
 // Output stuff
 // 24 Nov 2007	Added possibility to suppress segment overlap warnings 
 // 25 Sep 2011	Fixed bug in !to (colons in filename could be interpreted as EOS)
+//  5 Mar 2014	Fixed bug where setting *>0xffff resulted in hangups.
 #include <stdlib.h>
 //#include <stdio.h>
 #include <string.h>	// for memset()
@@ -20,34 +21,39 @@
 #include "tree.h"
 
 
-// Structure for linked list of segment data
-struct segment_t {
-	struct segment_t	*next,
-				*prev;
-	intval_t		start,
-				length;
+// constants
+#define OUTBUFFERSIZE		65536
+#define NO_SEGMENT_START	(-1)	// invalid value to signal "not in a segment"
+
+
+// structure for linked list of segment data
+struct segment {
+	struct segment	*next,
+			*prev;
+	intval_t	start,
+			length;
 };
 
-
-// constants
-#define OUTBUFFERSIZE	65536
-
+// structure for all output stuff:
+struct output {
+	// output buffer stuff
+	char		*buffer;	// holds assembled code
+	intval_t	write_idx;	// index of next write
+	intval_t	lowest_written;		// smallest address used
+	intval_t	highest_written;	// largest address used
+	int		initvalue_set;	// actually bool
+	struct {
+		intval_t	start;	// start of current segment (or NO_SEGMENT_START)
+		intval_t	max;	// highest address segment may use
+		int		flags;	// "overlay" and "invisible" flags
+		struct segment	list_head;	// head element of doubly-linked ring list
+	} segment;
+};
+static struct output	default_output;
+static struct output	*out	= &default_output;
 
 // variables
 
-// segment stuff
-static struct segment_t		segments_head;	// head element of segment list
-static intval_t			segment_start;	// start of current segment
-static intval_t			segment_max;	// highest address segment may use
-static int			segment_flags;	// "overlay" and "invisible" flags
-// misc
-static intval_t	lowest_idx;	// smallest address program uses
-static intval_t	highest_idx;	// end address of program plus one
-// output buffer stuff
-static char	*output_buffer	= NULL;	// to hold assembled code
-static char	*write_ptr	= NULL;	// points into output_buffer
-intval_t	write_idx;	// index in output buffer
-static int	memory_initialised	= FALSE;
 // predefined stuff
 static struct node_t	*file_format_tree	= NULL;	// tree to hold output formats
 // possible file formats
@@ -78,27 +84,24 @@ static struct node_t	segment_modifiers[]	= {
 };
 
 
-// fill output buffer with given byte value
-static void fill_completely(char value)
-{
-	memset(output_buffer, value, OUTBUFFERSIZE);
-}
-
-
-// set up new segment_max value according to the given address.
+// set up new out->segment.max value according to the given address.
 // just find the next segment start and subtract 1.
 static void find_segment_max(intval_t new_pc)
 {
-	struct segment_t	*test_segment	= segments_head.next;
+	struct segment	*test_segment	= out->segment.list_head.next;
 
 	// search for smallest segment start address that
 	// is larger than given address
 	// use list head as sentinel
-	segments_head.start = OUTBUFFERSIZE;
+// FIXME - if +1 overflows intval_t, we have an infinite loop!
+	out->segment.list_head.start = new_pc + 1;
 	while (test_segment->start <= new_pc)
 		test_segment = test_segment->next;
-	segment_max = test_segment->start;
-	segment_max--;	// last free address available
+	if (test_segment == &out->segment.list_head) {
+		out->segment.max = OUTBUFFERSIZE - 1;
+	} else {
+		out->segment.max = test_segment->start - 1;	// last free address available
+	}
 }
 
 
@@ -109,66 +112,82 @@ static void border_crossed(int current_offset)
 		Throw_serious_error("Produced too much code.");
 	if (pass_count == 0) {
 		Throw_warning("Segment reached another one, overwriting it.");
-		find_segment_max(current_offset + 1);
+		find_segment_max(current_offset + 1);	// find new (next) limit
 	}
 }
 
 
-// send low byte to output buffer
+// function ptr to write byte into output buffer (might point to real fn or error trigger)
 void (*Output_byte)(intval_t byte);
-static void real_output(intval_t byte);	// fn for actual output
-static void no_output(intval_t byte);	// fn when output impossible
-
-
-// set output pointer (negative values deactivate output)
-static void set_mem_ptr(signed long index)
-{
-	if (index < 0) {
-		Output_byte = no_output;
-		write_ptr = output_buffer;
-		write_idx = 0;
-	} else {
-		Output_byte = real_output;
-		write_ptr = output_buffer + index;
-		write_idx = index;
-	}
-}
 
 
 // send low byte to output buffer, automatically increasing program counter
 static void real_output(intval_t byte)
 {
-	if (write_idx > segment_max)
-		border_crossed(write_idx);
-	*write_ptr++ = byte & 0xff;
-	write_idx++;
+	// did we reach segment limit?
+	if (out->write_idx > out->segment.max)
+		border_crossed(out->write_idx);
+	// new minimum address?
+	if (out->write_idx < out->lowest_written)
+		out->lowest_written = out->write_idx;
+	// new maximum address?
+	if (out->write_idx > out->highest_written)
+		out->highest_written = out->write_idx;
+	// write byte and advance ptrs
+	out->buffer[out->write_idx++] = byte & 0xff;
 	CPU_2add++;
 }
 
 
-// fail to write to output buffer
+// activate output and set output pointer
+static void enable_output(intval_t index)
+{
+	Output_byte = real_output;
+	out->write_idx = index;
+}
+
+
+// throw error (pc undefined) and use fake pc from now on
 static void no_output(intval_t byte)
 {
 	Throw_error(exception_pc_undefined);
 	// set ptr to not complain again. as we have thrown an error, assembly
 	// fails, so don't care about actual value.
-	set_mem_ptr(512);	// 512 to not garble zero page and stack. ;)
-	CPU_2add++;
+	enable_output(512);	// 512 to not garble zero page and stack. ;)
+	Output_byte(byte);	// try again - the line above has changed the fn ptr!
+}
+
+
+// deactivate output - any byte written will trigger error!
+static void disable_output(void)
+{
+	Output_byte = no_output;
+	out->write_idx = 0;
 }
 
 
 // call this if really calling Output_byte would be a waste of time
 void Output_fake(int size)
 {
+	if (size < 1)
+		return;
+
 	// check whether ptr undefined
 	if (Output_byte == no_output) {
-		no_output(0);
-		size--;
+		Output_byte(0);	// trigger error with a dummy byte
+		size--;	// fix amount to cater for dummy byte
 	}
-	if (write_idx + size - 1 > segment_max)
-		border_crossed(write_idx + size - 1);
-	write_ptr += size;
-	write_idx += size;
+	// did we reach segment limit?
+	if (out->write_idx + size - 1 > out->segment.max)
+		border_crossed(out->write_idx + size - 1);
+	// new minimum address?
+	if (out->write_idx < out->lowest_written)
+		out->lowest_written = out->write_idx;
+	// new maximum address?
+	if (out->write_idx + size - 1 > out->highest_written)
+		out->highest_written = out->write_idx + size - 1;
+	// advance ptrs
+	out->write_idx += size;
 	CPU_2add += size;
 }
 
@@ -222,6 +241,13 @@ void Output_32b(intval_t value)
 }
 
 
+// fill output buffer with given byte value
+static void fill_completely(char value)
+{
+	memset(out->buffer, value, OUTBUFFERSIZE);
+}
+
+
 // define default value for empty memory ("!initmem" pseudo opcode)
 static enum eos_t PO_initmem(void)
 {
@@ -232,12 +258,12 @@ static enum eos_t PO_initmem(void)
 		return SKIP_REMAINDER;
 
 	// if MemInit flag is already set, complain
-	if (memory_initialised) {
+	if (out->initvalue_set) {
 		Throw_warning("Memory already initialised.");
 		return SKIP_REMAINDER;
 	}
 	// set MemInit flag
-	memory_initialised = TRUE;
+	out->initvalue_set = TRUE;
 	// get value and init memory
 	content = ALU_defined_int();
 	if ((content > 0xff) || (content < -0x80))
@@ -249,7 +275,7 @@ static enum eos_t PO_initmem(void)
 		pass_undefined_count = 1;
 // FIXME - enforcing another pass is not needed if there hasn't been any
 // output yet. But that's tricky to detect without too much overhead.
-// The old solution was to add &&(lowest_idx < highest_idx) to "if" above
+// The old solution was to add &&(out->lowest_written < out->highest_written+1) to "if" above
 	return ENSURE_EOS;
 }
 
@@ -325,47 +351,58 @@ static struct node_t	pseudo_opcodes[]	= {
 };
 
 
-// init file format tree (is done early)
+// init file format tree (is done early, because it is needed for CLI argument parsing)
 void Outputfile_init(void)
 {
 	Tree_add_table(&file_format_tree, file_formats);
 }
 
 
-// alloc and init mem buffer, register pseudo opcodes (done later)
+// init output struct, register pseudo opcodes (done later)
 void Output_init(signed long fill_value)
 {
-	output_buffer = safe_malloc(OUTBUFFERSIZE);
-	write_ptr = output_buffer;
-	if (fill_value == MEMINIT_USE_DEFAULT)
+	out->buffer = safe_malloc(OUTBUFFERSIZE);
+	out->write_idx = 0;
+	if (fill_value == MEMINIT_USE_DEFAULT) {
 		fill_value = FILLVALUE_INITIAL;
-	else
-		memory_initialised = TRUE;
+		out->initvalue_set = FALSE;
+	} else {
+		out->initvalue_set = TRUE;
+	}
 	// init output buffer (fill memory with initial value)
 	fill_completely(fill_value & 0xff);
 	Tree_add_table(&pseudo_opcode_tree, pseudo_opcodes);
 	Tree_add_table(&segment_modifier_tree, segment_modifiers);
 	// init ring list of segments
-	segments_head.next = &segments_head;
-	segments_head.prev = &segments_head;
+	out->segment.list_head.next = &out->segment.list_head;
+	out->segment.list_head.prev = &out->segment.list_head;
 }
 
 
-// dump memory buffer into output file
+// dump used portion of output buffer into output file
 void Output_save_file(FILE *fd)
 {
-	intval_t	amount	= highest_idx - lowest_idx;
+	intval_t	start,
+			amount;
 
+	if (out->highest_written < out->lowest_written) {
+		// nothing written
+		start = 0;	// I could try to use some segment start, but what for?
+		amount = 0;
+	} else {
+		start = out->lowest_written;
+		amount = out->highest_written - start + 1;
+	}
 	if (Process_verbosity)
-		printf("Saving %ld ($%lx) bytes ($%lx - $%lx exclusive).\n",
-			amount, amount, lowest_idx, highest_idx);
+		printf("Saving %ld (0x%lx) bytes (0x%lx - 0x%lx exclusive).\n",
+			amount, amount, start, start + amount);
 	// output file header according to file format
 	switch (output_format) {
 	case OUTPUT_FORMAT_APPLE:
 		PLATFORM_SETFILETYPE_APPLE(output_filename);
 		// output 16-bit load address in little-endian byte order
-		putc(lowest_idx & 255, fd);
-		putc(lowest_idx >>  8, fd);
+		putc(start & 255, fd);
+		putc(start >>  8, fd);
 		// output 16-bit length in little-endian byte order
 		putc(amount & 255, fd);
 		putc(amount >>  8, fd);
@@ -377,31 +414,30 @@ void Output_save_file(FILE *fd)
 	case OUTPUT_FORMAT_CBM:
 		PLATFORM_SETFILETYPE_CBM(output_filename);
 		// output 16-bit load address in little-endian byte order
-		putc(lowest_idx & 255, fd);
-		putc(lowest_idx >>  8, fd);
+		putc(start & 255, fd);
+		putc(start >>  8, fd);
 	}
 	// dump output buffer to file
-	fwrite(output_buffer + lowest_idx, sizeof(char), amount, fd);
+	fwrite(out->buffer + start, amount, 1, fd);
 }
 
 
 // link segment data into segment ring
 static void link_segment(intval_t start, intval_t length)
 {
-	struct segment_t	*new_segment,
-				*test_segment	= segments_head.next;
+	struct segment	*new_segment,
+			*test_segment	= out->segment.list_head.next;
 
 	// init new segment
 	new_segment = safe_malloc(sizeof(*new_segment));
 	new_segment->start = start;
 	new_segment->length = length;
 	// use ring head as sentinel
-	segments_head.start = start;
-	segments_head.length = length + 1;
+	out->segment.list_head.start = start;
+	out->segment.list_head.length = length + 1;	// +1 to make sure sentinel exits loop
 	// walk ring to find correct spot
-	while ((test_segment->start < new_segment->start) ||
-		((test_segment->start == new_segment->start) &&
-		(test_segment->length < new_segment->length)))
+	while ((test_segment->start < new_segment->start)
+	|| ((test_segment->start == new_segment->start) && (test_segment->length < new_segment->length)))
 		test_segment = test_segment->next;
 	// link into ring
 	new_segment->next = test_segment;
@@ -417,21 +453,19 @@ void Output_end_segment(void)
 {
 	intval_t	amount;
 
+	// if no segments were started, ignore the call at end-of-pass:
+	if (out->segment.start == NO_SEGMENT_START)
+		return;
+
 	if (CPU_uses_pseudo_pc())
 		Throw_first_pass_warning("Offset assembly still active at end of segment.");	// FIXME - should be error!
-	if ((pass_count == 0) && !(segment_flags & SEGMENT_FLAG_INVISIBLE)) {
-		amount = write_idx - segment_start;
-		link_segment(segment_start, amount);
+	if ((pass_count == 0) && !(out->segment.flags & SEGMENT_FLAG_INVISIBLE)) {
+		amount = out->write_idx - out->segment.start;
+		link_segment(out->segment.start, amount);
 		if (Process_verbosity > 1)
-			printf(
-"Segment size is %ld ($%lx) bytes ($%lx - $%lx exclusive).\n",
-amount, amount, segment_start, write_idx);
+			printf("Segment size is %ld (0x%lx) bytes (0x%lx - 0x%lx exclusive).\n",
+				amount, amount, out->segment.start, out->write_idx);
 	}
-
-// FIXME - this was in real_output():
-	// check for new max address (FIXME - move to close_segment?)
-	if (write_idx > highest_idx)
-		highest_idx = write_idx;
 }
 
 
@@ -439,11 +473,11 @@ amount, amount, segment_start, write_idx);
 // only call in first pass, otherwise too many warnings might be thrown
 static void check_segment(intval_t new_pc)
 {
-	struct segment_t	*test_segment	= segments_head.next;
+	struct segment	*test_segment	= out->segment.list_head.next;
 
 	// use list head as sentinel
-	segments_head.start = new_pc + 1;
-	segments_head.length = 1;
+	out->segment.list_head.start = new_pc + 1;	// +1 to make sure sentinel exits loop
+	out->segment.list_head.length = 1;
 	// search ring for matching entry
 	while (test_segment->start <= new_pc) {
 		if ((test_segment->start + test_segment->length) > new_pc) {
@@ -456,38 +490,34 @@ static void check_segment(intval_t new_pc)
 }
 
 
-// init lowest and highest address
-static void init_borders(intval_t address)
-{
-	lowest_idx = address;
-	highest_idx = address;
-}
-
-
 // clear segment list
 void Output_passinit(signed long start_addr)
 {
-//	struct segment_t	*temp;
+//	struct segment	*temp;
+
 //FIXME - why clear ring list in every pass?
 	// delete segment list (and free blocks)
 //	while ((temp = segment_list)) {
 //		segment_list = segment_list->next;
 //		free(temp);
 //	}
-	set_mem_ptr(start_addr);	// negative values deactivate output
+
+	// invalidate start and end (first byte actually output will fix them)
+	out->lowest_written = OUTBUFFERSIZE - 1;
+	out->highest_written = 0;
+
 	// if start address given, set program counter
 	if (start_addr >= 0) {
+		enable_output(start_addr);
 		CPU_set_pc(start_addr);
-		// FIXME - integrate next two?
-		init_borders(start_addr);
-		segment_start = start_addr;
+		out->segment.start = start_addr;
 	} else {
-		init_borders(0);	// set to _something_ (for !initmem)
-		segment_start = 0;
+		disable_output();
+		out->segment.start = NO_SEGMENT_START;
 	}
 	// other stuff
-	segment_max = OUTBUFFERSIZE - 1;
-	segment_flags = 0;
+	out->segment.max = OUTBUFFERSIZE - 1;
+	out->segment.flags = 0;
 }
 
 
@@ -513,12 +543,9 @@ void Output_start_segment(void)
 		new_flags |= (int) node_body;
 	}
 
-// to allow for undefined pseudopc, this must be changed to use memaddress instead!
-	if (CPU_pc.flags & MVALUE_DEFINED) {
-		// it's a redefinition. Check some things:
-		// check whether new low
-		if (new_addr < lowest_idx)
-			lowest_idx = new_addr;
+	// if there was a segment before, end it
+	if (out->segment.start != NO_SEGMENT_START) {
+		// it's a redefinition, so:
 		// show status of previous segment
 		Output_end_segment();
 		// in first pass, maybe issue warning
@@ -527,11 +554,9 @@ void Output_start_segment(void)
 				check_segment(new_addr);
 			find_segment_max(new_addr);
 		}
-	} else {
-		init_borders(new_addr);	// it's the first pc definition
 	}
+	out->segment.start = new_addr;
+	out->segment.flags = new_flags;
+	enable_output(new_addr);
 	CPU_set_pc(new_addr);
-	segment_start = new_addr;
-	segment_flags = new_flags;
-	set_mem_ptr(new_addr);
 }

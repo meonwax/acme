@@ -192,9 +192,9 @@ void dump_tree(struct node_ra_t *node, int id_number, void (*fn)(struct node_ra_
 // Calls Tree_dump_tree for each non-zero entry of the given tree table.
 void Tree_dump_forest(struct node_ra_t **forest, int id_number, void (*fn)(struct node_ra_t *, FILE *), FILE *env)
 {
-	int	i;
+	int	ii;
 
-	for (i = 255; i >= 0; i--) {
+	for (ii = 255; ii >= 0; ii--) {
 		if (*forest)
 			dump_tree(*forest, id_number, fn, env);
 		forest++;
