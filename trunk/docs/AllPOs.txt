@@ -73,7 +73,7 @@ Parameters:	ANDVALUE: Any formula the value parser accepts, but it
 		FILLVALUE: Any formula the value parser accepts. If it
 		is omitted, a default value is used (currently 234,
 		that's the 6502 CPU's NOP command).
-Examples:	; eliminate the 6502's JMP()-Bug:
+Examples:	; eliminate the 6502's JMP($xxff)-Bug:
 		!align 1, 0	; wait for even address
 	Label	!word Pointer
 
@@ -113,14 +113,14 @@ Examples:	!convtab raw
 Hint: If you don't want to fiddle with a hex editor to create a
 conversion table file, try using ACME:
 		!to "asc2pet.ct", plain	; no load address
-		*=0			; pc = table index
+		* = 0			; pc = table index
 		; first create "as-is" table
-		!for i, 256 {!byte i-1}
+		!for i, 256 {!byte i - 1}
 		; now exchange upper and lower case characters
-		*=65
-		!for i, 91-65 {!byte *+128}
-		*=97
-		!for i, 123-97 {!byte *-32}
+		* = 65
+		!for i, 91 - 65 {!byte * + 128}
+		* = 97
+		!for i, 123 - 97 {!byte * - 32}
 The resulting file can be used as a conversion table to convert to
 PetSCII (which is useless, because ACME can do so anyway. But you get
 the idea).
@@ -135,7 +135,7 @@ Parameters:	STRING_VALUE: Can be either a string given in double
 		but single characters involved in calculations will.
 Aliases:	"!tx"
 Examples:	!text "Loading...", Char_NewLine, "Filename:", 0
-		!tx "Offset character is ", offset-1+'a', 0
+		!tx "Offset character is ", offset - 1 + 'a', 0
 
 
 Call:		!pet STRING_VALUE [, STRING_VALUE]*
@@ -147,7 +147,7 @@ Parameters:	STRING_VALUE: Can be either a string given in double
 		Please note that formula results won't be converted,
 		but single characters involved in calculations will.
 Examples:	!pet "Loading...", Char_NewLine, "Filename:", 0
-		!pet "Offset character is ", offset-1+'a', 0
+		!pet "Offset character is ", offset - 1 + 'a', 0
 
 
 Call:		!raw STRING_VALUE [, STRING_VALUE]*
@@ -156,7 +156,7 @@ Purpose:	Output the given string(s) without any conversion at
 Parameters:	STRING_VALUE: Can be either a string given in double
 		quotes or any formula the value parser accepts.
 Examples:	!raw "Loading...", Char_NewLine, "Filename:", 0
-		!raw "Offset character is ", offset-1+'a', 0
+		!raw "Offset character is ", offset - 1 + 'a', 0
 
 
 Call:		!scr STRING_VALUE [, STRING_VALUE]*
@@ -168,7 +168,7 @@ Parameters:	STRING_VALUE: Can be either a string given in double
 		Please note that formula results won't be converted,
 		but single characters involved in calculations will.
 Examples:	!scr "Loading...", Char_NewLine, "Filename:", 0
-		!scr "Offset character is ", offset-1+'a', 0
+		!scr "Offset character is ", offset - 1 + 'a', 0
 
 
 Call:		!scrxor XOR_VALUE, STRING_VALUE [, STRING_VALUE]*
@@ -350,7 +350,7 @@ Examples:	; this was taken from <6502/std.a>:
 		; if the following code gets included several times,
 		; only assemble it at the first location:
 		!ifndef my_label {my_label} ; only define if undefined
-		!if *=my_label {
+		!if * = my_label {
 			; imagine some code here...
 			; this block will only be assembled at the
 			; first location where it is included. all
@@ -380,7 +380,7 @@ Parameters:	LABEL: Any valid label name. The label's value will
 Examples:	; conversion table: integer to BCD
 	int2BCD	!for Outer, 10 {
 			!for Inner, 10 {
-				!byte ((Outer-1) << 4) OR (Inner-1)
+				!byte ((Outer - 1) << 4) OR (Inner - 1)
 			}
 		}
 		!fill 156, $ff	; values above 99 give 255 (invalid)
@@ -388,7 +388,7 @@ Examples:	; conversion table: integer to BCD
 		; conversion table: BCD to integer
 	BCD2int	!for Outer, 10 {
 			!for Inner, 10 {
-				!byte 10 * (Outer-1) + (Inner-1)
+				!byte 10 * (Outer - 1) + (Inner - 1)
 			}
 			!fill 6, $ff	; invalid BCD values give 255
 		}
@@ -423,7 +423,7 @@ Examples:	; a loop with conditions at both start and end
 		!set a = 0			; init loop counter
 		!do while loop_flag = TRUE {
 			lda #a
-			sta label+a
+			sta label + a
 			!set a = a + 1
 		} until a > 6
 
@@ -468,7 +468,7 @@ Purpose:	Generate an error during assembly (therefore, no
 Parameters:	STRING_VALUE: A string given in double quotes.
 Example:	rts	; end of some function
 	start	!source "colors.a"
-	end	!if end-start > 256 {
+	end	!if end - start > 256 {
 			!error "Color strings exceed 256 chars!"
 		}
 
@@ -542,7 +542,7 @@ Examples:	; far branch, as defined in <6502/std.a>
 
 		; define a pixel row of a C64 hardware sprite
 		!macro SpriteLine .v {
-			!by .v>>16, (.v>>8)&255, .v&255
+			!by .v >> 16, (.v >> 8) & 255, .v & 255
 		}
 
 
@@ -607,9 +607,9 @@ Examples:	inc label
 Since release 0.86, different macros are allowed to have the same name
 as long as their parameter lists differ in size (number of arguments)
 or type (call-by-value vs. call-by-reference). So
-		!macro process_bytes b1,b2 {...whatever...}
-		!macro process_bytes b1,b2,b3 {...whatever...}
-		!macro process_bytes b1,b2,~b3 {...whatever...}
+		!macro process_bytes b1, b2 {...whatever...}
+		!macro process_bytes b1, b2, b3 {...whatever...}
+		!macro process_bytes b1, b2, ~b3 {...whatever...}
 can *all* be used at the same time without any name clash.
 
 
@@ -617,7 +617,7 @@ can *all* be used at the same time without any name clash.
 Section:   Segment assembly
 ----------------------------------------------------------------------
 
-Call:		*= EXPRESSION [,MODIFIER]*
+Call:		* = EXPRESSION [, MODIFIER]*
 Purpose:	Set program counter to given value and start new
 		segment. This opcode must be given at least once
 		(or the command line option "--setpc" must be used).
@@ -636,15 +636,15 @@ Parameters:	EXPRESSION: Any formula the value parser accepts, but
 		_other_ segments will never raise the warning "Segment
 		reached another one, overwriting it".
 Examples:	!to "TinyDemo", cbm	; define output file + format
-		*= $0801		; start at C64 BASIC start
+		* = $0801		; start at C64 BASIC start
 		!src "basicmacros.a"	; include macro definitions
 		+basic_header		; call program header macro
 		!src "main.a"		; include main program
-		*= $1000		; jump to new segment
+		* = $1000		; jump to new segment
 		!bin "music.b"		; load music to $1000
-		*= $8000		; jump to new segment
+		* = $8000		; jump to new segment
 		!bin "pic.b"		; load graphics to $8000
-		*= $8010, overlay, invisible	; go back and patch
+		* = $8010, overlay, invisible	; go back and patch
 				; the graphics, suppressing warnings
 		; After assembly, ACME will save everything from $0801
 		; up to the highest address written to. The resulting
@@ -665,15 +665,15 @@ Parameters:	EXPRESSION: Any formula the value parser accepts, but
 		this opcode will be ignored in all later passes).
 Examples:	!to "TinyDemo", cbm	; define output file + format
 		!initmem $ea		; default memory content $ea.
-		*= $0801		; start at C64 BASIC start
+		* = $0801		; start at C64 BASIC start
 		!src "basicmacros.a"	; include macro definitions
 		+basic_header		; call program header macro
 		!src "main.a"		; include main program
-		*= $1000		; jump to new segment
+		* = $1000		; jump to new segment
 		!bin "music.b"		; load music to $1000
-		*= $8000		; jump to new segment
+		* = $8000		; jump to new segment
 		!bin "pic.b"		; load graphics to $8000
-		*= $8010, overlay, invisible	; go back and patch
+		* = $8010, overlay, invisible	; go back and patch
 				; the graphics, suppressing warnings
 		; This is the same example as before, but now the big
 		; unused areas will contain the value $ea instead of
@@ -687,7 +687,7 @@ Examples:	!to "TinyDemo", cbm	; define output file + format
 Section:   Offset assembly
 ----------------------------------------------------------------------
 
-Call:		!pseudopc EXPRESSION [ { BLOCK } ]
+Call:		!pseudopc EXPRESSION { BLOCK }
 Purpose:	Assemble code as if the program counter had the given
 		value, effectively producing a program that has to be
 		copied to a different address space before being run.
@@ -701,9 +701,9 @@ Purpose:	Assemble code as if the program counter had the given
 Parameters:	EXPRESSION: Any formula the value parser accepts, but
 		it must be solvable even in the first pass.
 		BLOCK: A block of assembler statements.
-Examples:	ldx #.shifted_end-.shifted_start
-	-		lda .shifted_start-1,x
-			sta .target-1,x
+Examples:	ldx #.shifted_end - .shifted_start
+	-		lda .shifted_start - 1, x
+			sta .target - 1, x
 			dex
 			bne -
 		jmp .target
@@ -780,22 +780,20 @@ Purpose:	Assume short (8 bits) index registers. Only needed
 
 
 ----------------------------------------------------------------------
-Section:   Deprecated pseudo opcodes (they still work at the moment)
+Section:   Obsolete pseudo opcodes (they will throw errors if used)
 ----------------------------------------------------------------------
 
 Call:		!cbm
 Purpose:	Use PetSCII as the text conversion table. Now
 		superseded by the "!convtab" pseudo opcode.
-Old usage:	!cbm		; gives "use !ct pet instead" warning
-Now use:	!convtab pet	; does the same without warning
+Old usage:	!cbm		; gives "use !ct pet instead" error
+Now use:	!convtab pet	; does the same without error
 
 
 Call:		!subzone [TITLE] { BLOCK }
 Purpose:	Allows nesting of zones. Now superseded by "!zone"
 		because that allows nesting as well.
-Parameters:	TITLE: May consist of letters and digits. Its only
-		purpose is to be displayed in error messages, so it'll
-		be omitted in most cases.
+Parameters:	TITLE: May consist of letters and digits.
 		BLOCK: A block of assembler statements.
 Aliases:	"!sz"
 Old usage:	!subzone graphics {

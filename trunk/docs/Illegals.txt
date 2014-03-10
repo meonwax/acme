@@ -22,7 +22,7 @@ Mnemo |   8    8,x   8,y    16   16,x  16,y  (8,x) (8),y |  performs:
  dcp  |   c7    d7    --    cf    df    db    c3    d3   |  dec + cmp
  isc  |   e7    f7    --    ef    ff    fb    e3    f3   |  inc + sbc
 
-In release 0.89, further ones were added:
+In release 0.89, more were added; and in 0.94.8, another one (lxa):
 
       |           addressing mode           |
 Mnemo | implied #8    8    8,x    16   16,x |  performs:
@@ -34,6 +34,7 @@ Mnemo | implied #8    8    8,x    16   16,x |  performs:
  dop  |   80*   80    04    14    --    --  |  skips next byte
  top  |   0c*   --    --    --    0c    1c  |  skips next two bytes
  jam  |   02    --    --    --    --    --  |  crash (wait for reset)
+ lxa  |   --    ab**  --    --    --    --  |  A/X = (A | ??) & arg
 
 Example:
 		!cpu 6510	; activate additional mnemonics...
@@ -45,6 +46,11 @@ the generated opcodes are those for immediate and 16-bit absolute
 addressing, respectively. Using dop/top with x-indexed addressing
 might have its uses when timing is critical (crossing a page border
 adds a penalty cycle).
+
+**) This opcode is said to first perform an ORA with an arbitrary(!)
+value, then do an AND with the given argument, then do a TAX.
+This means it is unstable and therefore useless - unless the given
+argument is zero, in which case it reliably clears both A and X.
 
 There is no guarantee that these opcodes actually work on a given 6502
 (or 6510, or 8500, or 8502) CPU. But as far as I know, nobody ever
@@ -93,7 +99,6 @@ Opcode|  Description
   9c  |    see notes below
   9e  |    see notes below
   9f  |    see notes below
-  ab  |    see notes below
   b2  |  same as 02 and others    jam                 CRASH
   bb  |    see notes below
   c2  |  same as 82/e2            dop #8, but said to CRASH sometimes
@@ -109,7 +114,7 @@ Opcode|  Description
   fc  |  same as 1c and others    top 16,x
 
 
-Concerning opcodes 8b, 93, 9b, 9c, 9e, 9f, ab, bb:
+Concerning opcodes 8b, 93, 9b, 9c, 9e, 9f, bb:
 
 These opcodes are said to be unstable. For more information about what
 they do, see these documents:
@@ -126,5 +131,4 @@ reference documents above call them:
   9c: shy, say, sya
   9e: shx, xas, sxa
   9f: sha, axa, ahx
-  ab: lxa, oal, atx
   bb: las, lar, lae

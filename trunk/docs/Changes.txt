@@ -13,6 +13,23 @@ outlining the platform specific changes.
 
 
 ----------------------------------------------------------------------
+Section:   New in release 0.94.8
+----------------------------------------------------------------------
+
+Finally disabled pseudo opcode "!cbm". It now gives an error instead
+    of a warning.
+Finally disabled pseudo opcode "!realpc". It now gives an error
+    instead of a warning. Therefore, "!pseudopc" now *must* be used
+    with a block in {} braces.
+Finally disabled pseudo opcode "!subzone". It now gives an error
+    instead of a warning.
+Added support for one more undocumented ("illegal") opcode: lxa. See
+    Illegals.txt for more info.
+Removed "Offset assembly still active at end of segment" warning. New
+    segments can now be started even from within pseudopc sections.
+
+
+----------------------------------------------------------------------
 Section:   New in release 0.94.7
 ----------------------------------------------------------------------
 
@@ -88,7 +105,7 @@ New CLI switch: "-D" allows to set global labels via the command line.
 New CLI switch: "-Wno-label-indent" switches off warnings about
     indented implicit label definitions.
 New PO: "!ifndef" (finally a companion for "!ifdef"...)
-When setting the program counter via "*=", modifiers ("overlay" and
+When setting the program counter via "* =", modifiers ("overlay" and
     "invisible") allow to suppress warnings about segment overlap.
 Float values without leading digits are now accepted.
 
@@ -328,7 +345,7 @@ New PO: "!convtab CONVERSION" (short "!ct") selects the default
 Improved PO: "!binary" now has "skip" parameter.
 Change: "!cbm" outputs a warning when used - use "!ct pet" instead.
 Change: "!end" no longer works - use "!eof" instead.
-Change: "*=VALUE" is now segment change instead of offset assembly.
+Change: "* = VALUE" is now segment change instead of offset assembly.
 Change: Argument order of MVN/MVP is now as is standard.
 The typecast system has been rewritten - now it works as intended.
 BIT without any parameters no longer works - use a macro instead.

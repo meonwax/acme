@@ -1,5 +1,5 @@
 // ACME - a crossassembler for producing 6502/65c02/65816 code.
-// Copyright (C) 1998-2009 Marco Baye
+// Copyright (C) 1998-2014 Marco Baye
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -15,9 +15,9 @@
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-#define RELEASE		"0.94.7"	// update before release (FIXME)
+#define RELEASE		"0.94.8"	// update before release (FIXME)
 #define CODENAME	"Zarquon"	// update before release
-#define CHANGE_DATE	"5 Mar"		// update before release
+#define CHANGE_DATE	"10 Mar"	// update before release
 #define CHANGE_YEAR	"2014"		// update before release
 //#define HOME_PAGE	"http://home.pages.de/~mac_bacon/smorbrod/acme/"	// FIXME
 #define HOME_PAGE	"http://sourceforge.net/p/acme-crossass/"	// FIXME
@@ -69,9 +69,10 @@ static const char	name_dumpfile[]		= "label dump filename";
 // variables
 static const char	**toplevel_sources;
 static int		toplevel_src_count	= 0;
-static signed long	start_addr		= -1;	// <0 is illegal
+#define ILLEGAL_START_ADDRESS	(-1)
+static signed long	start_address		= ILLEGAL_START_ADDRESS;
 static signed long	fill_value		= MEMINIT_USE_DEFAULT;
-static struct cpu_t	*default_cpu		= NULL;
+static const struct cpu_type	*default_cpu	= NULL;
 const char		*labeldump_filename	= NULL;
 const char		*output_filename	= NULL;
 // maximum recursion depth for macro calls and "!source"
@@ -185,8 +186,11 @@ static int perform_pass(void)
 	int	ii;
 
 	// call modules' "pass init" functions
+	Output_passinit();	// disable output (until PC gets set)
 	CPU_passinit(default_cpu);	// set default cpu values (PC undefined)
-	Output_passinit(start_addr);	// call after CPU_passinit(), to define PC
+	// if start address was given on command line, use it:
+	if (start_address != ILLEGAL_START_ADDRESS)
+		CPU_set_pc(start_address, 0);
 	Encoding_passinit();	// set default encoding
 	Section_passinit();	// set initial zone (untitled)
 	// init variables
@@ -317,8 +321,8 @@ static signed long string_to_number(const char *string)
 // set program counter
 static void set_starting_pc(void)
 {
-	start_addr = string_to_number(cliargs_safe_get_next("program counter"));
-	if ((start_addr > -1) && (start_addr < 65536))
+	start_address = string_to_number(cliargs_safe_get_next("program counter"));
+	if ((start_address > -1) && (start_address < 65536))
 		return;
 	fprintf(stderr, "%sProgram counter out of range (0-0xffff).\n", cliargs_error);
 	exit(EXIT_FAILURE);

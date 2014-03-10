@@ -1,5 +1,5 @@
 // ACME - a crossassembler for producing 6502/65c02/65816 code.
-// Copyright (C) 1998-2009 Marco Baye
+// Copyright (C) 1998-2014 Marco Baye
 // Have a look at "acme.c" for further info
 //
 // Output stuff
@@ -54,6 +54,7 @@ static struct output	*out	= &default_output;
 
 // variables
 
+// FIXME - move file format stuff to some other .c file!
 // predefined stuff
 static struct node_t	*file_format_tree	= NULL;	// tree to hold output formats
 // possible file formats
@@ -72,6 +73,8 @@ static struct node_t	file_formats[]	= {
 };
 // chosen file format
 static enum out_format_t	output_format	= OUTPUT_FORMAT_UNSPECIFIED;
+
+
 // predefined stuff
 static struct node_t	*segment_modifier_tree	= NULL;	// tree to hold segment modifiers
 // segment modifiers
@@ -97,11 +100,10 @@ static void find_segment_max(intval_t new_pc)
 	out->segment.list_head.start = new_pc + 1;
 	while (test_segment->start <= new_pc)
 		test_segment = test_segment->next;
-	if (test_segment == &out->segment.list_head) {
+	if (test_segment == &out->segment.list_head)
 		out->segment.max = OUTBUFFERSIZE - 1;
-	} else {
+	else
 		out->segment.max = test_segment->start - 1;	// last free address available
-	}
 }
 
 
@@ -135,15 +137,7 @@ static void real_output(intval_t byte)
 		out->highest_written = out->write_idx;
 	// write byte and advance ptrs
 	out->buffer[out->write_idx++] = byte & 0xff;
-	CPU_2add++;
-}
-
-
-// activate output and set output pointer
-static void enable_output(intval_t index)
-{
-	Output_byte = real_output;
-	out->write_idx = index;
+	CPU_state.add_to_pc++;
 }
 
 
@@ -151,18 +145,9 @@ static void enable_output(intval_t index)
 static void no_output(intval_t byte)
 {
 	Throw_error(exception_pc_undefined);
-	// set ptr to not complain again. as we have thrown an error, assembly
-	// fails, so don't care about actual value.
-	enable_output(512);	// 512 to not garble zero page and stack. ;)
-	Output_byte(byte);	// try again - the line above has changed the fn ptr!
-}
-
-
-// deactivate output - any byte written will trigger error!
-static void disable_output(void)
-{
-	Output_byte = no_output;
-	out->write_idx = 0;
+	// now change fn ptr to not complain again.
+	Output_byte = real_output;
+	Output_byte(byte);	// try again
 }
 
 
@@ -188,7 +173,7 @@ void Output_fake(int size)
 		out->highest_written = out->write_idx + size - 1;
 	// advance ptrs
 	out->write_idx += size;
-	CPU_2add += size;
+	CPU_state.add_to_pc += size;
 }
 
 
@@ -249,6 +234,7 @@ static void fill_completely(char value)
 
 
 // define default value for empty memory ("!initmem" pseudo opcode)
+// FIXME - move to basics.c
 static enum eos_t PO_initmem(void)
 {
 	intval_t	content;
@@ -281,6 +267,7 @@ static enum eos_t PO_initmem(void)
 
 
 // try to set output format held in DynaBuf. Returns whether succeeded.
+// FIXME - move to basics.c?
 int Output_set_output_format(void)
 {
 	void	*node_body;
@@ -294,6 +281,7 @@ int Output_set_output_format(void)
 
 
 // select output file and format ("!to" pseudo opcode)
+// FIXME - move to basics.c
 static enum eos_t PO_to(void)
 {
 	// bugfix: first read filename, *then* check for first pass.
@@ -344,6 +332,7 @@ static enum eos_t PO_to(void)
 
 
 // pseudo ocpode table
+// FIXME - move to basics.c
 static struct node_t	pseudo_opcodes[]	= {
 	PREDEFNODE("initmem",	PO_initmem),
 	PREDEFLAST("to",	PO_to),
@@ -352,6 +341,7 @@ static struct node_t	pseudo_opcodes[]	= {
 
 
 // init file format tree (is done early, because it is needed for CLI argument parsing)
+// FIXME - move to some other file
 void Outputfile_init(void)
 {
 	Tree_add_table(&file_format_tree, file_formats);
@@ -362,7 +352,6 @@ void Outputfile_init(void)
 void Output_init(signed long fill_value)
 {
 	out->buffer = safe_malloc(OUTBUFFERSIZE);
-	out->write_idx = 0;
 	if (fill_value == MEMINIT_USE_DEFAULT) {
 		fill_value = FILLVALUE_INITIAL;
 		out->initvalue_set = FALSE;
@@ -447,28 +436,6 @@ static void link_segment(intval_t start, intval_t length)
 }
 
 
-// show start and end of current segment
-// called whenever a new segment begins, and at end of pass.
-void Output_end_segment(void)
-{
-	intval_t	amount;
-
-	// if no segments were started, ignore the call at end-of-pass:
-	if (out->segment.start == NO_SEGMENT_START)
-		return;
-
-	if (CPU_uses_pseudo_pc())
-		Throw_first_pass_warning("Offset assembly still active at end of segment.");	// FIXME - should be error!
-	if ((pass_count == 0) && !(out->segment.flags & SEGMENT_FLAG_INVISIBLE)) {
-		amount = out->write_idx - out->segment.start;
-		link_segment(out->segment.start, amount);
-		if (Process_verbosity > 1)
-			printf("Segment size is %ld (0x%lx) bytes (0x%lx - 0x%lx exclusive).\n",
-				amount, amount, out->segment.start, out->write_idx);
-	}
-}
-
-
 // check whether given PC is inside segment.
 // only call in first pass, otherwise too many warnings might be thrown
 static void check_segment(intval_t new_pc)
@@ -490,42 +457,93 @@ static void check_segment(intval_t new_pc)
 }
 
 
-// clear segment list
-void Output_passinit(signed long start_addr)
+// clear segment list and disable output
+void Output_passinit(void)
 {
 //	struct segment	*temp;
 
 //FIXME - why clear ring list in every pass?
+// Because later pass shouldn't complain about overwriting the same segment from earlier pass!
+// Currently this does not happen because segment checks are only done in first pass. FIXME!
 	// delete segment list (and free blocks)
 //	while ((temp = segment_list)) {
 //		segment_list = segment_list->next;
 //		free(temp);
 //	}
 
-	// invalidate start and end (first byte actually output will fix them)
+	// invalidate start and end (first byte actually written will fix them)
 	out->lowest_written = OUTBUFFERSIZE - 1;
 	out->highest_written = 0;
-
-	// if start address given, set program counter
-	if (start_addr >= 0) {
-		enable_output(start_addr);
-		CPU_set_pc(start_addr);
-		out->segment.start = start_addr;
-	} else {
-		disable_output();
-		out->segment.start = NO_SEGMENT_START;
-	}
-	// other stuff
+	// deactivate output - any byte written will trigger error:
+	Output_byte = no_output;
+	out->write_idx = 0;	// same as pc on pass init!
+	out->segment.start = NO_SEGMENT_START;	// TODO - "no active segment" could be made a segment flag!
 	out->segment.max = OUTBUFFERSIZE - 1;
 	out->segment.flags = 0;
 }
 
 
-// called when "*=EXPRESSION" is parsed
-void Output_start_segment(void)
+// show start and end of current segment
+// called whenever a new segment begins, and at end of pass.
+void Output_end_segment(void)
+{
+	intval_t	amount;
+
+	// in later passes, ignore completely
+	if (pass_count)
+		return;
+
+	// if there is no segment, there is nothing to do
+	if (out->segment.start == NO_SEGMENT_START)
+		return;
+
+	// ignore "invisible" segments
+	if (out->segment.flags & SEGMENT_FLAG_INVISIBLE)
+		return;
+
+	// ignore empty segments
+	amount = out->write_idx - out->segment.start;
+	if (amount == 0)
+		return;
+
+	// link to segment list
+	link_segment(out->segment.start, amount);
+	// announce
+	if (Process_verbosity > 1)
+		printf("Segment size is %ld (0x%lx) bytes (0x%lx - 0x%lx exclusive).\n",
+			amount, amount, out->segment.start, out->write_idx);
+}
+
+
+// change output pointer and enable output
+void Output_start_segment(intval_t address_change, int segment_flags)
+{
+	// properly finalize previous segment (link to list, announce)
+	Output_end_segment();
+
+	// calculate start of new segment
+	out->write_idx = (out->write_idx + address_change) & 0xffff;
+	out->segment.start = out->write_idx;
+	out->segment.flags = segment_flags;
+	// allow writing to output buffer
+	Output_byte = real_output;
+	// in first pass, check for other segments and maybe issue warning
+	if (pass_count == 0) {
+		if (!(segment_flags & SEGMENT_FLAG_OVERLAY))
+			check_segment(out->segment.start);
+		find_segment_max(out->segment.start);
+	}
+}
+
+
+// TODO - add "!skip AMOUNT" pseudo opcode as alternative to "* = * + AMOUNT" (needed for assemble-to-end-address)
+// called when "* = EXPRESSION" is parsed
+// setting program counter via "* = VALUE"
+// FIXME - move to basics.c
+void PO_setpc(void)
 {
 	void		*node_body;
-	int		new_flags	= 0;
+	int		segment_flags	= 0;
 	intval_t	new_addr	= ALU_defined_int();
 
 	// check for modifiers
@@ -536,27 +554,13 @@ void Output_start_segment(void)
 			return;
 
 		if (!Tree_easy_scan(segment_modifier_tree, &node_body, GlobalDynaBuf)) {
-			Throw_error("Unknown \"*=\" segment modifier.");
+			Throw_error("Unknown \"* =\" segment modifier.");
 			return;
 		}
 
-		new_flags |= (int) node_body;
+		segment_flags |= (int) node_body;
 	}
-
-	// if there was a segment before, end it
-	if (out->segment.start != NO_SEGMENT_START) {
-		// it's a redefinition, so:
-		// show status of previous segment
-		Output_end_segment();
-		// in first pass, maybe issue warning
-		if (pass_count == 0) {
-			if (!(new_flags & SEGMENT_FLAG_OVERLAY))
-				check_segment(new_addr);
-			find_segment_max(new_addr);
-		}
-	}
-	out->segment.start = new_addr;
-	out->segment.flags = new_flags;
-	enable_output(new_addr);
-	CPU_set_pc(new_addr);
+	CPU_set_pc(new_addr, segment_flags);
 }
+
+
