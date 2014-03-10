@@ -4,8 +4,6 @@
 
          ...the ACME Crossassembler for Multiple Environments
 
-                            Release 0.94.7
-
                           - free  software -
 
                        (C) 1998-2014 Marco Baye

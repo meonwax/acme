@@ -1,5 +1,5 @@
 // ACME - a crossassembler for producing 6502/65c02/65816 code.
-// Copyright (C) 1998-2009 Marco Baye
+// Copyright (C) 1998-2014 Marco Baye
 // Have a look at "acme.c" for further info
 //
 // Output stuff
@@ -21,8 +21,8 @@
 extern void Outputfile_init(void);
 // alloc and init mem buffer, register pseudo opcodes (done later)
 extern void Output_init(signed long fill_value);
-// clear segment list
-extern void Output_passinit(signed long start_addr);
+// clear segment list and disable output
+extern void Output_passinit(void);
 // call this if really calling Output_byte would be a waste of time
 extern void Output_fake(int size);
 // Send low byte of arg to output buffer and advance pointer
@@ -39,8 +39,10 @@ extern void Output_32b(intval_t);
 extern int Output_set_output_format(void);
 // write smallest-possible part of memory buffer to file
 extern void Output_save_file(FILE *fd);
-// Call when "*=EXPRESSION" is parsed
-extern void Output_start_segment(void);
+// Call when "* = EXPRESSION" is parsed
+extern void PO_setpc(void);
+// change output pointer and enable output
+extern void Output_start_segment(intval_t address_change, int segment_flags);
 // Show start and end of current segment
 extern void Output_end_segment(void);
 

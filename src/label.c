@@ -1,5 +1,5 @@
 // ACME - a crossassembler for producing 6502/65c02/65816 code.
-// Copyright (C) 1998-2009 Marco Baye
+// Copyright (C) 1998-2014 Marco Baye
 // Have a look at "acme.c" for further info
 //
 // Label stuff
@@ -213,8 +213,8 @@ void Label_implicit_definition(zone_t zone, int stat_flags, int force_bit, int c
 	// implicit label definition (label)
 	if ((stat_flags & SF_FOUND_BLANK) && warn_on_indented_labels)
 		Throw_first_pass_warning("Implicit label definition not in leftmost column.");
-	result.flags = CPU_pc.flags & MVALUE_DEFINED;
-	result.val.intval = CPU_pc.intval;
+	result.flags = CPU_state.pc.flags & MVALUE_DEFINED;
+	result.val.intval = CPU_state.pc.intval;
 	Label_set_value(label, &result, change);
 }
 

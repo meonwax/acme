@@ -1,5 +1,5 @@
 // ACME - a crossassembler for producing 6502/65c02/65816 code.
-// Copyright (C) 1998-2009 Marco Baye
+// Copyright (C) 1998-2014 Marco Baye
 // Have a look at "acme.c" for further info
 //
 // Section stuff
@@ -88,11 +88,10 @@ static enum eos_t PO_zone(void)
 	return ENSURE_EOS;
 }
 
-// Start subzone ("!subzone" or "!sz"). Has to be re-entrant.
+// "!subzone" or "!sz" pseudo opcode (now obsolete)
 static enum eos_t PO_subzone(void)
 {
-	// output deprecation warning
-	Throw_first_pass_warning("\"!subzone {}\" is deprecated; use \"!zone {}\" instead.");
+	Throw_error("\"!subzone {}\" is obsolete; use \"!zone {}\" instead.");
 	// call "!zone" instead
 	return PO_zone();
 }

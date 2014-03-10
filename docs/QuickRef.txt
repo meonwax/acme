@@ -19,7 +19,7 @@ Section:   Example of what an ACME source code file looks like
 ;--- Example code fragment, start ---
 
 		!to "tiny.o", cbm	; set output file and format
-		*= $c000		; set program counter
+		* = $c000		; set program counter
 
 		basout = $ffd2		; explicit global label def.
 		; a string output loop:
@@ -28,7 +28,7 @@ Section:   Example of what an ACME source code file looks like
 
 -			jsr basout	; output character
 			inx		; advance pointer
-+			lda .string,x	; get character
++			lda .string, x	; get character
 			bne -		; check whether last
 		rts
 .string		!pet "Dumb example", 13, 0
@@ -44,7 +44,7 @@ Here's the same fragment again, now with some additional info:
 ; This is a pseudo opcode to select the output filename and format.
 ; This can also be done using the command line options "-o" and "-f",
 ; respectively.
-		*= $c000		; set program counter
+		* = $c000		; set program counter
 ; This can also be done using the command line option "--setpc".
 		basout = $ffd2		; explicit global label def.
 ; Now "basout" is defined as a global label having the value $ffd2.
@@ -99,7 +99,7 @@ macro/zone), but in addition to that, the "-" labels can only be used
 for backward references, while the "+" labels can only be used for
 forward references.
 In contrast to global and local labels, anonymous labels can not be
-defined explicitly (as in LABEL=VALUE).
+defined explicitly (as in LABEL = VALUE).
 
 Save the given example source code to a file called "tiny.a" and start
 acme by typing
@@ -112,7 +112,7 @@ filename has been given.
 
 After assembly, the example program can be run on a C64 using
 
-    LOAD "tiny.o",8,1
+    LOAD "tiny.o", 8, 1
     SYS 49152
 
 Note that ACME does not include any routines for transferring data to
@@ -185,7 +185,7 @@ Available options are:
         opcode. Defaults to 6502.
 
     --setpc NUMBER         set program counter
-        This can also be given in the source code using "*=NUMBER".
+        This can also be given in the source code using "* = NUMBER".
 
     --initmem NUMBER       define 'empty' memory
         This can also be given using the "!initmem" pseudo opcode.

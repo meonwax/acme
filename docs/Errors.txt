@@ -27,18 +27,6 @@ Error in CLI arguments: ...
 Section:   Warnings during assembly
 ----------------------------------------------------------------------
 
-"!cbm" is deprecated; use "!ct pet" instead.
-    This is given when "!cbm" is encountered. It still works though.
-
-"!pseudopc/!realpc" is deprecated; use "!pseudopc {}" instead.
-    "!pseudopc" can now be used with a block, so it can be nested.
-    So "!realpc" is no longer needed. It still works though.
-
-"!subzone {}" is deprecated; use "!zone {}" instead.
-    "!zone" can now be used stand-alone (which just changes the
-    current zone) as well as with a block (which creates a subzone).
-    So "!subzone" is no longer needed. It still works though.
-
 !warn: ...
     This is given when the pseudo opcode "!warn" is executed. The
     actual message varies according to the pseudo opcode's arguments.
@@ -52,6 +40,13 @@ Assembling buggy JMP($xxff) instruction
     instruction.
     Note that this warning is only given for CPU types 6502 and 6510,
     because 65c02 and 65816 have been fixed in this respect.
+
+Assembling unstable LXA #NONZERO instruction
+    This warning is only ever given for CPU type 6510. LXA is one of
+    the undocumented ("illegal") opcodes of this CPU (opcode 0xab),
+    and it only works reliably if its argument is zero. Therefore ACME
+    issues this warning if you are about to generate this instruction
+    with a non-zero argument.
 
 Bug in ACME, code follows
     A situation has been encountered implying there is a bug in ACME.
@@ -83,12 +78,6 @@ Memory already initialised.
     The "!initmem" command was given more than once (or in addition to
     the "--initmem" command line option). Only use it once.
 
-Offset assembly still active at end of segment.
-    There's a "*=" command inside an offset assembly block. There has
-    been some discussion on the ACME mailing list over whether this
-    should raise a warning. Future releases of ACME might not warn
-    anymore.
-
 Output file already chosen.
     The "!to" command was given more than once (or in addition to the
     "--outfile" command line option). Only use it once.
@@ -97,16 +86,16 @@ Segment reached another one, overwriting it.
     The program counter has just reached the start of another segment.
     Because some people might want to assemble "onto" a binary file
     that was loaded before, this warning can be switched off using
-    modifier keywords when changing the program counter via "*=".
+    modifier keywords when changing the program counter via "* =".
     Future versions of ACME might throw an error instead of a warning
     in this case.
 
 Segment starts inside another one, overwriting it.
-    The given value in a "*=" command is located inside another
+    The given value in a "* =" command is located inside another
     segment. Because some people might want to assemble "onto" a
     binary file that was loaded before, this warning can be switched
     off using modifier keywords when changing the program counter via
-    "*=".
+    "* =".
     Future versions of ACME might throw an error instead of a warning
     in this case.
 
@@ -141,6 +130,18 @@ Section:   Errors during assembly
     This will be shown if the source code references any files from
     the library, but the library location variable wasn't set. This
     can only be given on systems using the said variable.
+
+"!cbm" is obsolete; use "!ct pet" instead.
+    This is given when the now obsolete "!cbm" pseudo opcode is
+    encountered.
+
+"!pseudopc/!realpc" is obsolete; use "!pseudopc {}" instead.
+    This is given when one of the now obsolete !pseudopc/!realpc
+    pseudo opcodes is encountered.
+
+"!subzone {}" is obsolete; use "!zone {}" instead.
+    This is given when the now obsolete "!subzone" pseudo opcode is
+    encountered.
 
 !error: ...
     This is given when the pseudo opcode "!error" is executed. The
@@ -268,7 +269,7 @@ Unknown processor.
 Unknown pseudo opcode.
     You have mistyped a "!" command.
 
-Unknown "*=" segment modifier.
+Unknown "* =" segment modifier.
     You used a modifier keyword ACME does not know.
 
 Value not yet defined.

@@ -1,5 +1,5 @@
 // ACME - a crossassembler for producing 6502/65c02/65816 code.
-// Copyright (C) 1998-2009 Marco Baye
+// Copyright (C) 1998-2014 Marco Baye
 // Have a look at "acme.c" for further info
 //
 // Global stuff - things that are needed by several modules
@@ -127,7 +127,7 @@ static void parse_pc_def(void)	// Now GotByte = "*"
 	// re-definitions of program counter change segment
 	if (GotByte == '=') {
 		GetByte();	// proceed with next char
-		Output_start_segment();
+		PO_setpc();
 		Input_ensure_EOS();
 	} else {
 		Throw_error(exception_syntax);
@@ -183,7 +183,7 @@ static int first_label_of_statement(int *statement_flags)
 static void parse_mnemo_or_global_label_def(int *statement_flags)
 {
 	// It is only a label if it isn't a mnemonic
-	if ((CPU_now->keyword_is_mnemonic(Input_read_keyword()) == FALSE)
+	if ((CPU_state.type->keyword_is_mnemonic(Input_read_keyword()) == FALSE)
 	&& first_label_of_statement(statement_flags)) {
 		// Now GotByte = illegal char
 		// 04 Jun 2005 - this fix should help to
@@ -300,8 +300,8 @@ void Parse_until_eob_or_eof(void)
 			}
 		} while (GotByte != CHAR_EOS);	// until end-of-statement
 		// adjust program counter
-		CPU_pc.intval = (CPU_pc.intval + CPU_2add) & 0xffff;
-		CPU_2add = 0;
+		CPU_state.pc.intval = (CPU_state.pc.intval + CPU_state.add_to_pc) & 0xffff;
+		CPU_state.add_to_pc = 0;
 		// go on with next byte
 		GetByte();	//NEXTANDSKIPSPACE();
 	}

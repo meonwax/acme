@@ -1,5 +1,5 @@
 // ACME - a crossassembler for producing 6502/65c02/65816 code.
-// Copyright (C) 1998-2009 Marco Baye
+// Copyright (C) 1998-2014 Marco Baye
 // Have a look at "acme.c" for further info
 //
 // Character encoding stuff
@@ -135,12 +135,10 @@ static enum eos_t PO_scrxor(void)
 	return SKIP_REMAINDER;
 }
 
-// Switch to CBM mode ("!cbm" pseudo opcode)
+// "!cbm" pseudo opcode (now obsolete)
 static enum eos_t PO_cbm(void)
 {
-	Encoding_encode_char = encoder_pet;
-	// output deprecation warning
-	Throw_first_pass_warning("\"!cbm\" is deprecated; use \"!ct pet\" instead.");
+	Throw_error("\"!cbm\" is obsolete; use \"!ct pet\" instead.");
 	return ENSURE_EOS;
 }
 

@@ -1,5 +1,5 @@
 // ACME - a crossassembler for producing 6502/65c02/65816 code.
-// Copyright (C) 1998-2009 Marco Baye
+// Copyright (C) 1998-2014 Marco Baye
 // Have a look at "acme.c" for further info
 //
 // Arithmetic/logic unit
@@ -624,7 +624,7 @@ static void expect_operand_or_monadic_operator(void)
 
 	case '*':	// Program counter
 		GetByte();	// proceed with next char
-		PUSH_INTOPERAND(CPU_pc.intval, CPU_pc.flags | MVALUE_EXISTS);
+		PUSH_INTOPERAND(CPU_state.pc.intval, CPU_state.pc.flags | MVALUE_EXISTS);
 		// Now GotByte = char after closing quote
 		goto now_expect_dyadic;
 

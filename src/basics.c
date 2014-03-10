@@ -1,5 +1,5 @@
 // ACME - a crossassembler for producing 6502/65c02/65816 code.
-// Copyright (C) 1998-2009 Marco Baye
+// Copyright (C) 1998-2014 Marco Baye
 // Have a look at "acme.c" for further info
 //
 // basic assembly stuff
@@ -117,7 +117,7 @@ static enum eos_t PO_binary(void)
 	// if verbose, produce some output
 	if ((pass_count == 0) && (Process_verbosity > 1))
 		printf("Loaded %d (0x%04x) bytes from file offset %ld (0x%04lx).\n",
-			CPU_2add, CPU_2add, skip, skip);
+			CPU_state.add_to_pc, CPU_state.add_to_pc, skip, skip);
 	return ENSURE_EOS;
 }
 
