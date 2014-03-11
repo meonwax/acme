@@ -30,7 +30,7 @@ struct node_ra_t	*Label_forest[256];	// ... (because of 8-bit hash)
 // Dump label value and flags to dump file
 static void dump_one_label(struct node_ra_t *node, FILE *fd)
 {
-	struct label_t	*label	= node->body;
+	struct label	*label	= node->body;
 
 	// output name
 	fprintf(fd, "%s", node->id_string);
@@ -64,10 +64,10 @@ static void dump_one_label(struct node_ra_t *node, FILE *fd)
 
 // Search for label. Create if nonexistant. If created, give it flags "Flags".
 // The label name must be held in GlobalDynaBuf.
-struct label_t *Label_find(zone_t zone, int flags)
+struct label *Label_find(zone_t zone, int flags)
 {
 	struct node_ra_t	*node;
-	struct label_t		*label;
+	struct label		*label;
 	int			node_created,
 				force_bits	= flags & MVALUE_FORCEBITS;
 
@@ -98,7 +98,7 @@ struct label_t *Label_find(zone_t zone, int flags)
 
 // Assign value to label. The function acts upon the label's flag bits and
 // produces an error if needed.
-void Label_set_value(struct label_t *label, struct result_t *newvalue, int change_allowed)
+void Label_set_value(struct label *label, struct result_t *newvalue, int change_allowed)
 {
 	int	oldflags	= label->result.flags;
 
@@ -132,11 +132,11 @@ void Label_set_value(struct label_t *label, struct result_t *newvalue, int chang
 
 
 // (Re)set label
-static enum eos_t PO_set(void)	// Now GotByte = illegal char
+static enum eos PO_set(void)	// Now GotByte = illegal char
 {
 	struct result_t	result;
 	int		force_bit;
-	struct label_t	*label;
+	struct label	*label;
 	zone_t		zone;
 
 	if (Input_read_zone_and_keyword(&zone) == 0)	// skips spaces before
@@ -165,7 +165,7 @@ static enum eos_t PO_set(void)	// Now GotByte = illegal char
 
 
 // Select dump file
-static enum eos_t PO_sl(void)
+static enum eos PO_sl(void)
 {
 	// bugfix: first read filename, *then* check for first pass.
 	// if skipping right away, quoted colons might be misinterpreted as EOS
@@ -207,12 +207,13 @@ static struct node_t	pseudo_opcodes[]	= {
 void Label_implicit_definition(zone_t zone, int stat_flags, int force_bit, int change)
 {
 	struct result_t	result;
-	struct label_t	*label;
+	struct label	*label;
 
 	label = Label_find(zone, force_bit);
 	// implicit label definition (label)
 	if ((stat_flags & SF_FOUND_BLANK) && warn_on_indented_labels)
 		Throw_first_pass_warning("Implicit label definition not in leftmost column.");
+	// FIXME - read pc via function call!
 	result.flags = CPU_state.pc.flags & MVALUE_DEFINED;
 	result.val.intval = CPU_state.pc.intval;
 	Label_set_value(label, &result, change);
@@ -224,7 +225,7 @@ void Label_implicit_definition(zone_t zone, int stat_flags, int force_bit, int c
 void Label_parse_definition(zone_t zone, int stat_flags)
 {
 	struct result_t	result;
-	struct label_t	*label;
+	struct label	*label;
 	int		force_bit	= Input_get_force_bit();	// skips spaces after
 	// FIXME - force bit is allowed for implicit label defs?!
 
@@ -247,7 +248,7 @@ void Label_parse_definition(zone_t zone, int stat_flags)
 void Label_define(intval_t value)
 {
 	struct result_t	result;
-	struct label_t	*label;
+	struct label	*label;
 
 	result.flags = MVALUE_GIVEN;
 	result.val.intval = value;
@@ -288,9 +289,9 @@ void Label_register_init(void)
 // references the *next* anonymous forward label definition. The tricky bit is,
 // each name length would need its own counter. But hey, ACME's real quick in
 // finding labels, so I'll just abuse the label system to store those counters.
-struct label_t *Label_fix_forward_name(void)
+struct label *Label_fix_forward_name(void)
 {
-	struct label_t	*counter_label;
+	struct label	*counter_label;
 	unsigned long	number;
 
 	// terminate name, find "counter" label and read value

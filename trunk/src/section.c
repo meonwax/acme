@@ -19,7 +19,7 @@ static char		untitled[]	= "<untitled>";
 // ...is actually constant, but flagging it "const" results in heap of warnings
 
 // fake section structure (for error msgs before any real section is in use)
-static struct section_t	initial_section	= {
+static struct section	initial_section	= {
 	0,		// zone value
 	"during",	// "type"	=> normally "zone Title" or
 	"init",		// "title"	=>  "macro test", now "during init"
@@ -28,12 +28,12 @@ static struct section_t	initial_section	= {
 
 
 // Variables
-struct section_t	*Section_now	= &initial_section;	// current section
-static struct section_t	outer_section;	// outermost section struct
+struct section		*Section_now	= &initial_section;	// current section
+static struct section	outer_section;	// outermost section struct
 static zone_t		zone_max;	// Highest zone number yet
 
 // Write given info into given zone structure and activate it
-void Section_new_zone(struct section_t *section, const char *type, char *title, int allocated)
+void Section_new_zone(struct section *section, const char *type, char *title, int allocated)
 {
 	section->zone = ++zone_max;
 	section->type = type;
@@ -46,18 +46,18 @@ void Section_new_zone(struct section_t *section, const char *type, char *title, 
 // Tidy up: If necessary, release section title.
 // Warning - the state of the component "Allocd" may have
 // changed in the meantime, so don't rely on a local variable.
-void Section_finalize(struct section_t *section)
+void Section_finalize(struct section *section)
 {
 	if (section->allocated)
 		free(section->title);
 }
 
 // Switch to new zone ("!zone" or "!zn"). Has to be re-entrant.
-static enum eos_t PO_zone(void)
+static enum eos PO_zone(void)
 {
-	struct section_t	entry_values;	// buffer for outer zone
-	char			*new_title;
-	int			allocated;
+	struct section	entry_values;	// buffer for outer zone
+	char		*new_title;
+	int		allocated;
 
 	// remember everything about current structure
 	entry_values = *Section_now;
@@ -89,7 +89,7 @@ static enum eos_t PO_zone(void)
 }
 
 // "!subzone" or "!sz" pseudo opcode (now obsolete)
-static enum eos_t PO_subzone(void)
+static enum eos PO_subzone(void)
 {
 	Throw_error("\"!subzone {}\" is obsolete; use \"!zone {}\" instead.");
 	// call "!zone" instead

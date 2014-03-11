@@ -1,5 +1,5 @@
 // ACME - a crossassembler for producing 6502/65c02/65816 code.
-// Copyright (C) 1998-2009 Marco Baye
+// Copyright (C) 1998-2014 Marco Baye
 // Have a look at "acme.c" for further info
 //
 // Input stuff
@@ -25,7 +25,7 @@ const char	FILE_READBINARY[]	= "rb";
 // if the characters above are changed, don't forget to adjust ByteFlags[]!
 
 // fake input structure (for error msgs before any real input is established)
-static struct input_t	outermost	= {
+static struct input	outermost	= {
 	"<none>",	// file name
 	0,		// line number
 	FALSE,		// Faked file access, so no RAM read
@@ -37,11 +37,11 @@ static struct input_t	outermost	= {
 
 
 // Variables
-struct input_t	*Input_now	= &outermost;	// current input structure
+struct input	*Input_now	= &outermost;	// current input structure
 
 
 // End of source file ("!endoffile" or "!eof")
-static enum eos_t PO_eof(void)
+static enum eos PO_eof(void)
 {
 	// Well, it doesn't end right here and now, but at end-of-line! :-)
 	Input_ensure_EOS();

@@ -1,5 +1,5 @@
 // ACME - a crossassembler for producing 6502/65c02/65816 code.
-// Copyright (C) 1998-2009 Marco Baye
+// Copyright (C) 1998-2014 Marco Baye
 // Have a look at "acme.c" for further info
 //
 // Input stuff
@@ -12,8 +12,8 @@
 
 // type definitions
 
-// values for input_t component "src.state"
-enum inputstate_t {
+// values for input component "src.state"
+enum inputstate {
 	INPUTSTATE_NORMAL,	// everything's fine
 	INPUTSTATE_AGAIN,	// re-process last byte
 	INPUTSTATE_SKIPBLANKS,	// shrink multiple spaces
@@ -24,11 +24,11 @@ enum inputstate_t {
 	INPUTSTATE_EOB,		// send end-of-block after end-of-statement
 	INPUTSTATE_EOF,		// send end-of-file after end-of-statement
 };
-struct input_t {
+struct input {
 	const char	*original_filename;	// during RAM reads, too
 	int		line_number,	// in file (on RAM reads, too)
 			source_is_ram;	// TRUE if RAM, FALSE if file
-	enum inputstate_t	state;	// state of input
+	enum inputstate	state;	// state of input
 	union {
 		FILE	*fd;		// file descriptor
 		char	*ram_ptr;	// RAM read ptr (loop or macro block)
@@ -49,7 +49,7 @@ extern const char	FILE_READBINARY[];
 
 
 // Variables
-extern struct input_t	*Input_now;	// current input structure
+extern struct input	*Input_now;	// current input structure
 
 
 // Prototypes

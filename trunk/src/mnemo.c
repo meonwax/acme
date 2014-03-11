@@ -141,7 +141,7 @@ static const char	exception_highbyte_zero[]= "Using oversized addressing mode.";
 
 // Variables
 
-static struct dynabuf_t	*mnemo_dyna_buf;	// dynamic buffer for mnemonics
+static struct dynabuf	*mnemo_dyna_buf;	// dynamic buffer for mnemonics
 // predefined stuff
 static struct node_t	*mnemo_6502_tree	= NULL;	// holds 6502 mnemonics
 static struct node_t	*mnemo_6510_tree	= NULL;	// holds 6510 extensions
@@ -588,6 +588,7 @@ static void group_only_relative8_addressing(int opcode)
 	intval_t		offset	= 0;	// dummy value, to not throw more errors than necessary
 
 	ALU_int_result(&target);
+	// FIXME - read pc via function call instead!
 	if (CPU_state.pc.flags & target.flags & MVALUE_DEFINED) {
 		if ((target.intval | 0xffff) != 0xffff) {
 			not_in_bank(target.intval);
@@ -621,6 +622,7 @@ static void group_only_relative16_addressing(int opcode)
 	intval_t		offset	= 0;	// dummy value, to not throw more errors than necessary
 
 	ALU_int_result(&target);
+	// FIXME - read pc via function call instead!
 	if (CPU_state.pc.flags & target.flags & MVALUE_DEFINED) {
 		if ((target.intval | 0xffff) != 0xffff) {
 			not_in_bank(target.intval);
@@ -821,7 +823,7 @@ static void group_jump(int index)
 }
 
 // Work function
-static int check_mnemo_tree(struct node_t *tree, struct dynabuf_t *dyna_buf)
+static int check_mnemo_tree(struct node_t *tree, struct dynabuf *dyna_buf)
 {
 	void	*node_body;
 	int	code,

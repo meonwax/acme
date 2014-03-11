@@ -140,7 +140,7 @@ static void parse_pc_def(void)	// Now GotByte = "*"
 static void parse_pseudo_opcode(void)	// Now GotByte = "!"
 {
 	void		*node_body;
-	enum eos_t	(*fn)(void),
+	enum eos	(*fn)(void),
 			then	= SKIP_REMAINDER;	// prepare for errors
 
 	GetByte();	// read next byte
@@ -149,7 +149,7 @@ static void parse_pseudo_opcode(void)	// Now GotByte = "!"
 		// search for tree item
 		if ((Tree_easy_scan(pseudo_opcode_tree, &node_body, GlobalDynaBuf))
 		&& node_body) {
-			fn = (enum eos_t (*)(void)) node_body;
+			fn = (enum eos (*)(void)) node_body;
 			SKIPSPACE();
 			// call function
 			then = fn();
@@ -223,7 +223,7 @@ static void parse_backward_anon_def(int *statement_flags)
 // Parse anonymous forward label definition. Called with GotByte == ?
 static void parse_forward_anon_def(int *statement_flags)
 {
-	struct label_t	*counter_label;
+	struct label	*counter_label;
 
 	if (!first_label_of_statement(statement_flags))
 		return;
@@ -300,6 +300,7 @@ void Parse_until_eob_or_eof(void)
 			}
 		} while (GotByte != CHAR_EOS);	// until end-of-statement
 		// adjust program counter
+		// FIXME - next two lines should be a function call!
 		CPU_state.pc.intval = (CPU_state.pc.intval + CPU_state.add_to_pc) & 0xffff;
 		CPU_state.add_to_pc = 0;
 		// go on with next byte

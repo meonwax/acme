@@ -73,7 +73,8 @@ struct cpu		CPU_state;	// current CPU state
 
 // insert byte until PC fits condition
 // FIXME - move to basics.c
-static enum eos_t PO_align(void) {
+static enum eos PO_align(void)
+{
 	intval_t	and,
 			equal,
 			fill,
@@ -116,7 +117,7 @@ int CPU_find_cpu_struct(const struct cpu_type **target)
 
 // select CPU ("!cpu" pseudo opcode)
 // FIXME - move to basics.c
-static enum eos_t PO_cpu(void)
+static enum eos PO_cpu(void)
 {
 	const struct cpu_type	*cpu_buffer	= CPU_state.type;	// remember current cpu
 
@@ -136,7 +137,7 @@ static const char	Error_old_offset_assembly[]	=
 
 // "!realpc" pseudo opcode (now obsolete)
 // FIXME - move to basics.c
-static enum eos_t PO_realpc(void)
+static enum eos PO_realpc(void)
 {
 	Throw_error(Error_old_offset_assembly);
 	return ENSURE_EOS;
@@ -146,7 +147,7 @@ static enum eos_t PO_realpc(void)
 // start offset assembly
 // FIXME - split into PO (move to basics.c) and backend
 // TODO - add a label argument to assign the block size afterwards (for assemble-to-end-address)
-static enum eos_t PO_pseudopc(void)
+static enum eos PO_pseudopc(void)
 {
 	intval_t	new_pc,
 			new_offset;
@@ -221,7 +222,7 @@ static void check_and_set_reg_length(int *var, int make_long)
 
 
 // set register length, block-wise if needed.
-static enum eos_t set_register_length(int *var, int make_long)
+static enum eos set_register_length(int *var, int make_long)
 {
 	int	old_size	= *var;
 
@@ -235,28 +236,28 @@ static enum eos_t set_register_length(int *var, int make_long)
 
 
 // switch to long accu ("!al" pseudo opcode)
-static enum eos_t PO_al(void)
+static enum eos PO_al(void)
 {
 	return set_register_length(&CPU_state.a_is_long, TRUE);
 }
 
 
 // switch to short accu ("!as" pseudo opcode)
-static enum eos_t PO_as(void)
+static enum eos PO_as(void)
 {
 	return set_register_length(&CPU_state.a_is_long, FALSE);
 }
 
 
 // switch to long index registers ("!rl" pseudo opcode)
-static enum eos_t PO_rl(void)
+static enum eos PO_rl(void)
 {
 	return set_register_length(&CPU_state.xy_are_long, TRUE);
 }
 
 
 // switch to short index registers ("!rs" pseudo opcode)
-static enum eos_t PO_rs(void)
+static enum eos PO_rs(void)
 {
 	return set_register_length(&CPU_state.xy_are_long, FALSE);
 }

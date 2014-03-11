@@ -39,7 +39,7 @@ static struct node_t	*encoder_tree	= NULL;	// tree to hold encoders
 char		(*Encoding_encode_char)(char);
 
 // Insert string(s)
-static enum eos_t encode_string(encoder_t inner_encoder, char xor)
+static enum eos encode_string(encoder_t inner_encoder, char xor)
 {
 	encoder_t	outer_encoder	= Encoding_encode_char;	// buffer encoder
 
@@ -71,7 +71,7 @@ static enum eos_t encode_string(encoder_t inner_encoder, char xor)
 }
 
 // Insert text string (default format)
-static enum eos_t PO_text(void)
+static enum eos PO_text(void)
 {
 	return encode_string(Encoding_encode_char, 0);
 }
@@ -83,7 +83,7 @@ static char encoder_raw(char byte)
 }
 
 // Insert raw string
-static enum eos_t PO_raw(void)
+static enum eos PO_raw(void)
 {
 	return encode_string(encoder_raw, 0);
 }
@@ -99,7 +99,7 @@ static char encoder_pet(char byte)
 }
 
 // Insert PetSCII string
-static enum eos_t PO_pet(void)
+static enum eos PO_pet(void)
 {
 	return encode_string(encoder_pet, 0);
 }
@@ -119,13 +119,13 @@ static char encoder_scr(char byte)
 }
 
 // Insert screencode string
-static enum eos_t PO_scr(void)
+static enum eos PO_scr(void)
 {
 	return encode_string(encoder_scr, 0);
 }
 
 // Insert screencode string, XOR'd
-static enum eos_t PO_scrxor(void)
+static enum eos PO_scrxor(void)
 {
 	intval_t	num	= ALU_any_int();
 
@@ -136,7 +136,7 @@ static enum eos_t PO_scrxor(void)
 }
 
 // "!cbm" pseudo opcode (now obsolete)
-static enum eos_t PO_cbm(void)
+static enum eos PO_cbm(void)
 {
 	Throw_error("\"!cbm\" is obsolete; use \"!ct pet\" instead.");
 	return ENSURE_EOS;
@@ -149,7 +149,7 @@ static char encoder_file(char byte)
 }
 
 // read encoding table from file
-static enum eos_t user_defined_encoding(void)
+static enum eos user_defined_encoding(void)
 {
 	FILE		*fd;
 	char		local_table[256],
@@ -182,7 +182,7 @@ static enum eos_t user_defined_encoding(void)
 }
 
 // use one of the pre-defined encodings (raw, pet, scr)
-static enum eos_t predefined_encoding(void)
+static enum eos predefined_encoding(void)
 {
 	void		*node_body;
 	char		local_table[256],
@@ -207,7 +207,7 @@ static enum eos_t predefined_encoding(void)
 }
 
 // Set current encoding ("!convtab" pseudo opcode)
-static enum eos_t PO_convtab(void)
+static enum eos PO_convtab(void)
 {
 	if ((GotByte == '<') || (GotByte == '"'))
 		return user_defined_encoding();

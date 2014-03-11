@@ -83,79 +83,79 @@ enum operator_handle {
 	OPHANDLE_EOR,		//	v EOR w		v XOR w		(FIXME:remove)
 	OPHANDLE_XOR,		//	v XOR w
 };
-struct operator_t {
+struct operator {
 	enum operator_handle	handle;
 	char			priority_and_associativity;
 };
 #define IS_RIGHT_ASSOCIATIVE(p)	((p) & 1)	// lsb of priority value signals right-associtivity
 
 // operator structs (only hold handle and priority/associativity value)
-static struct operator_t ops_end		= {OPHANDLE_END,	0};	// special
-static struct operator_t ops_return		= {OPHANDLE_RETURN,	2};	// special
-static struct operator_t ops_closing		= {OPHANDLE_CLOSING,	4};	// dyadic
-static struct operator_t ops_opening		= {OPHANDLE_OPENING,	6};	// monadic
-static struct operator_t ops_or			= {OPHANDLE_OR,		8};	// dyadic
-static struct operator_t ops_eor		= {OPHANDLE_EOR,	10};	//	(FIXME:remove)
-static struct operator_t ops_xor		= {OPHANDLE_XOR,	10};	// dyadic
-static struct operator_t ops_and		= {OPHANDLE_AND,	12};	// dyadic
-static struct operator_t ops_equals		= {OPHANDLE_EQUALS,	14};	// dyadic
-static struct operator_t ops_notequal		= {OPHANDLE_NOTEQUAL,	16};	// dyadic
+static struct operator ops_end		= {OPHANDLE_END,	0};	// special
+static struct operator ops_return	= {OPHANDLE_RETURN,	2};	// special
+static struct operator ops_closing	= {OPHANDLE_CLOSING,	4};	// dyadic
+static struct operator ops_opening	= {OPHANDLE_OPENING,	6};	// monadic
+static struct operator ops_or		= {OPHANDLE_OR,		8};	// dyadic
+static struct operator ops_eor		= {OPHANDLE_EOR,	10};	//	(FIXME:remove)
+static struct operator ops_xor		= {OPHANDLE_XOR,	10};	// dyadic
+static struct operator ops_and		= {OPHANDLE_AND,	12};	// dyadic
+static struct operator ops_equals	= {OPHANDLE_EQUALS,	14};	// dyadic
+static struct operator ops_notequal	= {OPHANDLE_NOTEQUAL,	16};	// dyadic
 	// same priority for all comparison operators (left-associative)
-static struct operator_t ops_le			= {OPHANDLE_LE,		18};	// dyadic
-static struct operator_t ops_lessthan		= {OPHANDLE_LESSTHAN,	18};	// dyadic
-static struct operator_t ops_ge			= {OPHANDLE_GE,		18};	// dyadic
-static struct operator_t ops_greaterthan	= {OPHANDLE_GREATERTHAN,18};	// dyadic
+static struct operator ops_le		= {OPHANDLE_LE,		18};	// dyadic
+static struct operator ops_lessthan	= {OPHANDLE_LESSTHAN,	18};	// dyadic
+static struct operator ops_ge		= {OPHANDLE_GE,		18};	// dyadic
+static struct operator ops_greaterthan	= {OPHANDLE_GREATERTHAN,18};	// dyadic
 	// same priority for all byte extraction operators
-static struct operator_t ops_lowbyteof		= {OPHANDLE_LOWBYTEOF,	20};	// monadic
-static struct operator_t ops_highbyteof		= {OPHANDLE_HIGHBYTEOF,	20};	// monadic
-static struct operator_t ops_bankbyteof		= {OPHANDLE_BANKBYTEOF,	20};	// monadic
+static struct operator ops_lowbyteof	= {OPHANDLE_LOWBYTEOF,	20};	// monadic
+static struct operator ops_highbyteof	= {OPHANDLE_HIGHBYTEOF,	20};	// monadic
+static struct operator ops_bankbyteof	= {OPHANDLE_BANKBYTEOF,	20};	// monadic
 	// same priority for all shift operators (left-associative, though they could be argued to be made right-associative :))
-static struct operator_t ops_sl			= {OPHANDLE_SL,		22};	// dyadic
-static struct operator_t ops_asr		= {OPHANDLE_ASR,	22};	// dyadic
-static struct operator_t ops_lsr		= {OPHANDLE_LSR,	22};	// dyadic
+static struct operator ops_sl		= {OPHANDLE_SL,		22};	// dyadic
+static struct operator ops_asr		= {OPHANDLE_ASR,	22};	// dyadic
+static struct operator ops_lsr		= {OPHANDLE_LSR,	22};	// dyadic
 	// same priority for "+" and "-" (left-associative)
-static struct operator_t ops_add		= {OPHANDLE_ADD,	24};	// dyadic
-static struct operator_t ops_subtract		= {OPHANDLE_SUBTRACT,	24};	// dyadic
+static struct operator ops_add		= {OPHANDLE_ADD,	24};	// dyadic
+static struct operator ops_subtract	= {OPHANDLE_SUBTRACT,	24};	// dyadic
 	// same priority for "*", "/" and "%" (left-associative)
-static struct operator_t ops_multiply		= {OPHANDLE_MULTIPLY,	26};	// dyadic
-static struct operator_t ops_divide		= {OPHANDLE_DIVIDE,	26};	// dyadic
-static struct operator_t ops_intdiv		= {OPHANDLE_INTDIV,	26};	// dyadic
-static struct operator_t ops_modulo		= {OPHANDLE_MODULO,	26};	// dyadic
+static struct operator ops_multiply	= {OPHANDLE_MULTIPLY,	26};	// dyadic
+static struct operator ops_divide	= {OPHANDLE_DIVIDE,	26};	// dyadic
+static struct operator ops_intdiv	= {OPHANDLE_INTDIV,	26};	// dyadic
+static struct operator ops_modulo	= {OPHANDLE_MODULO,	26};	// dyadic
 	// highest "real" priorities
-static struct operator_t ops_negate		= {OPHANDLE_NEGATE,	28};	// monadic
-static struct operator_t ops_powerof		= {OPHANDLE_POWEROF,	29};	// dyadic, right-associative
-static struct operator_t ops_not		= {OPHANDLE_NOT,	30};	// monadic
+static struct operator ops_negate	= {OPHANDLE_NEGATE,	28};	// monadic
+static struct operator ops_powerof	= {OPHANDLE_POWEROF,	29};	// dyadic, right-associative
+static struct operator ops_not		= {OPHANDLE_NOT,	30};	// monadic
 	// function calls act as if they were monadic operators
-static struct operator_t ops_int		= {OPHANDLE_INT,	32};	// function
-static struct operator_t ops_float		= {OPHANDLE_FLOAT,	32};	// function
-static struct operator_t ops_sin		= {OPHANDLE_SIN,	32};	// function
-static struct operator_t ops_cos		= {OPHANDLE_COS,	32};	// function
-static struct operator_t ops_tan		= {OPHANDLE_TAN,	32};	// function
-static struct operator_t ops_arcsin		= {OPHANDLE_ARCSIN,	32};	// function
-static struct operator_t ops_arccos		= {OPHANDLE_ARCCOS,	32};	// function
-static struct operator_t ops_arctan		= {OPHANDLE_ARCTAN,	32};	// function
+static struct operator ops_int		= {OPHANDLE_INT,	32};	// function
+static struct operator ops_float	= {OPHANDLE_FLOAT,	32};	// function
+static struct operator ops_sin		= {OPHANDLE_SIN,	32};	// function
+static struct operator ops_cos		= {OPHANDLE_COS,	32};	// function
+static struct operator ops_tan		= {OPHANDLE_TAN,	32};	// function
+static struct operator ops_arcsin	= {OPHANDLE_ARCSIN,	32};	// function
+static struct operator ops_arccos	= {OPHANDLE_ARCCOS,	32};	// function
+static struct operator ops_arctan	= {OPHANDLE_ARCTAN,	32};	// function
 
 
 // variables
-static struct dynabuf_t		*function_dyna_buf;	// dynamic buffer for fn names
-static struct operator_t	**operator_stack	= NULL;
+static struct dynabuf	*function_dyna_buf;	// dynamic buffer for fn names
+static struct operator	**operator_stack	= NULL;
 static int		operator_stk_size	= HALF_INITIAL_STACK_SIZE;
 static int		operator_sp;		// operator stack pointer
-static struct result_t		*operand_stack		= NULL;	// flags and value
+static struct result_t	*operand_stack		= NULL;	// flags and value
 static int		operand_stk_size	= HALF_INITIAL_STACK_SIZE;
 static int		operand_sp;		// value stack pointer
 static int		indirect_flag;	// Flag for indirect addressing
 					// (indicated by useless parentheses)
 					// Contains either 0 or MVALUE_INDIRECT
-enum alu_state_t {
+enum alu_state {
 	STATE_EXPECT_OPERAND_OR_MONADIC_OPERATOR,
 	STATE_EXPECT_DYADIC_OPERATOR,
 	STATE_TRY_TO_REDUCE_STACKS,
 	STATE_MAX_GO_ON,	// "border value" to find the stoppers:
 	STATE_ERROR,		// error has occured
-	STATE_END,		// standard end
+	STATE_END		// standard end
 };
-static enum alu_state_t	alu_state;	// deterministic finite automaton
+static enum alu_state	alu_state;	// deterministic finite automaton
 // predefined stuff
 static struct node_t	*operator_tree	= NULL;	// tree to hold operators
 static struct node_t	operator_list[]	= {
@@ -309,7 +309,7 @@ static intval_t my_asr(intval_t left, intval_t right)
 // label name is stored!
 static void get_label_value(zone_t zone)
 {
-	struct label_t	*label;
+	struct label	*label;
 
 	// if the label gets created now, mark it as unsure
 	label = Label_find(zone, MVALUE_UNSURE);
@@ -482,6 +482,15 @@ static void parse_octal_value(void)	// Now GotByte = "&"
 }
 
 
+// Parse program counter ('*')
+static void parse_program_counter(void)	// Now GotByte = "*"
+{
+	GetByte();
+	// FIXME - read pc via function call, then move cpu struct from .h to .c file
+	PUSH_INTOPERAND(CPU_state.pc.intval, CPU_state.pc.flags | MVALUE_EXISTS);
+}
+
+
 // Parse binary value. Apart from '0' and '1', it also accepts the characters
 // '.' and '#', this is much more readable. The current value is stored as soon
 // as a character is read that is none of those given above.
@@ -531,7 +540,7 @@ static void parse_function_call(void)
 	DynaBuf_to_lower(function_dyna_buf, GlobalDynaBuf);
 	// search for tree item
 	if (Tree_easy_scan(function_tree, &node_body, function_dyna_buf))
-		PUSH_OPERATOR((struct operator_t*) node_body);
+		PUSH_OPERATOR((struct operator*) node_body);
 	else
 		Throw_error("Unknown function.");
 }
@@ -540,8 +549,8 @@ static void parse_function_call(void)
 // Expect operand or monadic operator (hopefully inlined)
 static void expect_operand_or_monadic_operator(void)
 {
-	struct operator_t	*operator;
-	int	perform_negation;
+	struct operator	*operator;
+	int		perform_negation;
 
 	SKIPSPACE();
 	switch (GotByte) {
@@ -623,8 +632,7 @@ static void expect_operand_or_monadic_operator(void)
 		goto now_expect_dyadic;
 
 	case '*':	// Program counter
-		GetByte();	// proceed with next char
-		PUSH_INTOPERAND(CPU_state.pc.intval, CPU_state.pc.flags | MVALUE_EXISTS);
+		parse_program_counter();
 		// Now GotByte = char after closing quote
 		goto now_expect_dyadic;
 
@@ -708,61 +716,61 @@ now_expect_dyadic:
 // Expect dyadic operator (hopefully inlined)
 static void expect_dyadic_operator(void)
 {
-	void			*node_body;
-	struct operator_t	*op;
+	void		*node_body;
+	struct operator	*operator;
 
 	SKIPSPACE();
 	switch (GotByte) {
 // Single-character dyadic operators
 	case '^':	// "to the power of"
-		op = &ops_powerof;
+		operator = &ops_powerof;
 		goto get_byte_and_push_dyadic;
 
 	case '+':	// add
-		op = &ops_add;
+		operator = &ops_add;
 		goto get_byte_and_push_dyadic;
 
 	case '-':	// subtract
-		op = &ops_subtract;
+		operator = &ops_subtract;
 		goto get_byte_and_push_dyadic;
 
 	case '*':	// multiply
-		op = &ops_multiply;
+		operator = &ops_multiply;
 		goto get_byte_and_push_dyadic;
 
 	case '/':	// divide
-		op = &ops_divide;
+		operator = &ops_divide;
 		goto get_byte_and_push_dyadic;
 
 	case '%':	// modulo
-		op = &ops_modulo;
+		operator = &ops_modulo;
 		goto get_byte_and_push_dyadic;
 
 	case '&':	// bitwise AND
-		op = &ops_and;
+		operator = &ops_and;
 		goto get_byte_and_push_dyadic;
 
 	case '|':	// bitwise OR
-		op = &ops_or;
+		operator = &ops_or;
 		goto get_byte_and_push_dyadic;
 
 // This part is commented out because there is no XOR character defined
 //	case ???:	// bitwise exclusive OR
-//		op = &ops_xor;
+//		operator = &ops_xor;
 //		goto get_byte_and_push_dyadic;
 
 	case '=':	// is equal
-		op = &ops_equals;
+		operator = &ops_equals;
 		goto get_byte_and_push_dyadic;
 
 	case ')':	// closing parenthesis
-		op = &ops_closing;
+		operator = &ops_closing;
 		goto get_byte_and_push_dyadic;
 
 // Multi-character dyadic operators
 	case '!':	// "!="
 		if (GetByte() == '=') {
-			op = &ops_notequal;
+			operator = &ops_notequal;
 			goto get_byte_and_push_dyadic;
 		}
 
@@ -772,19 +780,19 @@ static void expect_dyadic_operator(void)
 	case '<':	// "<", "<=", "<<" and "<>"
 		switch (GetByte()) {
 		case '=':	// "<=", less or equal
-			op = &ops_le;
+			operator = &ops_le;
 			goto get_byte_and_push_dyadic;
 
 		case '<':	// "<<", shift left
-			op = &ops_sl;
+			operator = &ops_sl;
 			goto get_byte_and_push_dyadic;
 
 		case '>':	// "<>", not equal
-			op = &ops_notequal;
+			operator = &ops_notequal;
 			goto get_byte_and_push_dyadic;
 
 		default:	// "<", less than
-			op = &ops_lessthan;
+			operator = &ops_lessthan;
 			goto push_dyadic;
 
 		}
@@ -792,23 +800,23 @@ static void expect_dyadic_operator(void)
 	case '>':	// ">", ">=", ">>", ">>>" and "><"
 		switch (GetByte()) {
 		case '=':	// ">=", greater or equal
-			op = &ops_ge;
+			operator = &ops_ge;
 			goto get_byte_and_push_dyadic;
 
 		case '<':	// "><", not equal
-			op = &ops_notequal;
+			operator = &ops_notequal;
 			goto get_byte_and_push_dyadic;
 
 		case '>':	// ">>" or ">>>", shift right
-			op = &ops_asr;	// arithmetic shift right
+			operator = &ops_asr;	// arithmetic shift right
 			if (GetByte() != '>')
 				goto push_dyadic;
 
-			op = &ops_lsr;	// logical shift right
+			operator = &ops_lsr;	// logical shift right
 			goto get_byte_and_push_dyadic;
 
 		default:	// ">", greater than
-			op = &ops_greaterthan;
+			operator = &ops_greaterthan;
 			goto push_dyadic;
 
 		}
@@ -821,7 +829,7 @@ static void expect_dyadic_operator(void)
 			// Now GotByte = illegal char
 			// search for tree item
 			if (Tree_easy_scan(operator_tree, &node_body, GlobalDynaBuf)) {
-				op = node_body;
+				operator = node_body;
 				goto push_dyadic;
 			}
 
@@ -829,7 +837,7 @@ static void expect_dyadic_operator(void)
 			Throw_error("Unknown operator.");
 			alu_state = STATE_ERROR;
 		} else {
-			op = &ops_end;
+			operator = &ops_end;
 			goto push_dyadic;
 		}
 
@@ -840,7 +848,7 @@ static void expect_dyadic_operator(void)
 get_byte_and_push_dyadic:
 	GetByte();
 push_dyadic:
-	PUSH_OPERATOR(op);
+	PUSH_OPERATOR(operator);
 	alu_state = STATE_TRY_TO_REDUCE_STACKS;
 }
 
