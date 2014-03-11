@@ -1,5 +1,5 @@
 // ACME - a crossassembler for producing 6502/65c02/65816 code.
-// Copyright (C) 1998-2009 Marco Baye
+// Copyright (C) 1998-2014 Marco Baye
 // Have a look at "acme.c" for further info
 //
 // Tree stuff
@@ -47,7 +47,7 @@ struct node_ra_t {
 extern void Tree_add_table(struct node_t **tree, struct node_t *table_to_add);
 // Search for a given ID string in a given tree. Store "Body" component in
 // NodeBody and return TRUE. Return FALSE if no matching item found.
-extern int Tree_easy_scan(struct node_t *tree, void **node_body, struct dynabuf_t *dyna_buf);
+extern int Tree_easy_scan(struct node_t *tree, void **node_body, struct dynabuf *dyna_buf);
 // Search for a "RAM tree" item. Save pointer to found tree item in given
 // location. If no matching item is found, check the "Create" flag: If set,
 // create new tree item, link to tree, fill with data and store its pointer.

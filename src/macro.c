@@ -1,5 +1,5 @@
 // ACME - a crossassembler for producing 6502/65c02/65816 code.
-// Copyright (C) 1998-2009 Marco Baye
+// Copyright (C) 1998-2014 Marco Baye
 // Have a look at "acme.c" for further info
 //
 // Macro stuff
@@ -30,7 +30,7 @@ static const char	exception_macro_twice[]	= "Macro already defined.";
 
 
 // macro struct type definition
-struct macro_t {
+struct macro {
 	int	def_line_number;	// line number of definition	for error msgs
 	char	*def_filename,	// file name of definition	for error msgs
 		*original_name,	// user-supplied name		for error msgs
@@ -43,13 +43,13 @@ struct macro_t {
 // which ones are call-by-reference.
 union macro_arg_t {
 	struct result_t	result;	// value and flags (call by value)
-	struct label_t	*label;	// pointer to label struct (call by reference)
+	struct label	*label;	// pointer to label struct (call by reference)
 };
 
 
 // Variables
-static struct dynabuf_t	*user_macro_name;	// original macro title
-static struct dynabuf_t	*internal_name;		// plus param type chars
+static struct dynabuf	*user_macro_name;	// original macro title
+static struct dynabuf	*internal_name;		// plus param type chars
 static struct node_ra_t	*macro_forest[256];	// trees (because of 8b hash)
 // Dynamic argument table
 static union macro_arg_t	*arg_table	= NULL;
@@ -141,7 +141,7 @@ static int search_for_macro(struct node_ra_t **result, zone_t zone, int create)
 // the maximum error limit inbetween.
 static void report_redefinition(struct node_ra_t *macro_node)
 {
-	struct macro_t	*original_macro	= macro_node->body;
+	struct macro	*original_macro	= macro_node->body;
 
 	// show warning with location of current definition
 	Throw_warning(exception_macro_twice);
@@ -162,7 +162,7 @@ void Macro_parse_definition(void)	// Now GotByte = illegal char after "!macro"
 {
 	char			*formal_parameters;
 	struct node_ra_t	*macro_node;
-	struct macro_t		*new_macro;
+	struct macro		*new_macro;
 	zone_t			macro_zone	= get_zone_and_title();
 
 	// now GotByte = first non-space after title
@@ -225,12 +225,12 @@ void Macro_parse_definition(void)	// Now GotByte = illegal char after "!macro"
 void Macro_parse_call(void)	// Now GotByte = dot or first char of macro name
 {
 	char			local_gotbyte;
-	struct label_t		*label;
-	struct section_t	new_section,
+	struct label		*label;
+	struct section		new_section,
 				*outer_section;
-	struct input_t		new_input,
+	struct input		new_input,
 				*outer_input;
-	struct macro_t		*actual_macro;
+	struct macro		*actual_macro;
 	struct node_ra_t	*macro_node,
 				*label_node;
 	zone_t		macro_zone,

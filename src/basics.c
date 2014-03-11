@@ -24,11 +24,11 @@ static const char	s_08[]	= "08";
 
 
 // variables
-static struct dynabuf_t	*user_message;	// dynamic buffer (!warn/error/serious)
+static struct dynabuf	*user_message;	// dynamic buffer (!warn/error/serious)
 
 
 // helper function for !8, !16, !24 and !32 pseudo opcodes
-static enum eos_t output_objects(void (*fn)(intval_t))
+static enum eos output_objects(void (*fn)(intval_t))
 {
 	do
 		fn(ALU_any_int());
@@ -38,35 +38,35 @@ static enum eos_t output_objects(void (*fn)(intval_t))
 
 
 // Insert 8-bit values ("!08" / "!8" / "!by" / "!byte" pseudo opcode)
-static enum eos_t PO_08(void)
+static enum eos PO_08(void)
 {
 	return output_objects(Output_8b);
 }
 
 
 // Insert 16-bit values ("!16" / "!wo" / "!word" pseudo opcode)
-static enum eos_t PO_16(void)
+static enum eos PO_16(void)
 {
 	return output_objects(Output_16b);
 }
 
 
 // Insert 24-bit values ("!24" pseudo opcode)
-static enum eos_t PO_24(void)
+static enum eos PO_24(void)
 {
 	return output_objects(Output_24b);
 }
 
 
 // Insert 32-bit values ("!32" pseudo opcode)
-static enum eos_t PO_32(void)
+static enum eos PO_32(void)
 {
 	return output_objects(Output_32b);
 }
 
 
 // Include binary file
-static enum eos_t PO_binary(void)
+static enum eos PO_binary(void)
 {
 	FILE		*fd;
 	int		byte;
@@ -115,15 +115,17 @@ static enum eos_t PO_binary(void)
 	}
 	fclose(fd);
 	// if verbose, produce some output
-	if ((pass_count == 0) && (Process_verbosity > 1))
+	if ((pass_count == 0) && (Process_verbosity > 1)) {
+		// FIXME - read "add_to_pc" via function call so struct can be moved from .h to .c file
 		printf("Loaded %d (0x%04x) bytes from file offset %ld (0x%04lx).\n",
 			CPU_state.add_to_pc, CPU_state.add_to_pc, skip, skip);
+	}
 	return ENSURE_EOS;
 }
 
 
 // Reserve space by sending bytes of given value ("!fi" / "!fill" pseudo opcode)
-static enum eos_t PO_fill(void)
+static enum eos PO_fill(void)
 {
 	intval_t	fill	= FILLVALUE_FILL,
 			size	= ALU_defined_int();
@@ -137,7 +139,7 @@ static enum eos_t PO_fill(void)
 
 
 // show user-defined message
-static enum eos_t throw_string(const char prefix[], void (*fn)(const char *))
+static enum eos throw_string(const char prefix[], void (*fn)(const char *))
 {
 	struct result_t	result;
 
@@ -189,16 +191,16 @@ static enum eos_t throw_string(const char prefix[], void (*fn)(const char *))
 
 
 ////
-//static enum eos_t PO_debug(void)
-//static enum eos_t PO_info(void)
-//static enum eos_t PO_print(void)
+//static enum eos PO_debug(void)
+//static enum eos PO_info(void)
+//static enum eos PO_print(void)
 //{
 //	return throw_string();
 //}
 
 
 // throw warning as given in source code
-static enum eos_t PO_warn(void)
+static enum eos PO_warn(void)
 {
 	return throw_string("!warn: ", Throw_warning);
 
@@ -206,14 +208,14 @@ static enum eos_t PO_warn(void)
 
 
 // throw error as given in source code
-static enum eos_t PO_error(void)
+static enum eos PO_error(void)
 {
 	return throw_string("!error: ", Throw_error);
 }
 
 
 // throw serious error as given in source code
-static enum eos_t PO_serious(void)
+static enum eos PO_serious(void)
 {
 	return throw_string("!serious: ", Throw_serious_error);
 }

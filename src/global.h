@@ -54,7 +54,8 @@ extern const char	Byte_flags[];
 
 extern struct node_t	*pseudo_opcode_tree;	// tree to hold pseudo opcodes
 // structures
-enum eos_t {
+// different ways to handle end-of-statement:
+enum eos {
 	SKIP_REMAINDER,		// skip remainder of line - (after errors)
 	ENSURE_EOS,		// make sure there's nothing left in statement
 	PARSE_REMAINDER,	// parse what's left

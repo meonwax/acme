@@ -17,7 +17,7 @@
 
 #define RELEASE		"0.94.8"	// update before release (FIXME)
 #define CODENAME	"Zarquon"	// update before release
-#define CHANGE_DATE	"10 Mar"	// update before release
+#define CHANGE_DATE	"11 Mar"	// update before release
 #define CHANGE_YEAR	"2014"		// update before release
 //#define HOME_PAGE	"http://home.pages.de/~mac_bacon/smorbrod/acme/"	// FIXME
 #define HOME_PAGE	"http://sourceforge.net/p/acme-crossass/"	// FIXME

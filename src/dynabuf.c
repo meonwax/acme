@@ -1,5 +1,5 @@
 // ACME - a crossassembler for producing 6502/65c02/65816 code.
-// Copyright (C) 1998-2009 Marco Baye
+// Copyright (C) 1998-2014 Marco Baye
 // Have a look at "acme.c" for further info
 //
 // Dynamic buffer stuff
@@ -24,13 +24,13 @@
 
 
 // Variables
-struct dynabuf_t	*GlobalDynaBuf;	// global dynamic buffer
+struct dynabuf	*GlobalDynaBuf;	// global dynamic buffer
 
 
 // Functions
 
 // get new buffer of given size
-static void resize(struct dynabuf_t *db, size_t new_size)
+static void resize(struct dynabuf *db, size_t new_size)
 {
 	char	*new_buf;
 
@@ -45,9 +45,9 @@ static void resize(struct dynabuf_t *db, size_t new_size)
 // Exported functions
 
 // Create and init a dynamic buffer and return pointer
-struct dynabuf_t *DynaBuf_create(int initial_size)
+struct dynabuf *DynaBuf_create(int initial_size)
 {
-	struct dynabuf_t	*db;
+	struct dynabuf	*db;
 
 	if (initial_size < DYNABUF_MINIMUM_INITIALSIZE)
 		initial_size = DYNABUF_MINIMUM_INITIALSIZE;
@@ -64,7 +64,7 @@ struct dynabuf_t *DynaBuf_create(int initial_size)
 }
 
 // Enlarge buffer
-void DynaBuf_enlarge(struct dynabuf_t	*db)
+void DynaBuf_enlarge(struct dynabuf *db)
 {
 	resize(db, MAKE_LARGER_THAN(db->reserved));
 }
@@ -72,7 +72,7 @@ void DynaBuf_enlarge(struct dynabuf_t	*db)
 // Claim enough memory to hold a copy of the current buffer contents,
 // make that copy and return it.
 // The copy must be released by calling free().
-char *DynaBuf_get_copy(struct dynabuf_t *db)
+char *DynaBuf_get_copy(struct dynabuf *db)
 {
 	char	*copy;
 
@@ -82,13 +82,13 @@ char *DynaBuf_get_copy(struct dynabuf_t *db)
 }
 
 // add char to buffer
-void DynaBuf_append(struct dynabuf_t *db, char byte)
+void DynaBuf_append(struct dynabuf *db, char byte)
 {
 	DYNABUF_APPEND(db, byte);
 }
 
 // Append string to buffer (without terminator)
-void DynaBuf_add_string(struct dynabuf_t *db, const char *string)
+void DynaBuf_add_string(struct dynabuf *db, const char *string)
 {
 	char	byte;
 
@@ -98,7 +98,7 @@ void DynaBuf_add_string(struct dynabuf_t *db, const char *string)
 
 // make sure DynaBuf is large enough to take "size" more bytes
 // return pointer to end of current contents
-static char *ensure_free_space(struct dynabuf_t *db, int size)
+static char *ensure_free_space(struct dynabuf *db, int size)
 {
 	while ((db->reserved - db->size) < size)
 		resize(db, MAKE_LARGER_THAN(db->reserved));
@@ -106,7 +106,7 @@ static char *ensure_free_space(struct dynabuf_t *db, int size)
 }
 
 // add string version of int to buffer (without terminator)
-void DynaBuf_add_signed_long(struct dynabuf_t *db, signed long value)
+void DynaBuf_add_signed_long(struct dynabuf *db, signed long value)
 {
 	char	*write	= ensure_free_space(db, INTVAL_MAXCHARACTERS + 1);
 
@@ -114,7 +114,7 @@ void DynaBuf_add_signed_long(struct dynabuf_t *db, signed long value)
 }
 
 // add string version of float to buffer (without terminator)
-void DynaBuf_add_double(struct dynabuf_t *db, double value)
+void DynaBuf_add_double(struct dynabuf *db, double value)
 {
 	char	*write	= ensure_free_space(db, 40);	// reserve 40 chars
 
@@ -124,7 +124,7 @@ void DynaBuf_add_double(struct dynabuf_t *db, double value)
 }
 
 // Convert buffer contents to lower case (target and source may be identical)
-void DynaBuf_to_lower(struct dynabuf_t *target, struct dynabuf_t *source)
+void DynaBuf_to_lower(struct dynabuf *target, struct dynabuf *source)
 {
 	char	*read,
 		*write;

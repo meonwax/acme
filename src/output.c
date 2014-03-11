@@ -58,7 +58,7 @@ static struct output	*out	= &default_output;
 // predefined stuff
 static struct node_t	*file_format_tree	= NULL;	// tree to hold output formats
 // possible file formats
-enum out_format_t {
+enum output_format {
 	OUTPUT_FORMAT_UNSPECIFIED,	// default (uses "plain" actually)
 	OUTPUT_FORMAT_APPLE,		// load address, length, code
 	OUTPUT_FORMAT_CBM,		// load address, code (default for "!to" pseudo opcode)
@@ -72,7 +72,7 @@ static struct node_t	file_formats[]	= {
 	//    ^^^^ this marks the last element
 };
 // chosen file format
-static enum out_format_t	output_format	= OUTPUT_FORMAT_UNSPECIFIED;
+static enum output_format	output_format	= OUTPUT_FORMAT_UNSPECIFIED;
 
 
 // predefined stuff
@@ -235,7 +235,7 @@ static void fill_completely(char value)
 
 // define default value for empty memory ("!initmem" pseudo opcode)
 // FIXME - move to basics.c
-static enum eos_t PO_initmem(void)
+static enum eos PO_initmem(void)
 {
 	intval_t	content;
 
@@ -275,14 +275,14 @@ int Output_set_output_format(void)
 	if (!Tree_easy_scan(file_format_tree, &node_body, GlobalDynaBuf))
 		return FALSE;
 
-	output_format = (enum out_format_t) node_body;
+	output_format = (enum output_format) node_body;
 	return TRUE;
 }
 
 
 // select output file and format ("!to" pseudo opcode)
 // FIXME - move to basics.c
-static enum eos_t PO_to(void)
+static enum eos PO_to(void)
 {
 	// bugfix: first read filename, *then* check for first pass.
 	// if skipping right away, quoted colons might be misinterpreted as EOS

@@ -1,5 +1,5 @@
 // ACME - a crossassembler for producing 6502/65c02/65816 code.
-// Copyright (C) 1998-2009 Marco Baye
+// Copyright (C) 1998-2014 Marco Baye
 // Have a look at "acme.c" for further info
 //
 // Flow control stuff (loops, conditional assembly etc.)
@@ -117,11 +117,11 @@ static int check_condition(struct loop_condition *condition)
 
 
 // looping assembly ("!do"). Has to be re-entrant.
-static enum eos_t PO_do(void)	// Now GotByte = illegal char
+static enum eos PO_do(void)	// Now GotByte = illegal char
 {
 	struct loop_condition	condition1,
 				condition2;
-	struct input_t	loop_input,
+	struct input	loop_input,
 			*outer_input;
 	char		*loop_body;
 	int		go_on,
@@ -179,14 +179,14 @@ static enum eos_t PO_do(void)	// Now GotByte = illegal char
 
 
 // looping assembly ("!for"). Has to be re-entrant.
-static enum eos_t PO_for(void)	// Now GotByte = illegal char
+static enum eos PO_for(void)	// Now GotByte = illegal char
 {
-	struct input_t	loop_input,
+	struct input	loop_input,
 			*outer_input;
 	struct result_t	loop_counter;
 	intval_t	maximum;
 	char		*loop_body;	// pointer to loop's body block
-	struct label_t	*label;
+	struct label	*label;
 	zone_t		zone;
 	int		force_bit,
 			loop_start;	// line number of "!for" pseudo opcode
@@ -291,7 +291,7 @@ static void parse_block_else_block(int parse_first)
 
 
 // conditional assembly ("!if"). Has to be re-entrant.
-static enum eos_t PO_if(void)	// Now GotByte = illegal char
+static enum eos PO_if(void)	// Now GotByte = illegal char
 {
 	intval_t	cond;
 
@@ -304,10 +304,10 @@ static enum eos_t PO_if(void)	// Now GotByte = illegal char
 
 
 // conditional assembly ("!ifdef" and "!ifndef"). Has to be re-entrant.
-static enum eos_t ifdef_ifndef(int invert)	// Now GotByte = illegal char
+static enum eos ifdef_ifndef(int invert)	// Now GotByte = illegal char
 {
 	struct node_ra_t	*node;
-	struct label_t		*label;
+	struct label		*label;
 	zone_t			zone;
 	int			defined	= FALSE;
 
@@ -316,7 +316,7 @@ static enum eos_t ifdef_ifndef(int invert)	// Now GotByte = illegal char
 
 	Tree_hard_scan(&node, Label_forest, zone, FALSE);
 	if (node) {
-		label = (struct label_t *) node->body;
+		label = (struct label *) node->body;
 		// in first pass, count usage
 		if (pass_count == 0)
 			label->usage++;
@@ -336,21 +336,21 @@ static enum eos_t ifdef_ifndef(int invert)	// Now GotByte = illegal char
 
 
 // conditional assembly ("!ifdef"). Has to be re-entrant.
-static enum eos_t PO_ifdef(void)	// Now GotByte = illegal char
+static enum eos PO_ifdef(void)	// Now GotByte = illegal char
 {
 	return ifdef_ifndef(FALSE);
 }
 
 
 // conditional assembly ("!ifndef"). Has to be re-entrant.
-static enum eos_t PO_ifndef(void)	// Now GotByte = illegal char
+static enum eos PO_ifndef(void)	// Now GotByte = illegal char
 {
 	return ifdef_ifndef(TRUE);
 }
 
 
 // macro definition ("!macro").
-static enum eos_t PO_macro(void)	// Now GotByte = illegal char
+static enum eos PO_macro(void)	// Now GotByte = illegal char
 {
 	// In first pass, parse. In all other passes, skip.
 	if (pass_count == 0) {
@@ -387,11 +387,11 @@ void Parse_and_close_file(FILE *fd, const char *filename)
 
 
 // include source file ("!source" or "!src"). Has to be re-entrant.
-static enum eos_t PO_source(void)	// Now GotByte = illegal char
+static enum eos PO_source(void)	// Now GotByte = illegal char
 {
 	FILE		*fd;
 	char		local_gotbyte;
-	struct input_t	new_input,
+	struct input	new_input,
 			*outer_input;
 
 	// Enter new nesting level.

@@ -1,5 +1,5 @@
 // ACME - a crossassembler for producing 6502/65c02/65816 code.
-// Copyright (C) 1998-2009 Marco Baye
+// Copyright (C) 1998-2014 Marco Baye
 // Have a look at "acme.c" for further info
 //
 // Dynamic buffer stuff
@@ -25,7 +25,7 @@ do {					\
 
 
 // dynamic buffer structure
-struct dynabuf_t {
+struct dynabuf {
 	char	*buffer;	// pointer to buffer
 	int	size;		// size of buffer's used portion
 	int	reserved;	// total size of buffer
@@ -33,27 +33,27 @@ struct dynabuf_t {
 
 
 // variables
-extern struct dynabuf_t *GlobalDynaBuf;	// global dynamic buffer
+extern struct dynabuf *GlobalDynaBuf;	// global dynamic buffer
 
 
 // create global DynaBuf (call once on program startup)
 extern void DynaBuf_init(void);
 // create (private) DynaBuf
-extern struct dynabuf_t *DynaBuf_create(int initial_size);
+extern struct dynabuf *DynaBuf_create(int initial_size);
 // call whenever buffer is too small
-extern void DynaBuf_enlarge(struct dynabuf_t *db);
+extern void DynaBuf_enlarge(struct dynabuf *db);
 // return malloc'd copy of buffer contents
-extern char *DynaBuf_get_copy(struct dynabuf_t *db);
+extern char *DynaBuf_get_copy(struct dynabuf *db);
 // copy string to buffer (without terminator)
-extern void DynaBuf_add_string(struct dynabuf_t *db, const char *);
+extern void DynaBuf_add_string(struct dynabuf *db, const char *);
 // add string version of int to buffer (without terminator)
-extern void DynaBuf_add_signed_long(struct dynabuf_t *db, signed long value);
+extern void DynaBuf_add_signed_long(struct dynabuf *db, signed long value);
 // add string version of float to buffer (without terminator)
-extern void DynaBuf_add_double(struct dynabuf_t *db, double value);
+extern void DynaBuf_add_double(struct dynabuf *db, double value);
 // converts buffer contents to lower case
-extern void DynaBuf_to_lower(struct dynabuf_t *target, struct dynabuf_t *source);
+extern void DynaBuf_to_lower(struct dynabuf *target, struct dynabuf *source);
 // add char to buffer
-extern void DynaBuf_append(struct dynabuf_t *db, char);
+extern void DynaBuf_append(struct dynabuf *db, char);
 
 
 #endif
