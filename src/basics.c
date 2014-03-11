@@ -116,9 +116,10 @@ static enum eos PO_binary(void)
 	fclose(fd);
 	// if verbose, produce some output
 	if ((pass_count == 0) && (Process_verbosity > 1)) {
-		// FIXME - read "add_to_pc" via function call so struct can be moved from .h to .c file
+		int	amount	= vcpu_get_statement_size();
+
 		printf("Loaded %d (0x%04x) bytes from file offset %ld (0x%04lx).\n",
-			CPU_state.add_to_pc, CPU_state.add_to_pc, skip, skip);
+			amount, amount, skip, skip);
 	}
 	return ENSURE_EOS;
 }

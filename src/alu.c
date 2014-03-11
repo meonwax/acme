@@ -12,12 +12,12 @@
 #include <math.h>	// only for fp support
 #include "platform.h"
 #include "alu.h"
-#include "cpu.h"
 #include "dynabuf.h"
 #include "encoding.h"
 #include "global.h"
 #include "input.h"
 #include "label.h"
+#include "output.h"
 #include "section.h"
 #include "tree.h"
 
@@ -485,9 +485,11 @@ static void parse_octal_value(void)	// Now GotByte = "&"
 // Parse program counter ('*')
 static void parse_program_counter(void)	// Now GotByte = "*"
 {
+	struct result_int_t	pc;
+
 	GetByte();
-	// FIXME - read pc via function call, then move cpu struct from .h to .c file
-	PUSH_INTOPERAND(CPU_state.pc.intval, CPU_state.pc.flags | MVALUE_EXISTS);
+	vcpu_read_pc(&pc);
+	PUSH_INTOPERAND(pc.intval, pc.flags | MVALUE_EXISTS);
 }
 
 

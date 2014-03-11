@@ -11,8 +11,24 @@
 #include "config.h"
 
 
-// Constants
+// constants
 #define MEMINIT_USE_DEFAULT	256
+
+
+// current CPU state
+// FIXME - move struct definition to .c file and change other .c files' accesses to fn calls
+struct vcpu {
+	const struct cpu_type	*type;		// current CPU type (default 6502)	(FIXME - move out of struct again?)
+	struct result_int_t	pc;		// current program counter (pseudo value)
+	int			add_to_pc;	// add to PC after statement
+	int			a_is_long;
+	int			xy_are_long;
+};
+
+
+// variables
+// FIXME - restrict visibility to .c file
+extern struct vcpu	CPU_state;	// current CPU state
 
 
 // Prototypes
@@ -45,6 +61,15 @@ extern void PO_setpc(void);
 extern void Output_start_segment(intval_t address_change, int segment_flags);
 // Show start and end of current segment
 extern void Output_end_segment(void);
+
+// set program counter to defined value (FIXME - allow undefined!)
+extern void vcpu_set_pc(intval_t new_pc, int flags);
+// get program counter
+extern void vcpu_read_pc(struct result_int_t *target);
+// get size of current statement (until now) - needed for "!bin" verbose output
+extern int vcpu_get_statement_size(void);
+// adjust program counter (called at end of each statement)
+extern void vcpu_end_statement(void);
 
 
 #endif

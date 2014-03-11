@@ -49,10 +49,12 @@ struct output {
 		struct segment	list_head;	// head element of doubly-linked ring list
 	} segment;
 };
-static struct output	default_output;
-static struct output	*out	= &default_output;
 
 // variables
+static struct output	default_output;
+static struct output	*out	= &default_output;
+// FIXME - make static
+struct vcpu		CPU_state;	// current CPU state
 
 // FIXME - move file format stuff to some other .c file!
 // predefined stuff
@@ -480,6 +482,13 @@ void Output_passinit(void)
 	out->segment.start = NO_SEGMENT_START;	// TODO - "no active segment" could be made a segment flag!
 	out->segment.max = OUTBUFFERSIZE - 1;
 	out->segment.flags = 0;
+
+	//vcpu stuff:
+	CPU_state.pc.flags = 0;	// not defined yet
+	CPU_state.pc.intval = 0;	// same as output's write_idx on pass init
+	CPU_state.add_to_pc = 0;	// increase PC by this at end of statement
+	CPU_state.a_is_long = FALSE;	// short accu
+	CPU_state.xy_are_long = FALSE;	// short index regs
 }
 
 
@@ -537,6 +546,46 @@ void Output_start_segment(intval_t address_change, int segment_flags)
 
 
 // TODO - add "!skip AMOUNT" pseudo opcode as alternative to "* = * + AMOUNT" (needed for assemble-to-end-address)
+
+// set program counter to defined value (FIXME - allow for undefined!)
+// if start address was given on command line, main loop will call this before each pass.
+// in addition to that, it will be called on each "* = VALUE".
+void vcpu_set_pc(intval_t new_pc, int segment_flags)
+{
+	intval_t	new_offset;
+
+	new_offset = (new_pc - CPU_state.pc.intval) & 0xffff;
+	CPU_state.pc.intval = new_pc;
+	CPU_state.pc.flags |= MVALUE_DEFINED;	// FIXME - remove when allowing undefined!
+	// now tell output buffer to start a new segment
+	Output_start_segment(new_offset, segment_flags);
+}
+/*
+FIXME - TODO:
+general stuff: PC and mem ptr might be marked as "undefined" via flags field.
+However, their "value" fields are still updated, so we can calculate differences.
+
+on pass init:
+	if value given on command line, set PC and out ptr to that value
+	otherwise, set both to zero and mark as "undefined"
+when ALU asks for "*":
+	return current PC (value and flags)
+when encountering "!pseudopc VALUE { BLOCK }":
+	parse new value (NEW: might be undefined!)
+	remember difference between current and new value
+	set PC to new value
+	after BLOCK, use remembered difference to change PC back
+when encountering "* = VALUE":
+	parse new value (NEW: might be undefined!)
+	calculate difference between current PC and new value
+	set PC to new value
+	tell outbuf to add difference to mem ptr (starting a new segment) - if new value is undefined, tell outbuf to disable output
+
+Problem: always check for "undefined"; there are some problematic combinations.
+I need a way to return the size of a generated code block even if PC undefined.
+*/
+
+
 // called when "* = EXPRESSION" is parsed
 // setting program counter via "* = VALUE"
 // FIXME - move to basics.c
@@ -560,7 +609,27 @@ void PO_setpc(void)
 
 		segment_flags |= (int) node_body;
 	}
-	CPU_set_pc(new_addr, segment_flags);
+	vcpu_set_pc(new_addr, segment_flags);
 }
 
 
+// get program counter
+void vcpu_read_pc(struct result_int_t *target)
+{
+	*target = CPU_state.pc;
+}
+
+
+// get size of current statement (until now) - needed for "!bin" verbose output
+int vcpu_get_statement_size(void)
+{
+	return CPU_state.add_to_pc;
+}
+
+
+// adjust program counter (called at end of each statement)
+void vcpu_end_statement(void)
+{
+	CPU_state.pc.intval = (CPU_state.pc.intval + CPU_state.add_to_pc) & 0xffff;
+	CPU_state.add_to_pc = 0;
+}
