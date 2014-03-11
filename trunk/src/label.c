@@ -9,11 +9,11 @@
 #include <stdio.h>
 #include "acme.h"
 #include "alu.h"
-#include "cpu.h"
 #include "dynabuf.h"
 #include "global.h"
 #include "input.h"
 #include "label.h"
+#include "output.h"
 #include "platform.h"
 #include "section.h"
 #include "tree.h"
@@ -206,16 +206,17 @@ static struct node_t	pseudo_opcodes[]	= {
 // GlobalDynaBuf holds the label name.
 void Label_implicit_definition(zone_t zone, int stat_flags, int force_bit, int change)
 {
-	struct result_t	result;
-	struct label	*label;
+	struct result_int_t	pc;
+	struct result_t		result;
+	struct label		*label;
 
 	label = Label_find(zone, force_bit);
 	// implicit label definition (label)
 	if ((stat_flags & SF_FOUND_BLANK) && warn_on_indented_labels)
 		Throw_first_pass_warning("Implicit label definition not in leftmost column.");
-	// FIXME - read pc via function call!
-	result.flags = CPU_state.pc.flags & MVALUE_DEFINED;
-	result.val.intval = CPU_state.pc.intval;
+	vcpu_read_pc(&pc);
+	result.flags = pc.flags & MVALUE_DEFINED;
+	result.val.intval = pc.intval;
 	Label_set_value(label, &result, change);
 }
 

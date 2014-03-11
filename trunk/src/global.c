@@ -299,10 +299,7 @@ void Parse_until_eob_or_eof(void)
 				}
 			}
 		} while (GotByte != CHAR_EOS);	// until end-of-statement
-		// adjust program counter
-		// FIXME - next two lines should be a function call!
-		CPU_state.pc.intval = (CPU_state.pc.intval + CPU_state.add_to_pc) & 0xffff;
-		CPU_state.add_to_pc = 0;
+		vcpu_end_statement();	// adjust program counter
 		// go on with next byte
 		GetByte();	//NEXTANDSKIPSPACE();
 	}

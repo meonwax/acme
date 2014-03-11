@@ -186,11 +186,11 @@ static int perform_pass(void)
 	int	ii;
 
 	// call modules' "pass init" functions
-	Output_passinit();	// disable output (until PC gets set)
-	CPU_passinit(default_cpu);	// set default cpu values (PC undefined)
+	Output_passinit();	// disable output, PC undefined
+	CPU_passinit(default_cpu);	// set default cpu type
 	// if start address was given on command line, use it:
 	if (start_address != ILLEGAL_START_ADDRESS)
-		CPU_set_pc(start_address, 0);
+		vcpu_set_pc(start_address, 0);
 	Encoding_passinit();	// set default encoding
 	Section_passinit();	// set initial zone (untitled)
 	// init variables
