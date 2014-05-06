@@ -763,7 +763,12 @@ static void expect_dyadic_operator(void)
 
 	case '=':	// is equal
 		operator = &ops_equals;
-		goto get_byte_and_push_dyadic;
+		// if it's "==", accept but warn
+		if (GetByte() == '=') {
+			Throw_warning("C-style \"==\" comparison detected");
+			goto get_byte_and_push_dyadic;
+		}
+		goto push_dyadic;
 
 	case ')':	// closing parenthesis
 		operator = &ops_closing;
