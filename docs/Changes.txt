@@ -13,6 +13,14 @@ outlining the platform specific changes.
 
 
 ----------------------------------------------------------------------
+Section:   New in release 0.94.9
+----------------------------------------------------------------------
+
+C-style equality checking ("==" operator) is now recognized (but gives
+    a warning). Thanks to groepaz for the suggestion.
+
+
+----------------------------------------------------------------------
 Section:   New in release 0.94.8
 ----------------------------------------------------------------------
 

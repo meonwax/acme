@@ -52,6 +52,9 @@ Bug in ACME, code follows
     A situation has been encountered implying there is a bug in ACME.
     See the last section in this file.
 
+C-style "==" comparison detected
+    To check for equality, use a single '=' character instead.
+
 Implicit label definition not in leftmost column.
     An implicit label definition has blanks before the label name.
     Imagine this source code:

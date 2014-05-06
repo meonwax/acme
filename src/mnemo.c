@@ -136,7 +136,7 @@ SCS jump_lind[]  = {      0,      0,      0,   0xdc00,   0xdc00,        0,      
 
 // error message strings
 static const char	exception_illegal_combination[]	= "Illegal combination of command and addressing mode.";
-static const char	exception_highbyte_zero[]= "Using oversized addressing mode.";
+static const char	exception_highbyte_zero[]	= "Using oversized addressing mode.";
 
 
 // Variables
@@ -146,7 +146,7 @@ static struct dynabuf	*mnemo_dyna_buf;	// dynamic buffer for mnemonics
 static struct node_t	*mnemo_6502_tree	= NULL;	// holds 6502 mnemonics
 static struct node_t	*mnemo_6510_tree	= NULL;	// holds 6510 extensions
 static struct node_t	*mnemo_65c02_tree	= NULL;	// holds 65c02 extensions
-//static node_t	*mnemo_Rockwell65c02_tree	= NULL;	// Rockwell
+//static struct node_t	*mnemo_Rockwell65c02_tree	= NULL;	// Rockwell
 static struct node_t	*mnemo_WDC65c02_tree	= NULL;	// WDC's "stp"/"wai"
 static struct node_t	*mnemo_65816_tree	= NULL;	// holds 65816 extensions
 
