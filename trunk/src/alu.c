@@ -8,6 +8,8 @@
 // 31 Jul 2009	Changed ASR again, just to be on the safe side.
 // 14 Jan 2014	Changed associativity of "power-of" operator,
 //		so a^b^c now means a^(b^c).
+//  7 May 2014	C-style "==" operators are now recognized (but
+//		give a warning).
 #include <stdlib.h>
 #include <math.h>	// only for fp support
 #include "platform.h"
@@ -765,7 +767,7 @@ static void expect_dyadic_operator(void)
 		operator = &ops_equals;
 		// if it's "==", accept but warn
 		if (GetByte() == '=') {
-			Throw_warning("C-style \"==\" comparison detected");
+			Throw_first_pass_warning("C-style \"==\" comparison detected");
 			goto get_byte_and_push_dyadic;
 		}
 		goto push_dyadic;
