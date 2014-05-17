@@ -186,9 +186,10 @@ static void parse_mnemo_or_global_label_def(int *statement_flags)
 	if ((CPU_state.type->keyword_is_mnemonic(Input_read_keyword()) == FALSE)
 	&& first_label_of_statement(statement_flags)) {
 		// Now GotByte = illegal char
-		// 04 Jun 2005 - this fix should help to
-		// explain "strange" error messages.
-		if (*GLOBALDYNABUF_CURRENT == ' ')
+		// 04 Jun 2005: this fix should help to explain "strange" error messages.
+		// 17 May 2014: now it works for UTF-8 as well.
+		if ((*GLOBALDYNABUF_CURRENT == (char) 0xa0)
+		|| ((GlobalDynaBuf->size >= 2) && (GLOBALDYNABUF_CURRENT[0] == (char) 0xc2) && (GLOBALDYNABUF_CURRENT[1] == (char) 0xa0)))
 			Throw_first_pass_warning("Label name starts with a shift-space character.");
 		Label_parse_definition(ZONE_GLOBAL, *statement_flags);
 	}

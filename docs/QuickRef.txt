@@ -259,6 +259,14 @@ This is a list of the operators currently known by ACME:
 
  Priority    Example      Meaning                   Alias
 ------------------------------------------------------------
+       14     sin(v)      Trigonometric sine function
+       14     cos(v)      Trigonometric cosine function
+       14     tan(v)      Trigonometric tangent function
+       14     arcsin(v)   Inverse of sin()
+       14     arccos(v)   Inverse of cos()
+       14     arctan(v)   Inverse of tan()
+       14     int(v)      Convert to integer
+       14     float(v)    Convert to float
        13        !  v     Complement of             NOT
        12     v  ^  w     To the power of
        11        -  v     Negate
