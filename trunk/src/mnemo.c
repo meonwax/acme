@@ -577,7 +577,7 @@ static void not_in_bank(intval_t target)
 {
 	char	buffer[60];	// 640K should be enough for anybody
 
-	sprintf(buffer, "Target not in bank (0x%lx).", target);
+	sprintf(buffer, "Target not in bank (0x%lx).", (long) target);
 	Throw_error(buffer);
 }
 
@@ -601,7 +601,7 @@ static void group_only_relative8_addressing(int opcode)
 			if ((offset < -128) || (offset > 127)) {
 				char	buffer[60];	// 640K should be enough for anybody
 
-				sprintf(buffer, "Target out of range (%ld; %ld too far).", offset, offset < -128 ? -128 - offset : offset - 127);
+				sprintf(buffer, "Target out of range (%ld; %ld too far).", (long) offset, (long) (offset < -128 ? -128 - offset : offset - 127));
 				Throw_error(buffer);
 			}
 		}

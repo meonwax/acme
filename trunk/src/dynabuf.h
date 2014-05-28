@@ -46,10 +46,6 @@ extern void DynaBuf_enlarge(struct dynabuf *db);
 extern char *DynaBuf_get_copy(struct dynabuf *db);
 // copy string to buffer (without terminator)
 extern void DynaBuf_add_string(struct dynabuf *db, const char *);
-// add string version of int to buffer (without terminator)
-extern void DynaBuf_add_signed_long(struct dynabuf *db, signed long value);
-// add string version of float to buffer (without terminator)
-extern void DynaBuf_add_double(struct dynabuf *db, double value);
 // converts buffer contents to lower case
 extern void DynaBuf_to_lower(struct dynabuf *target, struct dynabuf *source);
 // add char to buffer

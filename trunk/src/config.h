@@ -1,5 +1,5 @@
 // ACME - a crossassembler for producing 6502/65c02/65816 code.
-// Copyright (C) 1998-2009 Marco Baye
+// Copyright (C) 1998-2014 Marco Baye
 // Have a look at "acme.c" for further info
 //
 // Configuration
@@ -10,7 +10,6 @@
 // types
 typedef unsigned int	zone_t;
 typedef signed long	intval_t;	// at least 32 bits
-#define INTVAL_MAXCHARACTERS	11	// -2^32 takes 11 characters
 typedef unsigned long	uintval_t;	// just for logical shift right
 // result structure type definition with support for floating point
 struct result_t {	// either int or float
