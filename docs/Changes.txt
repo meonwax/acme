@@ -13,6 +13,14 @@ outlining the platform specific changes.
 
 
 ----------------------------------------------------------------------
+Section:   New in release 0.94.11
+----------------------------------------------------------------------
+
+If !warn, !error and !serious are called with numbers, those will now
+    be output in hex format as well. Also mentioned this in docs.
+
+
+----------------------------------------------------------------------
 Section:   New in release 0.94.10
 ----------------------------------------------------------------------
 

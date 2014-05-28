@@ -95,7 +95,7 @@ void DynaBuf_add_string(struct dynabuf *db, const char *string)
 	while ((byte = *string++))
 		DYNABUF_APPEND(db, byte);
 }
-
+/*
 // make sure DynaBuf is large enough to take "size" more bytes
 // return pointer to end of current contents
 static char *ensure_free_space(struct dynabuf *db, int size)
@@ -103,25 +103,7 @@ static char *ensure_free_space(struct dynabuf *db, int size)
 	while ((db->reserved - db->size) < size)
 		resize(db, MAKE_LARGER_THAN(db->reserved));
 	return db->buffer + db->size;
-}
-
-// add string version of int to buffer (without terminator)
-void DynaBuf_add_signed_long(struct dynabuf *db, signed long value)
-{
-	char	*write	= ensure_free_space(db, INTVAL_MAXCHARACTERS + 1);
-
-	db->size += sprintf(write, "%ld", value);
-}
-
-// add string version of float to buffer (without terminator)
-void DynaBuf_add_double(struct dynabuf *db, double value)
-{
-	char	*write	= ensure_free_space(db, 40);	// reserve 40 chars
-
-	// write up to 30 significant characters. remaining 10 should suffice
-	// for sign, decimal point, exponent, terminator etc.
-	db->size += sprintf(write, "%.30g", value);
-}
+}*/
 
 // Convert buffer contents to lower case (target and source may be identical)
 void DynaBuf_to_lower(struct dynabuf *target, struct dynabuf *source)

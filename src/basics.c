@@ -164,24 +164,27 @@ static enum eos throw_string(const char prefix[], void (*fn)(const char *))
 			ALU_any_result(&result);
 			if (result.flags & MVALUE_IS_FP) {
 				// floating point
-				if (result.flags & MVALUE_DEFINED)
-					DynaBuf_add_double(
-						user_message,
-						result.val.fpval);
-				else
-					DynaBuf_add_string(
-						user_message,
-						"<UNDEFINED FLOAT>");
+				if (result.flags & MVALUE_DEFINED) {
+					char	buffer[40];
+
+					// write up to 30 significant characters.
+					// remaining 10 should suffice for sign,
+					// decimal point, exponent, terminator etc.
+					sprintf(buffer, "%.30g", result.val.fpval);
+					DynaBuf_add_string(user_message, buffer);
+				} else {
+					DynaBuf_add_string(user_message, "<UNDEFINED FLOAT>");
+				}
 			} else {
 				// integer
-				if (result.flags & MVALUE_DEFINED)
-					DynaBuf_add_signed_long(
-						user_message,
-						result.val.intval);
-				else
-					DynaBuf_add_string(
-						user_message,
-						"<UNDEFINED INT>");
+				if (result.flags & MVALUE_DEFINED) {
+					char	buffer[32];	// 11 for dec, 8 for hex
+
+					sprintf(buffer, "%ld (0x%lx)", (long) result.val.intval, (long) result.val.intval);
+					DynaBuf_add_string(user_message, buffer);
+				} else {
+					DynaBuf_add_string(user_message, "<UNDEFINED INT>");
+				}
 			}
 		}
 	} while (Input_accept_comma());

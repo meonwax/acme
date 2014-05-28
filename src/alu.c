@@ -434,6 +434,7 @@ static void parse_decimal_value(void)	// Now GotByte = first digit
 	intval_t	intval	= (GotByte & 15);	// this works. it's ASCII.
 
 	GetByte();
+	// TODO - add "0b" prefix for binary values?
 	if ((intval == 0) && (GotByte == 'x')) {
 		parse_hexadecimal_value();
 		return;

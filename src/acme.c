@@ -15,9 +15,9 @@
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-#define RELEASE		"0.94.10"	// update before release (FIXME)
+#define RELEASE		"0.94.11"	// update before release (FIXME)
 #define CODENAME	"Zarquon"	// update before release
-#define CHANGE_DATE	"17 May"	// update before release
+#define CHANGE_DATE	"28 May"	// update before release
 #define CHANGE_YEAR	"2014"		// update before release
 //#define HOME_PAGE	"http://home.pages.de/~mac_bacon/smorbrod/acme/"	// FIXME
 #define HOME_PAGE	"http://sourceforge.net/p/acme-crossass/"	// FIXME

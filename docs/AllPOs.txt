@@ -454,29 +454,35 @@ Example:	rts	; some assembler mnemonic
 		"!eof" is reached.
 
 
-Call:		!warn STRING_VALUE
+Call:		!warn STRING_VALUE [, STRING_VALUE]*
 Purpose:	Show a warning during assembly.
-Parameters:	STRING_VALUE: A string given in double quotes.
+Parameters:	STRING_VALUE: Can be either a string given in double
+		quotes or any formula the value parser accepts.
+		Numbers will be output in decimal _and_ hex format.
 Example:	!if * > $a000 {
-			!warn "Program reached ROM area."
+			!warn "Program reached ROM: ", * - $a000, " bytes overlap."
 		}
 
 
-Call:		!error STRING_VALUE
+Call:		!error STRING_VALUE [, STRING_VALUE]*
 Purpose:	Generate an error during assembly (therefore, no
 		output file will be generated).
-Parameters:	STRING_VALUE: A string given in double quotes.
+Parameters:	STRING_VALUE: Can be either a string given in double
+		quotes or any formula the value parser accepts.
+		Numbers will be output in decimal _and_ hex format.
 Example:	rts	; end of some function
 	start	!source "colors.a"
 	end	!if end - start > 256 {
-			!error "Color strings exceed 256 chars!"
+			!error "Color strings are ", end - start - 256, " bytes too long."
 		}
 
 
-Call:		!serious STRING_VALUE
+Call:		!serious STRING_VALUE [, STRING_VALUE]*
 Purpose:	Generate a serious error, immediately stopping
 		assembly.
-Parameters:	STRING_VALUE: A string given in double quotes.
+Parameters:	STRING_VALUE: Can be either a string given in double
+		quotes or any formula the value parser accepts.
+		Numbers will be output in decimal _and_ hex format.
 Example:	!source "part1.a"	; sets part1_version
 		!source "part2.a"	; sets part2_version
 		!if part1_version != part2_version {
