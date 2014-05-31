@@ -27,9 +27,9 @@
 // type definitions
 
 struct loop_condition {
-	int		line;	// original line number
-	int		invert;	// actually bool (0 for WHILE, 1 for UNTIL)
-	char		*body;	// pointer to actual expression
+	int	line;	// original line number
+	int	invert;	// actually bool (0 for WHILE, 1 for UNTIL)
+	char	*body;	// pointer to actual expression
 };
 
 
@@ -179,12 +179,18 @@ static enum eos PO_do(void)	// Now GotByte = illegal char
 
 
 // looping assembly ("!for"). Has to be re-entrant.
+// old syntax: !for VAR, END { BLOCK }		VAR counts from 1 to END
+// new syntax: !for VAR, START, END { BLOCK }	VAR counts from START to END
 static enum eos PO_for(void)	// Now GotByte = illegal char
 {
 	struct input	loop_input,
 			*outer_input;
 	struct result_t	loop_counter;
-	intval_t	maximum;
+	intval_t	first_arg,
+			counter_first,
+			counter_last,
+			counter_increment;
+	int		old_algo;	// actually bool
 	char		*loop_body;	// pointer to loop's body block
 	struct label	*label;
 	zone_t		zone;
@@ -196,13 +202,25 @@ static enum eos PO_for(void)	// Now GotByte = illegal char
 	// Now GotByte = illegal char
 	force_bit = Input_get_force_bit();	// skips spaces after
 	label = Label_find(zone, force_bit);
-	if (Input_accept_comma() == 0) {
+	if (!Input_accept_comma()) {
 		Throw_error(exception_syntax);
 		return SKIP_REMAINDER;
 	}
-	maximum = ALU_defined_int();
-	if (maximum < 0)
-		Throw_serious_error("Loop count is negative.");
+	first_arg = ALU_defined_int();
+	if (Input_accept_comma()) {
+		old_algo = FALSE;	// new format - yay!
+		counter_first = first_arg;	// use given argument
+		counter_last = ALU_defined_int();	// read second argument
+		counter_increment = (counter_last < counter_first) ? -1 : 1;
+	} else {
+		old_algo = TRUE;	// old format - booo!
+		Throw_first_pass_warning("Found deprecated \"!for\" syntax.");
+		if (first_arg < 0)
+			Throw_serious_error("Loop count is negative.");
+		counter_first = 0;	// CAUTION - old algo pre-increments and therefore starts with 1!
+		counter_last = first_arg;	// use given argument
+		counter_increment = 1;
+	}
 	if (GotByte != CHAR_SOB)
 		Throw_serious_error(exception_no_left_brace);
 	// remember line number of loop pseudo opcode
@@ -220,16 +238,25 @@ static enum eos PO_for(void)	// Now GotByte = illegal char
 	Input_now = &loop_input;
 	// init counter
 	loop_counter.flags = MVALUE_DEFINED | MVALUE_EXISTS;
-	loop_counter.val.intval = 0;
-	// if count == 0, skip loop
-	if (maximum) {
-		do {
-			loop_counter.val.intval++;	// increment counter
-			Label_set_value(label, &loop_counter, TRUE);
-			parse_ram_block(loop_start, loop_body);
-		} while (loop_counter.val.intval < maximum);
+	loop_counter.val.intval = counter_first;
+	Label_set_value(label, &loop_counter, TRUE);
+	if (old_algo) {
+		// old algo for old syntax:
+		// if count == 0, skip loop
+		if (counter_last) {
+			do {
+				loop_counter.val.intval += counter_increment;
+				Label_set_value(label, &loop_counter, TRUE);
+				parse_ram_block(loop_start, loop_body);
+			} while (loop_counter.val.intval < counter_last);
+		}
 	} else {
-		Label_set_value(label, &loop_counter, TRUE);
+		// new algo for new syntax:
+		do {
+			parse_ram_block(loop_start, loop_body);
+			loop_counter.val.intval += counter_increment;
+			Label_set_value(label, &loop_counter, TRUE);
+		} while (loop_counter.val.intval != (counter_last + counter_increment));
 	}
 	// Free memory
 	free(loop_body);

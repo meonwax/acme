@@ -44,7 +44,7 @@ struct result_int_t {
 // Boolean values
 #ifndef FALSE
 #define FALSE	0
-#define TRUE	1
+#define TRUE	(!FALSE)
 #endif
 
 

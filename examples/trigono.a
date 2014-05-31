@@ -1,4 +1,4 @@
-;ACME 0.93
+;ACME 0.94.12
 	!to "trigono.o", plain
 	* = $c000
 
@@ -7,10 +7,9 @@
 !raw "cos[0,pi/2] scaled to 0-255 range"
 !align $f, 0, 0	; make output file look better in hex editor :)
 
-	!for x, 256 {
-		!byte cos(float(x - 1) / 255 * PI/2) * 255 + 0.5
+	!for x, 0, 255 {
+		!byte cos(float(x) / 255 * PI/2) * 255 + 0.5
 	}
-	; "x-1" converts interval [1,256] to interval [0,255]
 	; "float()" makes sure this calculation is done in float mode now
 	; "/255*half_PI" converts interval [0,255] to interval [0,PI/2]
 	; "cos()" returns cosine. Wow.
@@ -21,8 +20,8 @@
 !raw "sin[-pi/2,pi/2] scaled to full range of 16b.16b fixed point"
 !align $f, 0, 0
 
-	!for x, 1024 {
-		!32 sin(float(x - 513) / 1024 * PI) * 65536 + 0.5
+	!for x, 0, 1023 {
+		!32 sin(float(x - 512) / 1024 * PI) * 65536 + 0.5
 	}
 
 	;undefined = 0.0 / 0.0	; throws error when active

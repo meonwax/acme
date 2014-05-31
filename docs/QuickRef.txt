@@ -318,15 +318,16 @@ Examples        Notes
 ---------------------------------------------------------------------
 128             a decimal value, integer
 128.5           a decimal value, floating point
-$d011           hexadecimal values are indicated by either
-0xffd2              leading "$" or leading "0x"
+$d011           hexadecimal values are indicated by either a
+0xffd2              leading "$" or a leading "0x".
 &1701           an octal value, indicated by "&"
-%010010         binary values are indicated by "%". In binary values,
-%....#...           you can substitute the characters "0" and "1" by
-                    "." and "#" respectively. This way the values are
-                    much more readable, especially when building
-                    bitmapped objects (like C64 sprites or fonts) in
-                    your source code.
+%010010         binary values are indicated by either a leading "%"
+%....#...           or a leading "0b". In binary values, you can
+0b01100110          substitute the characters "0" and "1" by "." and
+                    "#" respectively. This way the values are much
+                    more readable, especially when building bitmapped
+                    objects (like C64 sprites or fonts) in your source
+                    code.
 "p"             character values are indicated by double or single
 'q'                 quotes. The actual numeric value depends on the
                     current conversion table (none/petscii/screen),

@@ -52,8 +52,12 @@ Bug in ACME, code follows
     A situation has been encountered implying there is a bug in ACME.
     See the last section in this file.
 
-C-style "==" comparison detected
+C-style "==" comparison detected.
     To check for equality, use a single '=' character instead.
+
+Found deprecated "!for" syntax.
+    Please update your sources to use the new "!for" syntax. See
+    AllPOs.txt for details.
 
 Implicit label definition not in leftmost column.
     An implicit label definition has blanks before the label name.
@@ -294,7 +298,8 @@ Found end-of-file instead of '}'.
     (because there was at least one block left open).
 
 Loop count is negative.
-    You used the "!for" command with a negative loop count.
+    You used the "!for" command with a negative loop count (getting
+    this error is only possible when using the now deprecated syntax).
 
 Macro already defined.
     Macros can only be defined once. If you define a macro twice, ACME
