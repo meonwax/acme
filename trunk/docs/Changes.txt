@@ -13,6 +13,16 @@ outlining the platform specific changes.
 
 
 ----------------------------------------------------------------------
+Section:   New in release 0.94.12
+----------------------------------------------------------------------
+
+Finally created new "!for" syntax so counting can start at zero. The
+    old syntax still works, but gives a warning. See AllPOs.txt for
+    more info.
+Added "0b" as alternative prefix for binary values.
+
+
+----------------------------------------------------------------------
 Section:   New in release 0.94.11
 ----------------------------------------------------------------------
 

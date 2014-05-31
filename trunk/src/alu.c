@@ -10,6 +10,7 @@
 //		so a^b^c now means a^(b^c).
 //  7 May 2014	C-style "==" operators are now recognized (but
 //		give a warning).
+// 31 May 2014	Added "0b" binary number prefix as alternative to "%".
 #include <stdlib.h>
 #include <math.h>	// only for fp support
 #include "platform.h"
@@ -357,6 +358,46 @@ static void parse_quoted_character(char closing_quote)
 }
 
 
+// Parse binary value. Apart from '0' and '1', it also accepts the characters
+// '.' and '#', this is much more readable. The current value is stored as soon
+// as a character is read that is none of those given above.
+static void parse_binary_value(void)	// Now GotByte = "%" or "b"
+{
+	intval_t	value	= 0;
+	int		go_on	= TRUE,	// continue loop flag
+			flags	= MVALUE_GIVEN,
+			digits	= -1;	// digit counter
+
+	do {
+		digits++;
+		switch (GetByte()) {
+		case '0':
+		case '.':
+			value <<= 1;
+			break;
+		case '1':
+		case '#':
+			value = (value << 1) | 1;
+			break;
+		default:
+			go_on = 0;
+		}
+	} while (go_on);
+	// set force bits
+	if (digits > 8) {
+		if (digits > 16) {
+			if (value < 65536)
+				flags |= MVALUE_FORCE24;
+		} else {
+			if (value < 256)
+				flags |= MVALUE_FORCE16;
+		}
+	}
+	PUSH_INTOPERAND(value, flags);
+	// Now GotByte = non-binary char
+}
+
+
 // Parse hexadecimal value. It accepts "0" to "9", "a" to "f" and "A" to "F".
 // Capital letters will be converted to lowercase letters using the flagtable.
 // The current value is stored as soon as a character is read that is none of
@@ -434,10 +475,16 @@ static void parse_decimal_value(void)	// Now GotByte = first digit
 	intval_t	intval	= (GotByte & 15);	// this works. it's ASCII.
 
 	GetByte();
-	// TODO - add "0b" prefix for binary values?
-	if ((intval == 0) && (GotByte == 'x')) {
-		parse_hexadecimal_value();
-		return;
+	// check for "0b" (binary) and "0x" (hexadecimal) prefixes
+	if (intval == 0) {
+		if (GotByte == 'b') {
+			parse_binary_value();
+			return;
+		}
+		if (GotByte == 'x') {
+			parse_hexadecimal_value();
+			return;
+		}
 	}
 	// parse digits until no more
 	while ((GotByte >= '0') && (GotByte <= '9')) {
@@ -493,46 +540,6 @@ static void parse_program_counter(void)	// Now GotByte = "*"
 	GetByte();
 	vcpu_read_pc(&pc);
 	PUSH_INTOPERAND(pc.intval, pc.flags | MVALUE_EXISTS);
-}
-
-
-// Parse binary value. Apart from '0' and '1', it also accepts the characters
-// '.' and '#', this is much more readable. The current value is stored as soon
-// as a character is read that is none of those given above.
-static void parse_binary_value(void)	// Now GotByte = "%"
-{
-	intval_t	value	= 0;
-	int		go_on	= TRUE,	// continue loop flag
-			flags	= MVALUE_GIVEN,
-			digits	= -1;	// digit counter
-
-	do {
-		digits++;
-		switch (GetByte()) {
-		case '0':
-		case '.':
-			value <<= 1;
-			break;
-		case '1':
-		case '#':
-			value = (value << 1) | 1;
-			break;
-		default:
-			go_on = 0;
-		}
-	} while (go_on);
-	// set force bits
-	if (digits > 8) {
-		if (digits > 16) {
-			if (value < 65536)
-				flags |= MVALUE_FORCE24;
-		} else {
-			if (value < 256)
-				flags |= MVALUE_FORCE16;
-		}
-	}
-	PUSH_INTOPERAND(value, flags);
-	// Now GotByte = non-binary char
 }
 
 
@@ -768,7 +775,7 @@ static void expect_dyadic_operator(void)
 		operator = &ops_equals;
 		// if it's "==", accept but warn
 		if (GetByte() == '=') {
-			Throw_first_pass_warning("C-style \"==\" comparison detected");
+			Throw_first_pass_warning("C-style \"==\" comparison detected.");
 			goto get_byte_and_push_dyadic;
 		}
 		goto push_dyadic;

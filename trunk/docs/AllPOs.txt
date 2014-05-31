@@ -115,12 +115,12 @@ conversion table file, try using ACME:
 		!to "asc2pet.ct", plain	; no load address
 		* = 0			; pc = table index
 		; first create "as-is" table
-		!for i, 256 {!byte i - 1}
+		!for i, 0, 255 {!byte i}
 		; now exchange upper and lower case characters
-		* = 65
-		!for i, 91 - 65 {!byte * + 128}
-		* = 97
-		!for i, 123 - 97 {!byte * - 32}
+		* = 65, overlay
+		!for i, 1, 26 {!byte * + 128}
+		* = 97, overlay
+		!for i, 1, 26 {!byte * - 32}
 The resulting file can be used as a conversion table to convert to
 PetSCII (which is useless, because ACME can do so anyway. But you get
 the idea).
@@ -358,41 +358,67 @@ Examples:	; this was taken from <6502/std.a>:
 		}
 
 
-Call:		!for LABEL, TIMES { BLOCK }
+Call:		!for LABEL, START, END { BLOCK }
 Purpose:	Looping assembly. The block of statements will be
-		parsed TIMES times. For a more flexible possibility,
-		have a look at "!do" below.
-Parameters:	LABEL: Any valid label name. The label's value will
-		show the number of the current loop cycle:
-		In the first cycle it will have the value 1, in the
-		last cycle it will have the value TIMES.
-		TIMES: Any formula the value parser accepts, but it
-		must be solvable even in the first pass. Negative
-		values are forbidden, zero causes the block to be
-		skipped.
+		parsed a fixed number of times, as specified by the
+		values of START and END. For a more flexible
+		possibility, have a look at "!do" below.
+Parameters:	LABEL: Any valid label name.
+		START: Any formula the value parser accepts, but it
+		must be solvable even in the first pass. LABEL will 
+		have this value during the first loop cycle.
+		END: Any formula the value parser accepts, but it must
+		be solvable even in the first pass. LABEL will have
+		this value during the last loop cycle.
 		BLOCK: A block of assembler statements.
+		If START or END are floats, they will be converted to
+		integers (never use floats for loop counters). If
+		START is less than or equal to END, LABEL will get
+		incremented at the end of each cycle; if START is
+		greater than END, LABEL will get decremented at the
+		end of each cycle. So after leaving the loop, LABEL
+		will have an "illegal" value (END + 1 if counting up,
+		END - 1 if counting down).
 		Please note that it is impossible to change the number
 		of loop cycles "inside" the loop by fiddling with the
-		counter (using the "!set" pseudo opcode): The "!for"
+		counter using the "!set" pseudo opcode: The "!for"
 		routine keeps its own copy of the counter value and
 		only sets the label value, it never reads it back.
 		This was done to eliminate a possibility to hang ACME.
-Examples:	; conversion table: integer to BCD
-	int2BCD	!for Outer, 10 {
-			!for Inner, 10 {
-				!byte ((Outer - 1) << 4) OR (Inner - 1)
+Examples:
+	int2BCD ; conversion table: integer to BCD
+		!for Outer, 0, 9 {
+			!for Inner, 0, 9 {
+				!byte (Outer << 4) OR Inner
 			}
 		}
 		!fill 156, $ff	; values above 99 give 255 (invalid)
 
-		; conversion table: BCD to integer
-	BCD2int	!for Outer, 10 {
-			!for Inner, 10 {
-				!byte 10 * (Outer - 1) + (Inner - 1)
+	BCD2int ; conversion table: BCD to integer
+		!for Outer, 0, 9 {
+			!for Inner, 0, 9 {
+				!byte 10 * Outer + Inner
 			}
 			!fill 6, $ff	; invalid BCD values give 255
 		}
 		!fill 96, $ff		; invalid BCD values give 255
+
+	quickclear ; generate speedcode to clear C64 screen
+		lda #' '
+		!for i, 0, 999 {
+			sta $0400 + i
+		}
+
+Miscellaneous:	The old syntax ("!for LABEL, END { BLOCK }" where
+		START was always implied to be 1) is still fully
+		supported, but gives a warning to get people to change
+		to the new syntax. When migrating your sources, bear
+		in mind that it is no longer possible to skip the
+		block completely by specifying a loop count of zero.
+		Also note that with the new algorithm, LABEL has a
+		different value after the block than during the last
+		loop cycle, while the old algorithm kept that last
+		value.
 
 
 Call:		!set LABEL = VALUE
