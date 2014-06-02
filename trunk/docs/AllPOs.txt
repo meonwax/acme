@@ -412,9 +412,12 @@ Examples:
 Miscellaneous:	The old syntax ("!for LABEL, END { BLOCK }" where
 		START was always implied to be 1) is still fully
 		supported, but gives a warning to get people to change
-		to the new syntax. When migrating your sources, bear
-		in mind that it is no longer possible to skip the
-		block completely by specifying a loop count of zero.
+		to the new syntax. You can disable this warning using
+		the "-Wno-old-for" switch, but then you will get
+		warnings for using the *new* syntax.
+		When migrating your sources, bear in mind that it is
+		no longer possible to skip the block completely by
+		specifying a loop count of zero.
 		Also note that with the new algorithm, LABEL has a
 		different value after the block than during the last
 		loop cycle, while the old algorithm kept that last
@@ -809,6 +812,37 @@ Purpose:	Assume short (8 bits) index registers. Only needed
 		block syntax, the previous configuration is restored
 		afterwards. Short registers are the default in every
 		pass.
+
+
+----------------------------------------------------------------------
+Section:   Type system
+----------------------------------------------------------------------
+
+Call:		!address [ { BLOCK } ]
+or:		!address LABEL = VALUE
+Purpose:	Mark a block or a statement as "explicitly defined
+		labels are holding addresses".
+Parameters:	BLOCK: A block of assembler statements
+		Everything inside the block will be parsed as usual,
+		but labels getting explicitly defined will be marked
+		as referencing memory.
+		If no block is given, only the current statement will
+		be affected, which should then be an explicit label
+		definition.
+Aliases:	"!addr"
+Examples:	!addr	k_chrout = $ffd2	; this is an address
+			CLEAR = 147		; but this is not
+		!addr {
+			; these are addresses:
+			sid_v1_control	= $d404
+			sid_v2_control	= $d40b
+			sid_v3_control	= $d412
+		}
+		; these are not:
+		sid_VOICECONTROL_NOISE		= %#.......
+		sid_VOICECONTROL_RECTANGLE	= %.#......
+		sid_VOICECONTROL_SAWTOOTH	= %..#.....
+		sid_VOICECONTROL_TRIANGLE	= %...#....
 
 
 ----------------------------------------------------------------------

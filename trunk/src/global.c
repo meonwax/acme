@@ -5,6 +5,7 @@
 // Global stuff - things that are needed by several modules
 //  4 Oct 2006	Fixed a typo in a comment
 // 22 Nov 2007	Added warn_on_indented_labels
+//  2 Jun 2014	Added warn_on_old_for and warn_on_type_mismatch
 #include <stdio.h>
 #include "platform.h"
 #include "acme.h"
@@ -17,6 +18,7 @@
 #include "output.h"
 #include "section.h"
 #include "tree.h"
+#include "typesystem.h"
 
 
 // constants
@@ -55,7 +57,7 @@ const char	exception_syntax[]		= "Syntax error.";
 // ...4....	special character for input syntax: 0x00 TAB LF CR SPC : ; }
 // ....3...	preceding sequence of '-' characters is anonymous backward
 //		label. Currently only set for ')', ',' and CHAR_EOS.
-// .....210	unused
+// .....210	currently unused
 const char	Byte_flags[256]	= {
 /*$00*/	0x18, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,// control characters
 	0x00, 0x10, 0x10, 0x00, 0x00, 0x10, 0x00, 0x00,
@@ -98,6 +100,8 @@ int		pass_count;			// number of current pass (starts 0)
 char		GotByte;			// Last byte read (processed)
 int		Process_verbosity	= 0;	// Level of additional output
 int		warn_on_indented_labels	= TRUE;	// warn if indented label is encountered
+int		warn_on_old_for		= TRUE;	// warn if "!for" with old syntax is found
+int		warn_on_type_mismatch	= FALSE;	// use type-checking system
 // global counters
 int		pass_undefined_count;	// "NeedValue" type errors
 int		pass_real_errors;	// Errors yet
@@ -256,9 +260,10 @@ void Parse_until_eob_or_eof(void)
 	while ((GotByte != CHAR_EOB) && (GotByte != CHAR_EOF)) {
 		// process one statement
 		statement_flags = 0;	// no "label = pc" definition yet
+		typesystem_force_address_statement(FALSE);
 		// Parse until end of statement. Only loops if statement
 		// contains "label = pc" definition and something else; or
-		// if "!ifdef" is true.
+		// if "!ifdef" is true, or if "!addr" is used without block.
 		do {
 			switch (GotByte) {
 			case CHAR_EOS:	// end of statement

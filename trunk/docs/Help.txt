@@ -105,6 +105,8 @@ ACME exists on several platforms, meaning you can easily exchange your
     sources with other people (preferring other OSes).
 ACME can convert its strings to PetSCII and screen code (Okay, this is
     C64-specific).
+ACME has a rudimentary type checking system to catch errors like
+    missing '#' characters.
 Did I mention that it is fast?
 
 

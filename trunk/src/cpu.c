@@ -75,7 +75,7 @@ static enum eos PO_align(void)
 	intval_t	and,
 			equal,
 			fill,
-			test	= CPU_state.pc.intval;
+			test	= CPU_state.pc.val.intval;
 
 	// make sure PC is defined.
 	if ((CPU_state.pc.flags & MVALUE_DEFINED) == 0) {
@@ -152,13 +152,13 @@ static enum eos PO_pseudopc(void)
 
 	// set new
 	new_pc = ALU_defined_int();	// FIXME - allow for undefined!
-	new_offset = (new_pc - CPU_state.pc.intval) & 0xffff;
-	CPU_state.pc.intval = new_pc;
+	new_offset = (new_pc - CPU_state.pc.val.intval) & 0xffff;
+	CPU_state.pc.val.intval = new_pc;
 	CPU_state.pc.flags |= MVALUE_DEFINED;	// FIXME - remove when allowing undefined!
 	// if there's a block, parse that and then restore old value!
 	if (Parse_optional_block()) {
 		// restore old
-		CPU_state.pc.intval = (CPU_state.pc.intval - new_offset) & 0xffff;
+		CPU_state.pc.val.intval = (CPU_state.pc.val.intval - new_offset) & 0xffff;
 		CPU_state.pc.flags = outer_flags;
 	} else {
 		// not using a block is no longer allowed

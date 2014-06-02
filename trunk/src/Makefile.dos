@@ -8,7 +8,7 @@ RM		= rm
 PROGS		= acme
 #BINDIR		= /usr/local/bin
 #USERBIN	= $(HOME)/bin
-OBJS		= acme.o alu.o cliargs.o cpu.o dynabuf.o encoding.o flow.o global.o input.o label.o macro.o mnemo.o output.o platform.o section.o tree.o
+OBJS		= acme.o alu.o cliargs.o cpu.o dynabuf.o encoding.o flow.o global.o input.o label.o macro.o mnemo.o output.o platform.o section.o tree.o typesystem.o
 
 all: $(PROGS)
 
@@ -49,6 +49,8 @@ platform.o: config.h platform.h platform.c
 section.o: config.h dynabuf.h global.h section.h tree.h section.h section.c
 
 tree.o: config.h dynabuf.h global.h label.h tree.h tree.c
+
+typesystem.o: config.h global.h typesystem.h typesystem.c
 
 clean:
 	del *.o

@@ -15,9 +15,9 @@
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-#define RELEASE		"0.94.12"	// update before release (FIXME)
-#define CODENAME	"Zarquon"	// update before release
-#define CHANGE_DATE	"31 May"	// update before release
+#define RELEASE		"0.95"		// update before release (FIXME)
+#define CODENAME	"Fenchurch"	// update before release
+#define CHANGE_DATE	"2 Jun"		// update before release
 #define CHANGE_YEAR	"2014"		// update before release
 //#define HOME_PAGE	"http://home.pages.de/~mac_bacon/smorbrod/acme/"	// FIXME
 #define HOME_PAGE	"http://sourceforge.net/p/acme-crossass/"	// FIXME
@@ -64,6 +64,8 @@ static const char	name_dumpfile[]		= "label dump filename";
 #define OPTION_VERSION		"version"
 // options for "-W"
 #define OPTIONWNO_LABEL_INDENT	"no-label-indent"
+#define OPTIONWNO_OLD_FOR	"no-old-for"
+#define OPTIONWTYPE_MISMATCH	"type-mismatch"
 
 
 // variables
@@ -126,6 +128,8 @@ static void show_help_and_exit(void)
 // as long as there is only one -W option:
 #define OPTIONWNO_LABEL_INDENT	"no-label-indent"
 "  -W" OPTIONWNO_LABEL_INDENT "      suppress warnings about indented labels\n"
+"  -W" OPTIONWNO_OLD_FOR "           suppress warnings about old \"!for\" syntax\n"
+"  -W" OPTIONWTYPE_MISMATCH "        enable type checking (warn about type mismatch)\n"
 // when there are more, use next line and add a separate function:
 //"  -W                     show warning level options\n"
 "      --" OPTION_USE_STDOUT "       fix for 'Relaunch64' IDE (see docs)\n"
@@ -424,6 +428,12 @@ static char short_option(const char *argument)
 		case 'W':	// "-W" tunes warning level
 			if (strcmp(argument + 1, OPTIONWNO_LABEL_INDENT) == 0) {
 				warn_on_indented_labels = FALSE;
+				goto done;
+			} else if (strcmp(argument + 1, OPTIONWNO_OLD_FOR) == 0) {
+				warn_on_old_for = FALSE;
+				goto done;
+			} else if (strcmp(argument + 1, OPTIONWTYPE_MISMATCH) == 0) {
+				warn_on_type_mismatch = TRUE;
 				goto done;
 			} else {
 				fprintf(stderr, "%sUnknown warning level.\n", cliargs_error);

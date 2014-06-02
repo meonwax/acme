@@ -48,6 +48,7 @@ enum operator_handle {
 	OPHANDLE_END,		//		"reached end of expression"
 	OPHANDLE_RETURN,	//		"return value to caller"
 //	functions
+	OPHANDLE_ADDR,		//	addr(v)
 	OPHANDLE_INT,		//	int(v)
 	OPHANDLE_FLOAT,		//	float(v)
 	OPHANDLE_SIN,		//	sin(v)
@@ -129,6 +130,7 @@ static struct operator ops_negate	= {OPHANDLE_NEGATE,	28};	// monadic
 static struct operator ops_powerof	= {OPHANDLE_POWEROF,	29};	// dyadic, right-associative
 static struct operator ops_not		= {OPHANDLE_NOT,	30};	// monadic
 	// function calls act as if they were monadic operators
+static struct operator ops_addr		= {OPHANDLE_ADDR,	32};	// function
 static struct operator ops_int		= {OPHANDLE_INT,	32};	// function
 static struct operator ops_float	= {OPHANDLE_FLOAT,	32};	// function
 static struct operator ops_sin		= {OPHANDLE_SIN,	32};	// function
@@ -176,6 +178,7 @@ static struct node_t	operator_list[]	= {
 };
 static struct node_t	*function_tree	= NULL;	// tree to hold functions
 static struct node_t	function_list[]	= {
+	PREDEFNODE("addr",	&ops_addr),
 	PREDEFNODE("int",	&ops_int),
 	PREDEFNODE("float",	&ops_float),
 	PREDEFNODE(s_arcsin,	&ops_arcsin),
@@ -193,18 +196,22 @@ static struct node_t	function_list[]	= {
 #define RIGHT_INTVAL	(operand_stack[operand_sp-1].val.intval)
 #define LEFT_FPVAL	(operand_stack[operand_sp-2].val.fpval)
 #define RIGHT_FPVAL	(operand_stack[operand_sp-1].val.fpval)
+#define LEFT_ADDRREFS	(operand_stack[operand_sp-2].addr_refs)
+#define RIGHT_ADDRREFS	(operand_stack[operand_sp-1].addr_refs)
 
 #define PUSH_OPERATOR(x)	operator_stack[operator_sp++] = (x)
 
-#define PUSH_INTOPERAND(i, f)				\
+#define PUSH_INTOPERAND(i, f, r)			\
 do {							\
 	operand_stack[operand_sp].flags = (f);		\
-	operand_stack[operand_sp++].val.intval = (i);	\
+	operand_stack[operand_sp].val.intval = (i);	\
+	operand_stack[operand_sp++].addr_refs = (r);	\
 } while (0)
 #define PUSH_FPOPERAND(fp, f)					\
 do {								\
 	operand_stack[operand_sp].flags = (f) | MVALUE_IS_FP;	\
-	operand_stack[operand_sp++].val.fpval = (fp);		\
+	operand_stack[operand_sp].val.fpval = (fp);		\
+	operand_stack[operand_sp++].addr_refs = 0;		\
 } while (0)
 
 
@@ -353,7 +360,7 @@ static void parse_quoted_character(char closing_quote)
 			Throw_error("There's more than one character.");
 			Input_skip_remainder();
 		}
-	PUSH_INTOPERAND(value, MVALUE_GIVEN | MVALUE_ISBYTE);
+	PUSH_INTOPERAND(value, MVALUE_GIVEN | MVALUE_ISBYTE, 0);
 	// Now GotByte = char following closing quote (or CHAR_EOS on error)
 }
 
@@ -393,7 +400,7 @@ static void parse_binary_value(void)	// Now GotByte = "%" or "b"
 				flags |= MVALUE_FORCE16;
 		}
 	}
-	PUSH_INTOPERAND(value, flags);
+	PUSH_INTOPERAND(value, flags, 0);
 	// Now GotByte = non-binary char
 }
 
@@ -437,7 +444,7 @@ static void parse_hexadecimal_value(void)	// Now GotByte = "$" or "x"
 				flags |= MVALUE_FORCE16;
 		}
 	}
-	PUSH_INTOPERAND(value, flags);
+	PUSH_INTOPERAND(value, flags, 0);
 	// Now GotByte = non-hexadecimal char
 }
 
@@ -497,7 +504,7 @@ static void parse_decimal_value(void)	// Now GotByte = first digit
 		GetByte();
 		parse_frac_part(intval);
 	} else {
-		PUSH_INTOPERAND(intval, MVALUE_GIVEN);
+		PUSH_INTOPERAND(intval, MVALUE_GIVEN, 0);
 	}
 	// Now GotByte = non-decimal char
 }
@@ -527,7 +534,7 @@ static void parse_octal_value(void)	// Now GotByte = "&"
 				flags |= MVALUE_FORCE16;
 		}
 	}
-	PUSH_INTOPERAND(value, flags);
+	PUSH_INTOPERAND(value, flags, 0);
 	// Now GotByte = non-octal char
 }
 
@@ -535,11 +542,11 @@ static void parse_octal_value(void)	// Now GotByte = "&"
 // Parse program counter ('*')
 static void parse_program_counter(void)	// Now GotByte = "*"
 {
-	struct result_int_t	pc;
+	struct result_t	pc;
 
 	GetByte();
 	vcpu_read_pc(&pc);
-	PUSH_INTOPERAND(pc.intval, pc.flags | MVALUE_EXISTS);
+	PUSH_INTOPERAND(pc.val.intval, pc.flags | MVALUE_EXISTS, pc.addr_refs);
 }
 
 
@@ -698,7 +705,7 @@ static void expect_operand_or_monadic_operator(void)
 			}
 		} else {
 			// illegal character read - so don't go on
-			PUSH_INTOPERAND(0, 0);
+			PUSH_INTOPERAND(0, 0, 0);	// push dummy operand so stack is ok
 			// push pseudo value, EXISTS flag is clear
 			if (operator_stack[operator_sp-1] == &ops_return) {
 				PUSH_OPERATOR(&ops_end);
@@ -840,7 +847,7 @@ static void expect_dyadic_operator(void)
 		//break; unreachable
 // end of expression or text version of dyadic operator
 	default:
-		// check string version of operators
+		// check string versions of operators
 		if (BYTEFLAGS(GotByte) & STARTS_KEYWORD) {
 			Input_read_and_lower_keyword();
 			// Now GotByte = illegal char
@@ -878,6 +885,7 @@ static void perform_fp(double (*fn)(double))
 		RIGHT_FLAGS |= MVALUE_IS_FP;
 	}
 	RIGHT_FPVAL = fn(RIGHT_FPVAL);
+	RIGHT_ADDRREFS = 0;	// result now is a non-address
 }
 
 
@@ -895,6 +903,7 @@ static void perform_ranged_fp(double (*fn)(double))
 			Throw_error("Argument out of range.");
 		RIGHT_FPVAL = 0;
 	}
+	RIGHT_ADDRREFS = 0;	// result now is a non-address
 }
 
 
@@ -918,7 +927,7 @@ static void both_ensure_int(int warn)
 		RIGHT_INTVAL = RIGHT_FPVAL;
 		RIGHT_FLAGS &= ~MVALUE_IS_FP;
 	}
-	// FIXME - "warn" is not used
+	// FIXME - warning is never seen if both operands are undefined in first pass!
 	Throw_first_pass_warning("Converted to integer for binary logic operator.");
 }
 
@@ -993,9 +1002,14 @@ static void try_to_reduce_stacks(int *open_parentheses)
 		goto remove_next_to_last_operator;
 
 // functions
+	case OPHANDLE_ADDR:
+		RIGHT_ADDRREFS = 1;	// result now is an address
+		goto remove_next_to_last_operator;
+
 	case OPHANDLE_INT:
 		if (RIGHT_FLAGS & MVALUE_IS_FP)
 			right_fp_to_int();
+		RIGHT_ADDRREFS = 0;	// result now is a non-address
 		goto remove_next_to_last_operator;
 
 	case OPHANDLE_FLOAT:
@@ -1004,30 +1018,31 @@ static void try_to_reduce_stacks(int *open_parentheses)
 			RIGHT_FPVAL = RIGHT_INTVAL;
 			RIGHT_FLAGS |= MVALUE_IS_FP;
 		}
+		RIGHT_ADDRREFS = 0;	// result now is a non-address
 		goto remove_next_to_last_operator;
 
 	case OPHANDLE_SIN:
-		perform_fp(sin);
+		perform_fp(sin);	// also zeroes addr_refs
 		goto remove_next_to_last_operator;
 
 	case OPHANDLE_COS:
-		perform_fp(cos);
+		perform_fp(cos);	// also zeroes addr_refs
 		goto remove_next_to_last_operator;
 
 	case OPHANDLE_TAN:
-		perform_fp(tan);
+		perform_fp(tan);	// also zeroes addr_refs
 		goto remove_next_to_last_operator;
 
 	case OPHANDLE_ARCSIN:
-		perform_ranged_fp(asin);
+		perform_ranged_fp(asin);	// also zeroes addr_refs
 		goto remove_next_to_last_operator;
 
 	case OPHANDLE_ARCCOS:
-		perform_ranged_fp(acos);
+		perform_ranged_fp(acos);	// also zeroes addr_refs
 		goto remove_next_to_last_operator;
 
 	case OPHANDLE_ARCTAN:
-		perform_fp(atan);
+		perform_fp(atan);	// also zeroes addr_refs
 		goto remove_next_to_last_operator;
 
 // monadic operators
@@ -1055,6 +1070,7 @@ static void try_to_reduce_stacks(int *open_parentheses)
 		RIGHT_INTVAL = (RIGHT_INTVAL) & 255;
 		RIGHT_FLAGS |= MVALUE_ISBYTE;
 		RIGHT_FLAGS &= ~MVALUE_FORCEBITS;
+		RIGHT_ADDRREFS = 0;	// result now is a non-address
 		goto remove_next_to_last_operator;
 
 	case OPHANDLE_HIGHBYTEOF:
@@ -1064,6 +1080,7 @@ static void try_to_reduce_stacks(int *open_parentheses)
 		RIGHT_INTVAL = ((RIGHT_INTVAL) >> 8) & 255;
 		RIGHT_FLAGS |= MVALUE_ISBYTE;
 		RIGHT_FLAGS &= ~MVALUE_FORCEBITS;
+		RIGHT_ADDRREFS = 0;	// result now is a non-address
 		goto remove_next_to_last_operator;
 
 	case OPHANDLE_BANKBYTEOF:
@@ -1073,6 +1090,7 @@ static void try_to_reduce_stacks(int *open_parentheses)
 		RIGHT_INTVAL = ((RIGHT_INTVAL) >> 16) & 255;
 		RIGHT_FLAGS |= MVALUE_ISBYTE;
 		RIGHT_FLAGS &= ~MVALUE_FORCEBITS;
+		RIGHT_ADDRREFS = 0;	// result now is a non-address
 		goto remove_next_to_last_operator;
 
 // dyadic operators
@@ -1080,6 +1098,7 @@ static void try_to_reduce_stacks(int *open_parentheses)
 		if ((RIGHT_FLAGS | LEFT_FLAGS) & MVALUE_IS_FP) {
 			both_ensure_fp();
 			LEFT_FPVAL = pow(LEFT_FPVAL, RIGHT_FPVAL);
+			LEFT_ADDRREFS = 0;	// result now is a non-address
 			goto handle_flags_and_dec_stacks;
 		}
 
@@ -1090,6 +1109,7 @@ static void try_to_reduce_stacks(int *open_parentheses)
 				Throw_error("Exponent is negative.");
 			LEFT_INTVAL = 0;
 		}
+		LEFT_ADDRREFS = 0;	// result now is a non-address
 		goto handle_flags_and_dec_stacks;
 
 	case OPHANDLE_MULTIPLY:
@@ -1099,6 +1119,7 @@ static void try_to_reduce_stacks(int *open_parentheses)
 		} else {
 			LEFT_INTVAL *= RIGHT_INTVAL;
 		}
+		LEFT_ADDRREFS = 0;	// result now is a non-address
 		goto handle_flags_and_dec_stacks;
 
 	case OPHANDLE_DIVIDE:
@@ -1120,6 +1141,7 @@ static void try_to_reduce_stacks(int *open_parentheses)
 				LEFT_INTVAL = 0;
 			}
 		}
+		LEFT_ADDRREFS = 0;	// result now is a non-address
 		goto handle_flags_and_dec_stacks;
 
 	case OPHANDLE_INTDIV:
@@ -1142,6 +1164,7 @@ static void try_to_reduce_stacks(int *open_parentheses)
 				LEFT_INTVAL = 0;
 			}
 		}
+		LEFT_ADDRREFS = 0;	// result now is a non-address
 		goto handle_flags_and_dec_stacks;
 
 	case OPHANDLE_MODULO:
@@ -1154,6 +1177,7 @@ static void try_to_reduce_stacks(int *open_parentheses)
 				Throw_error(exception_div_by_zero);
 			LEFT_INTVAL = 0;
 		}
+		LEFT_ADDRREFS = 0;	// result now is a non-address
 		goto handle_flags_and_dec_stacks;
 
 	case OPHANDLE_ADD:
@@ -1163,6 +1187,7 @@ static void try_to_reduce_stacks(int *open_parentheses)
 		} else {
 			LEFT_INTVAL += RIGHT_INTVAL;
 		}
+		LEFT_ADDRREFS += RIGHT_ADDRREFS;	// add address references
 		goto handle_flags_and_dec_stacks;
 
 	case OPHANDLE_SUBTRACT:
@@ -1172,6 +1197,7 @@ static void try_to_reduce_stacks(int *open_parentheses)
 		} else {
 			LEFT_INTVAL -= RIGHT_INTVAL;
 		}
+		LEFT_ADDRREFS -= RIGHT_ADDRREFS;	// subtract address references
 		goto handle_flags_and_dec_stacks;
 
 	case OPHANDLE_SL:
@@ -1181,6 +1207,7 @@ static void try_to_reduce_stacks(int *open_parentheses)
 			LEFT_FPVAL *= pow(2.0, RIGHT_INTVAL);
 		else
 			LEFT_INTVAL <<= RIGHT_INTVAL;
+		LEFT_ADDRREFS = 0;	// result now is a non-address
 		goto handle_flags_and_dec_stacks;
 
 	case OPHANDLE_ASR:
@@ -1190,6 +1217,7 @@ static void try_to_reduce_stacks(int *open_parentheses)
 			LEFT_FPVAL /= (1 << RIGHT_INTVAL);
 		else
 			LEFT_INTVAL = my_asr(LEFT_INTVAL, RIGHT_INTVAL);
+		LEFT_ADDRREFS = 0;	// result now is a non-address
 		goto handle_flags_and_dec_stacks;
 
 	case OPHANDLE_LSR:
@@ -1197,6 +1225,7 @@ static void try_to_reduce_stacks(int *open_parentheses)
 		if ((RIGHT_FLAGS | LEFT_FLAGS) & MVALUE_IS_FP)
 			both_ensure_int(TRUE);
 		LEFT_INTVAL = ((uintval_t) LEFT_INTVAL) >> RIGHT_INTVAL;
+		LEFT_ADDRREFS = 0;	// result now is a non-address
 		goto handle_flags_and_dec_stacks;
 
 	case OPHANDLE_LE:
@@ -1206,6 +1235,7 @@ static void try_to_reduce_stacks(int *open_parentheses)
 		} else {
 			LEFT_INTVAL = (LEFT_INTVAL <= RIGHT_INTVAL);
 		}
+		LEFT_ADDRREFS = 0;	// result now is a non-address
 		goto handle_flags_and_dec_stacks;
 
 	case OPHANDLE_LESSTHAN:
@@ -1215,6 +1245,7 @@ static void try_to_reduce_stacks(int *open_parentheses)
 		} else {
 			LEFT_INTVAL = (LEFT_INTVAL < RIGHT_INTVAL);
 		}
+		LEFT_ADDRREFS = 0;	// result now is a non-address
 		goto handle_flags_and_dec_stacks;
 
 	case OPHANDLE_GE:
@@ -1224,6 +1255,7 @@ static void try_to_reduce_stacks(int *open_parentheses)
 		} else {
 			LEFT_INTVAL = (LEFT_INTVAL >= RIGHT_INTVAL);
 		}
+		LEFT_ADDRREFS = 0;	// result now is a non-address
 		goto handle_flags_and_dec_stacks;
 
 	case OPHANDLE_GREATERTHAN:
@@ -1233,6 +1265,7 @@ static void try_to_reduce_stacks(int *open_parentheses)
 		} else {
 			LEFT_INTVAL = (LEFT_INTVAL > RIGHT_INTVAL);
 		}
+		LEFT_ADDRREFS = 0;	// result now is a non-address
 		goto handle_flags_and_dec_stacks;
 
 	case OPHANDLE_NOTEQUAL:
@@ -1242,6 +1275,7 @@ static void try_to_reduce_stacks(int *open_parentheses)
 		} else {
 			LEFT_INTVAL = (LEFT_INTVAL != RIGHT_INTVAL);
 		}
+		LEFT_ADDRREFS = 0;	// result now is a non-address
 		goto handle_flags_and_dec_stacks;
 
 	case OPHANDLE_EQUALS:
@@ -1251,6 +1285,7 @@ static void try_to_reduce_stacks(int *open_parentheses)
 		} else {
 			LEFT_INTVAL = (LEFT_INTVAL == RIGHT_INTVAL);
 		}
+		LEFT_ADDRREFS = 0;	// result now is a non-address
 		goto handle_flags_and_dec_stacks;
 
 	case OPHANDLE_AND:
@@ -1258,6 +1293,7 @@ static void try_to_reduce_stacks(int *open_parentheses)
 		if ((RIGHT_FLAGS | LEFT_FLAGS) & MVALUE_IS_FP)
 			both_ensure_int(TRUE);
 		LEFT_INTVAL &= RIGHT_INTVAL;
+		LEFT_ADDRREFS += RIGHT_ADDRREFS;	// add address references
 		goto handle_flags_and_dec_stacks;
 
 	case OPHANDLE_EOR:
@@ -1268,6 +1304,7 @@ static void try_to_reduce_stacks(int *open_parentheses)
 		if ((RIGHT_FLAGS | LEFT_FLAGS) & MVALUE_IS_FP)
 			both_ensure_int(TRUE);
 		LEFT_INTVAL ^= RIGHT_INTVAL;
+		LEFT_ADDRREFS += RIGHT_ADDRREFS;	// add address references
 		goto handle_flags_and_dec_stacks;
 
 	case OPHANDLE_OR:
@@ -1275,6 +1312,7 @@ static void try_to_reduce_stacks(int *open_parentheses)
 		if ((RIGHT_FLAGS | LEFT_FLAGS) & MVALUE_IS_FP)
 			both_ensure_int(TRUE);
 		LEFT_INTVAL |= RIGHT_INTVAL;
+		LEFT_ADDRREFS += RIGHT_ADDRREFS;	// add address references
 		goto handle_flags_and_dec_stacks;
 
 	default:
@@ -1389,8 +1427,7 @@ static int parse_expression(struct result_t *result)
 }
 
 
-// These functions handle numerical expressions. There are operators for
-// arithmetic, logic, shift and comparison operations.
+// These functions handle numerical expressions.
 // There are several different ways to call the core function:
 // intval_t ALU_any_int(void);
 //		returns int value (0 if result was undefined)
@@ -1473,23 +1510,19 @@ int ALU_optional_defined_int(intval_t *target)
 // It the result's "exists" flag is clear (=empty expression), it throws an
 // error.
 // If the result's "defined" flag is clear, result_is_undefined() is called.
-void ALU_int_result(struct result_int_t *intresult)
+void ALU_int_result(struct result_t *intresult)
 {
-	struct result_t	result;
-
-	if (parse_expression(&result))
+	if (parse_expression(intresult))
 		Throw_error(exception_paren_open);
-	if ((result.flags & MVALUE_EXISTS) == 0)
-		Throw_error(exception_no_value);
-	else if ((result.flags & MVALUE_DEFINED) == 0)
-		result_is_undefined();
-	if (result.flags & MVALUE_IS_FP) {
-		intresult->intval = result.val.fpval;
-		intresult->flags = result.flags & ~MVALUE_IS_FP;
-	} else {
-		intresult->intval = result.val.intval;
-		intresult->flags = result.flags;
+	// make sure result is not float
+	if (intresult->flags & MVALUE_IS_FP) {
+		intresult->val.intval = intresult->val.fpval;
+		intresult->flags &= ~MVALUE_IS_FP;
 	}
+	if ((intresult->flags & MVALUE_EXISTS) == 0)
+		Throw_error(exception_no_value);
+	else if ((intresult->flags & MVALUE_DEFINED) == 0)
+		result_is_undefined();
 }
 
 
@@ -1497,26 +1530,23 @@ void ALU_int_result(struct result_int_t *intresult)
 // This function allows for one '(' too many. Needed when parsing indirect
 // addressing modes where internal indices have to be possible. Returns number
 // of parentheses still open (either 0 or 1).
-int ALU_liberal_int(struct result_int_t *intresult)
+int ALU_liberal_int(struct result_t *intresult)
 {
-	struct result_t	result;
-	int		parentheses_still_open;
+	int	parentheses_still_open;
 
-	parentheses_still_open = parse_expression(&result);
+	parentheses_still_open = parse_expression(intresult);
+	// make sure result is not float
+	if (intresult->flags & MVALUE_IS_FP) {
+		intresult->val.intval = intresult->val.fpval;
+		intresult->flags &= ~MVALUE_IS_FP;
+	}
 	if (parentheses_still_open > 1) {
 		parentheses_still_open = 0;
 		Throw_error(exception_paren_open);
 	}
-	if ((result.flags & MVALUE_EXISTS)
-	&& ((result.flags & MVALUE_DEFINED) == 0))
+	if ((intresult->flags & MVALUE_EXISTS)
+	&& ((intresult->flags & MVALUE_DEFINED) == 0))
 		result_is_undefined();
-	if (result.flags & MVALUE_IS_FP) {
-		intresult->intval = result.val.fpval;
-		intresult->flags = result.flags & ~MVALUE_IS_FP;
-	} else {
-		intresult->intval = result.val.intval;
-		intresult->flags = result.flags;
-	}
 	return parentheses_still_open;
 }
 

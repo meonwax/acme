@@ -1,4 +1,4 @@
-;ACME 0.94.4
+;ACME 0.95
 
 !ifdef lib_cbm_c64_float_a !eof
 lib_cbm_c64_float_a = 1
@@ -6,8 +6,10 @@ lib_cbm_c64_float_a = 1
 ; Here are some definitions to help you call the floating-point functions of the
 ; C64's BASIC ROM. They work on "float registers", which are actually just
 ; structures in zero page:
-fac1_base	= $61	; base address of floating-point accumulator 1
-fac2_base	= $69	; base address of floating-point accumulator 2
+!address {
+	fac1_base	= $61	; base address of floating-point accumulator 1
+	fac2_base	= $69	; base address of floating-point accumulator 2
+}
 ; There is really no need to use these addresses directly when calling the ROM
 ; functions. You'd only need the addresses when using <cbm/flpt.a>.
 
@@ -45,69 +47,71 @@ fac2_base	= $69	; base address of floating-point accumulator 2
 	lda .adr + 1
 }
 
-; constants in five-byte "mflpt" format
-mflpt_pi		= $aea8	; 3.1415926...
-mflpt_minus32768	= $b1a5	; -32768
-mflpt_1			= $b9bc	; 1
-mflpt_half_sqr2		= $b9d6	; SQR(2) / 2
-mflpt_sqr2		= $b9db ; SQR(2)
-mflpt_minus_point5	= $b9e0	; -.5
-mflpt_log_2		= $b9e5	; LOG(2)
-mflpt_10		= $baf9	; 10
-mflpt_99999999		= $bdb3 ; 99 999 999
-mflpt_999999999		= $bdb8	; 999 999 999
-mflpt_1000000000	= $bdbd	; 1 000 000 000
-mflpt_point5		= $bf11	; .5, also known as 1 / 2
-mflpt_log_2_reciprocal	= $bfbf	; 1 / LOG(2)
-mflpt_half_pi		= $e2e0	; PI / 2
-mflpt_double_pi		= $e2e5	; 2 * PI (also see $e309)
-mflpt_point25		= $e2ea	; .25, also known as 1 / 4
-mflpt_2_pi		= $e309	; 2 * PI (also see $e2e5)
+!address {
+	; constants in five-byte "mflpt" format
+	mflpt_pi		= $aea8	; 3.1415926...
+	mflpt_minus32768	= $b1a5	; -32768
+	mflpt_1			= $b9bc	; 1
+	mflpt_half_sqr2		= $b9d6	; SQR(2) / 2
+	mflpt_sqr2		= $b9db ; SQR(2)
+	mflpt_minus_point5	= $b9e0	; -.5
+	mflpt_log_2		= $b9e5	; LOG(2)
+	mflpt_10		= $baf9	; 10
+	mflpt_99999999		= $bdb3 ; 99 999 999
+	mflpt_999999999		= $bdb8	; 999 999 999
+	mflpt_1000000000	= $bdbd	; 1 000 000 000
+	mflpt_point5		= $bf11	; .5, also known as 1 / 2
+	mflpt_log_2_reciprocal	= $bfbf	; 1 / LOG(2)
+	mflpt_half_pi		= $e2e0	; PI / 2
+	mflpt_double_pi		= $e2e5	; 2 * PI (also see $e309)
+	mflpt_point25		= $e2ea	; .25, also known as 1 / 4
+	mflpt_2_pi		= $e309	; 2 * PI (also see $e2e5)
 
-; functions - a few points to note:
-; fac1/2 might get clobbered even if not mentioned in the function's name,
-;	because stuff like fac1_times_memAY will load the value from memory
-;	into fac2 first.
-; for subtraction and division, the left operand is in fac2, the right operand in fac1.
-fac1_print			= $aabc	; print string representation of contents of fac1
-fac1_to_signedYA		= $b1aa	; might throw ILLEGAL QUANTITY
-fac1_to_signed16		= $b1bf	; might throw ILLEGAL QUANTITY
-fac1_read_signedYA		= $b391	; convert 16 bit signed int to float
-fac1_read_unsignedY		= $b3a2	; convert 8 bit unsigned int to float
-fac1_read_string		= $b7b5	; $22/23 must point to string, A must be string length
-fac1_to_unsignedYA		= $b7f7	; might throw ILLEGAL QUANTITY (result is also in $14/15)
-fac1_add_point5			= $b849	; for rounding, call this before fac1_int
-fac1_memAY_minus_fac1		= $b850	; subtract fac1 from mflpt value
-fac1_fac2_minus_fac1		= $b853
-fac1_add_memAY			= $b867	; add mflpt value
-fac1_add_fac2			= $b86a
-fac1_log			= $b9ea	; LOG()
-fac1_times_memAY		= $ba28	; multiply by mflpt value
-fac2_read_memAY			= $ba8c	; load mflpt value from memory into fac2
-fac2_read_mem_via0x22ptr	= $ba90	; load mflpt value from memory into fac2
-fac1_times_10			= $bae2
-fac1_divide_by_10		= $bafe
-fac1_divide_memAY_by_fac1	= $bb0f	; divide mflpt value by fac1 value
-fac1_read_memAY			= $bba2	; load mflpt value from memory into fac1
-fac1_read_mem_via0x22ptr	= $bba6	; load mflpt value from memory into fac1
-fac1_to_memXY			= $bbd4	; store fac1 to memory as mflpt
-fac1_read_fac2			= $bbfc	; copy fac2 to fac1
-fac2_read_fac1			= $bc0c	; copy fac1 to fac2
-fac1_sign_to_A			= $bc2b	; $ff, $0, $1 for negative, zero, positive
-fac1_sgn			= $bc39 ; SGN()
-fac1_abs			= $bc58 ; ABS()
-fac1_compare_to_memAY		= $bc5b	; compare to mflpt value in memory
-fac1_to_signed32		= $bc9b
-fac1_int			= $bccc ; INT()
-fac1_print_unsignedXA		= $bdcd
-fac1_to_string			= $bddd	; string is stored at $0100 (address returned in AY)
-fac1_sqr			= $bf71	; SQR()
-fac1_fac2_to_the_power_of_memAY	= $bf78
-fac1_negate			= $bfb4
-fac1_exp			= $bfed	; EXP()
-; end of basic rom jumps to start of kernel rom!
-fac1_rnd			= $e097	; RND()
-fac1_cos			= $e264 ; COS()
-fac1_sin			= $e26b	; SIN()
-fac1_tan			= $e2b4	; TAN()
-fac1_atn			= $e30e	; ATN()
+	; functions - a few points to note:
+	; fac1/2 might get clobbered even if not mentioned in the function's name,
+	;	because stuff like fac1_times_memAY will load the value from memory
+	;	into fac2 first.
+	; for subtraction and division, the left operand is in fac2, the right operand in fac1.
+	fac1_print			= $aabc	; print string representation of contents of fac1
+	fac1_to_signedYA		= $b1aa	; might throw ILLEGAL QUANTITY
+	fac1_to_signed16		= $b1bf	; might throw ILLEGAL QUANTITY
+	fac1_read_signedYA		= $b391	; convert 16 bit signed int to float
+	fac1_read_unsignedY		= $b3a2	; convert 8 bit unsigned int to float
+	fac1_read_string		= $b7b5	; $22/23 must point to string, A must be string length
+	fac1_to_unsignedYA		= $b7f7	; might throw ILLEGAL QUANTITY (result is also in $14/15)
+	fac1_add_point5			= $b849	; for rounding, call this before fac1_int
+	fac1_memAY_minus_fac1		= $b850	; subtract fac1 from mflpt value
+	fac1_fac2_minus_fac1		= $b853
+	fac1_add_memAY			= $b867	; add mflpt value
+	fac1_add_fac2			= $b86a
+	fac1_log			= $b9ea	; LOG()
+	fac1_times_memAY		= $ba28	; multiply by mflpt value
+	fac2_read_memAY			= $ba8c	; load mflpt value from memory into fac2
+	fac2_read_mem_via0x22ptr	= $ba90	; load mflpt value from memory into fac2
+	fac1_times_10			= $bae2
+	fac1_divide_by_10		= $bafe
+	fac1_divide_memAY_by_fac1	= $bb0f	; divide mflpt value by fac1 value
+	fac1_read_memAY			= $bba2	; load mflpt value from memory into fac1
+	fac1_read_mem_via0x22ptr	= $bba6	; load mflpt value from memory into fac1
+	fac1_to_memXY			= $bbd4	; store fac1 to memory as mflpt
+	fac1_read_fac2			= $bbfc	; copy fac2 to fac1
+	fac2_read_fac1			= $bc0c	; copy fac1 to fac2
+	fac1_sign_to_A			= $bc2b	; $ff, $0, $1 for negative, zero, positive
+	fac1_sgn			= $bc39 ; SGN()
+	fac1_abs			= $bc58 ; ABS()
+	fac1_compare_to_memAY		= $bc5b	; compare to mflpt value in memory
+	fac1_to_signed32		= $bc9b
+	fac1_int			= $bccc ; INT()
+	fac1_print_unsignedXA		= $bdcd
+	fac1_to_string			= $bddd	; string is stored at $0100 (address returned in AY)
+	fac1_sqr			= $bf71	; SQR()
+	fac1_fac2_to_the_power_of_memAY	= $bf78
+	fac1_negate			= $bfb4
+	fac1_exp			= $bfed	; EXP()
+	; end of basic rom jumps to start of kernel rom!
+	fac1_rnd			= $e097	; RND()
+	fac1_cos			= $e264 ; COS()
+	fac1_sin			= $e26b	; SIN()
+	fac1_tan			= $e2b4	; TAN()
+	fac1_atn			= $e30e	; ATN()
+}

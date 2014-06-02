@@ -1,21 +1,23 @@
-;ACME 0.07
+;ACME 0.95
 
-!ifdef Lib_65816_std_a !eof
-Lib_65816_std_a = 1
+!ifdef lib_65816_std_a !eof
+lib_65816_std_a = 1
 
 ; Labels and macros for Western Digital's 65c816 processor
 
-cpu_e_cop   = $fff4
-cpu_e_abort = $fff8
-cpu_e_nmi   = $fffa
-cpu_e_reset = $fffc
-cpu_e_irq   = $fffe
+!address {
+	cpu_e_cop   = $fff4
+	cpu_e_abort = $fff8
+	cpu_e_nmi   = $fffa
+	cpu_e_reset = $fffc
+	cpu_e_irq   = $fffe
 
-cpu_n_cop   = $fff4
-cpu_n_brk   = $fff6
-cpu_n_abort = $fff8
-cpu_n_nmi   = $fffa
-cpu_n_irq   = $fffe
+	cpu_n_cop   = $fff4
+	cpu_n_brk   = $fff6
+	cpu_n_abort = $fff8
+	cpu_n_nmi   = $fffa
+	cpu_n_irq   = $fffe
+}
 
 !macro cpu_emu {; switch to emulation mode
 	sec
@@ -71,10 +73,9 @@ cpu_n_irq   = $fffe
 
 !macro inc24 .t {; increase 24-bit counter
 	inc .t
-	bne .j; "*" syntax not used here because size of ".t" is unknown
+	bne +
 	inc .t + 1
-	bne .j
+	bne +
 	inc .t + 2
-.j
++
 }
-

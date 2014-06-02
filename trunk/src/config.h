@@ -18,11 +18,7 @@ struct result_t {	// either int or float
 		intval_t	intval;	// integer value
 		double		fpval;	// floating point value
 	} val;	// Expression value
-};
-// result structure type definition for int
-struct result_int_t {
-	int		flags;	// expression flags
-	intval_t	intval;	// expression value
+	int	addr_refs;	// address reference count (only look at this if value is DEFINED)
 };
 
 
