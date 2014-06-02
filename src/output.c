@@ -485,7 +485,7 @@ void Output_passinit(void)
 
 	//vcpu stuff:
 	CPU_state.pc.flags = 0;	// not defined yet
-	CPU_state.pc.intval = 0;	// same as output's write_idx on pass init
+	CPU_state.pc.val.intval = 0;	// same as output's write_idx on pass init
 	CPU_state.add_to_pc = 0;	// increase PC by this at end of statement
 	CPU_state.a_is_long = FALSE;	// short accu
 	CPU_state.xy_are_long = FALSE;	// short index regs
@@ -554,9 +554,10 @@ void vcpu_set_pc(intval_t new_pc, int segment_flags)
 {
 	intval_t	new_offset;
 
-	new_offset = (new_pc - CPU_state.pc.intval) & 0xffff;
-	CPU_state.pc.intval = new_pc;
+	new_offset = (new_pc - CPU_state.pc.val.intval) & 0xffff;
+	CPU_state.pc.val.intval = new_pc;
 	CPU_state.pc.flags |= MVALUE_DEFINED;	// FIXME - remove when allowing undefined!
+	CPU_state.pc.addr_refs = 1;	// yes, PC counts as address
 	// now tell output buffer to start a new segment
 	Output_start_segment(new_offset, segment_flags);
 }
@@ -614,7 +615,7 @@ void PO_setpc(void)
 
 
 // get program counter
-void vcpu_read_pc(struct result_int_t *target)
+void vcpu_read_pc(struct result_t *target)
 {
 	*target = CPU_state.pc;
 }
@@ -630,6 +631,6 @@ int vcpu_get_statement_size(void)
 // adjust program counter (called at end of each statement)
 void vcpu_end_statement(void)
 {
-	CPU_state.pc.intval = (CPU_state.pc.intval + CPU_state.add_to_pc) & 0xffff;
+	CPU_state.pc.val.intval = (CPU_state.pc.val.intval + CPU_state.add_to_pc) & 0xffff;
 	CPU_state.add_to_pc = 0;
 }

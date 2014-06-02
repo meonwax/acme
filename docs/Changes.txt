@@ -13,6 +13,19 @@ outlining the platform specific changes.
 
 
 ----------------------------------------------------------------------
+Section:   New in release 0.95
+----------------------------------------------------------------------
+
+Added an experimental type system to tell addresses and non-addresses
+    apart (per default disabled; must be activated using the
+    "-Wtype-mismatch" CLI switch). The new "!address" pseudo opcode is
+    used to mark label definitions as setting address values.
+Added "-Wno-old-for" switch to disable warning about old "!for"
+    syntax. However, this will in turn enable warnings about using the
+    *new* syntax.
+
+
+----------------------------------------------------------------------
 Section:   New in release 0.94.12
 ----------------------------------------------------------------------
 

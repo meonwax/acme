@@ -17,6 +17,7 @@
 #include "platform.h"
 #include "section.h"
 #include "tree.h"
+#include "typesystem.h"
 
 
 // constants
@@ -62,7 +63,7 @@ static void dump_one_label(struct node_ra_t *node, FILE *fd)
 }
 
 
-// Search for label. Create if nonexistant. If created, give it flags "Flags".
+// Search for label. Create if nonexistant. If created, give it flags "flags".
 // The label name must be held in GlobalDynaBuf.
 struct label *Label_find(zone_t zone, int flags)
 {
@@ -78,6 +79,7 @@ struct label *Label_find(zone_t zone, int flags)
 		label = safe_malloc(sizeof(*label));
 		// Finish empty label item
 		label->result.flags = flags;
+		label->result.addr_refs = 0;
 		if (flags & MVALUE_IS_FP)
 			label->result.val.fpval = 0;
 		else
@@ -206,9 +208,9 @@ static struct node_t	pseudo_opcodes[]	= {
 // GlobalDynaBuf holds the label name.
 void Label_implicit_definition(zone_t zone, int stat_flags, int force_bit, int change)
 {
-	struct result_int_t	pc;
-	struct result_t		result;
-	struct label		*label;
+	struct result_t	pc,
+			result;
+	struct label	*label;
 
 	label = Label_find(zone, force_bit);
 	// implicit label definition (label)
@@ -216,7 +218,8 @@ void Label_implicit_definition(zone_t zone, int stat_flags, int force_bit, int c
 		Throw_first_pass_warning("Implicit label definition not in leftmost column.");
 	vcpu_read_pc(&pc);
 	result.flags = pc.flags & MVALUE_DEFINED;
-	result.val.intval = pc.intval;
+	result.val.intval = pc.val.intval;
+	result.addr_refs = pc.addr_refs;
 	Label_set_value(label, &result, change);
 }
 
@@ -236,6 +239,9 @@ void Label_parse_definition(zone_t zone, int stat_flags)
 		// label = parsed value
 		GetByte();	// skip '='
 		ALU_any_result(&result);
+		// if wanted, mark as address reference
+		if (typesystem_says_address())
+			result.addr_refs = 1;
 		Label_set_value(label, &result, FALSE);
 		Input_ensure_EOS();
 	} else {

@@ -11,6 +11,7 @@
 #include "input.h"
 #include "output.h"
 #include "tree.h"
+#include "typesystem.h"
 
 
 // Constants
@@ -395,9 +396,9 @@ static int get_index(int next)
 	return addressing_mode;
 }
 
-// This function stores the command's argument in the given result_int_t
+// This function stores the command's argument in the given result_t
 // structure (using the valueparser). The addressing mode is returned.
-static int get_argument(struct result_int_t *result)
+static int get_argument(struct result_t *result)
 {
 	int	open_paren,
 		addressing_mode	= HAM_ABS;
@@ -407,6 +408,7 @@ static int get_argument(struct result_int_t *result)
 	case '[':
 		GetByte();	// proceed with next char
 		ALU_int_result(result);
+		typesystem_want_addr(result);
 		if (GotByte == ']')
 			addressing_mode |= HAM_LIND | get_index(TRUE);
 		else
@@ -416,10 +418,12 @@ static int get_argument(struct result_int_t *result)
 		GetByte();	// proceed with next char
 		addressing_mode |= HAM_IMM;
 		ALU_int_result(result);
+		typesystem_want_imm(result);
 		break;
 	default:
 		// liberal, to allow for "(...,"
 		open_paren = ALU_liberal_int(result);
+		typesystem_want_addr(result);
 		// check for implied addressing
 		if ((result->flags & MVALUE_EXISTS) == 0)
 			addressing_mode |= HAM_IMP;
@@ -447,7 +451,7 @@ static int get_argument(struct result_int_t *result)
 
 // Helper function for calc_arg_size()
 // Only call with "size_bit = MVALUE_FORCE16" or "size_bit = MVALUE_FORCE24"
-static int check_oversize(int size_bit, struct result_int_t *argument)
+static int check_oversize(int size_bit, struct result_t *argument)
 {
 	// only check if value is *defined*
 	if ((argument->flags & MVALUE_DEFINED) == 0)
@@ -456,11 +460,11 @@ static int check_oversize(int size_bit, struct result_int_t *argument)
 	// value is defined, so check
 	if (size_bit == MVALUE_FORCE16) {
 		// check 16-bit argument for high byte zero
-		if ((argument->intval <= 255) && (argument->intval >= -128))
+		if ((argument->val.intval <= 255) && (argument->val.intval >= -128))
 			Throw_warning(exception_highbyte_zero);
 	} else {
 		// check 24-bit argument for bank byte zero
-		if ((argument->intval <= 65535) && (argument->intval >= -32768))
+		if ((argument->val.intval <= 65535) && (argument->val.intval >= -32768))
 			Throw_warning(exception_highbyte_zero);
 	}
 	return size_bit;	// pass on result
@@ -474,7 +478,7 @@ static int check_oversize(int size_bit, struct result_int_t *argument)
 // argument		value and flags of parameter
 // addressing_modes	adressing modes (8b, 16b, 24b or any combination)
 // Return value = force bit for number of parameter bytes to send (0 = error)
-static int calc_arg_size(int force_bit, struct result_int_t *argument, int addressing_modes)
+static int calc_arg_size(int force_bit, struct result_t *argument, int addressing_modes)
 {
 	// if there are no possible addressing modes, complain
 	if (addressing_modes == MAYBE______) {
@@ -541,18 +545,18 @@ static int calc_arg_size(int force_bit, struct result_int_t *argument, int addre
 
 	// Value is sure, so use its own size
 	// if value is negative, size cannot be chosen. Complain!
-	if (argument->intval < 0) {
+	if (argument->val.intval < 0) {
 		Throw_error("Negative value - cannot choose addressing mode.");
 		return 0;
 	}
 
 	// Value is positive or zero. Check size ranges
 	// if there is an 8-bit addressing mode and value fits, use 8 bits
-	if ((addressing_modes & MVALUE_FORCE08) && (argument->intval < 256))
+	if ((addressing_modes & MVALUE_FORCE08) && (argument->val.intval < 256))
 		return MVALUE_FORCE08;
 
 	// if there is a 16-bit addressing mode and value fits, use 16 bits
-	if ((addressing_modes & MVALUE_FORCE16) && (argument->intval < 65536))
+	if ((addressing_modes & MVALUE_FORCE16) && (argument->val.intval < 65536))
 		return MVALUE_FORCE16;
 
 	// if there is a 24-bit addressing mode, use that. In case the
@@ -584,16 +588,17 @@ static void not_in_bank(intval_t target)
 // Mnemonics using only 8bit relative addressing (short branch instructions).
 static void group_only_relative8_addressing(int opcode)
 {
-	struct result_int_t	target;
-	intval_t		offset	= 0;	// dummy value, to not throw more errors than necessary
+	struct result_t	target;
+	intval_t	offset	= 0;	// dummy value, to not throw more errors than necessary
 
 	ALU_int_result(&target);
+	typesystem_want_addr(&target);
 	// FIXME - read pc via function call instead!
 	if (CPU_state.pc.flags & target.flags & MVALUE_DEFINED) {
-		if ((target.intval | 0xffff) != 0xffff) {
-			not_in_bank(target.intval);
+		if ((target.val.intval | 0xffff) != 0xffff) {
+			not_in_bank(target.val.intval);
 		} else {
-			offset = (target.intval - (CPU_state.pc.intval + 2)) & 0xffff;	// clip to 16 bit offset
+			offset = (target.val.intval - (CPU_state.pc.val.intval + 2)) & 0xffff;	// clip to 16 bit offset
 			// fix sign
 			if (offset & 0x8000)
 				offset -= 0x10000;
@@ -618,16 +623,17 @@ static void group_only_relative8_addressing(int opcode)
 // Mnemonics using only 16bit relative addressing (BRL and PER).
 static void group_only_relative16_addressing(int opcode)
 {
-	struct result_int_t	target;
-	intval_t		offset	= 0;	// dummy value, to not throw more errors than necessary
+	struct result_t	target;
+	intval_t	offset	= 0;	// dummy value, to not throw more errors than necessary
 
 	ALU_int_result(&target);
+	typesystem_want_addr(&target);
 	// FIXME - read pc via function call instead!
 	if (CPU_state.pc.flags & target.flags & MVALUE_DEFINED) {
-		if ((target.intval | 0xffff) != 0xffff) {
-			not_in_bank(target.intval);
+		if ((target.val.intval | 0xffff) != 0xffff) {
+			not_in_bank(target.val.intval);
 		} else {
-			offset = (target.intval - (CPU_state.pc.intval + 3)) & 0xffff;
+			offset = (target.val.intval - (CPU_state.pc.val.intval + 3)) & 0xffff;
 			// no further checks necessary, 16-bit branches can access whole bank
 		}
 	}
@@ -638,7 +644,7 @@ static void group_only_relative16_addressing(int opcode)
 
 // set addressing mode bits depending on which opcodes exist, then calculate
 // argument size and output both opcode and argument
-static void make_command(int force_bit, struct result_int_t *result, unsigned long opcodes)
+static void make_command(int force_bit, struct result_t *result, unsigned long opcodes)
 {
 	int	addressing_modes	= MAYBE______;
 
@@ -651,15 +657,15 @@ static void make_command(int force_bit, struct result_int_t *result, unsigned lo
 	switch (calc_arg_size(force_bit, result, addressing_modes)) {
 	case MVALUE_FORCE08:
 		Output_byte(opcodes & 255);
-		Output_8b(result->intval);
+		Output_8b(result->val.intval);
 		break;
 	case MVALUE_FORCE16:
 		Output_byte((opcodes >> 8) & 255);
-		Output_16b(result->intval);
+		Output_16b(result->val.intval);
 		break;
 	case MVALUE_FORCE24:
 		Output_byte((opcodes >> 16) & 255);
-		Output_24b(result->intval);
+		Output_24b(result->val.intval);
 	}
 }
 
@@ -688,9 +694,9 @@ static unsigned int imm_ops(int *force_bit, unsigned char opcode, int imm_flag)
 // plus PEI.
 static void group_main(int index, int imm_flag)
 {
-	unsigned long		imm_opcodes;
-	struct result_int_t	result;
-	int			force_bit	= Input_get_force_bit();	// skips spaces after
+	unsigned long	imm_opcodes;
+	struct result_t	result;
+	int		force_bit	= Input_get_force_bit();	// skips spaces after
 
 	switch (get_argument(&result)) {
 	case HAM_IMM:	// #$ff or #$ffff (depending on accu length)
@@ -737,9 +743,9 @@ static void group_main(int index, int imm_flag)
 // Various mnemonics with different addressing modes.
 static void group_misc(int index, int imm_flag)
 {
-	unsigned long		imm_opcodes;
-	struct result_int_t	result;
-	int			force_bit	= Input_get_force_bit();	// skips spaces after
+	unsigned long	imm_opcodes;
+	struct result_t	result;
+	int		force_bit	= Input_get_force_bit();	// skips spaces after
 
 	switch (get_argument(&result)) {
 	case HAM_IMP:	// implied addressing
@@ -755,7 +761,7 @@ static void group_misc(int index, int imm_flag)
 		make_command(force_bit, &result, imm_opcodes);
 		// check whether to warn about 6510's unstable LXA
 		if ((imm_opcodes == 0xab)
-		&& ((result.intval & 0xff) != 0x00)
+		&& ((result.val.intval & 0xff) != 0x00)
 		&& (result.flags & MVALUE_DEFINED)
 		&& (CPU_state.type->flags & CPUFLAG_AB_NEEDS_0_ARG))
 			Throw_warning("Assembling unstable LXA #NONZERO instruction");
@@ -796,8 +802,8 @@ static void group_move(int opcode)
 // The jump instructions.
 static void group_jump(int index)
 {
-	struct result_int_t	result;
-	int			force_bit	= Input_get_force_bit();	// skips spaces after
+	struct result_t	result;
+	int		force_bit	= Input_get_force_bit();	// skips spaces after
 
 	switch (get_argument(&result)) {
 	case HAM_ABS:	// absolute16 or absolute24
@@ -806,7 +812,7 @@ static void group_jump(int index)
 	case HAM_IND:	// ($ffff)
 		make_command(force_bit, &result, jump_ind[index]);
 		// check whether to warn about 6502's JMP() bug
-		if (((result.intval & 0xff) == 0xff)
+		if (((result.val.intval & 0xff) == 0xff)
 		&& (result.flags & MVALUE_DEFINED)
 		&& (CPU_state.type->flags & CPUFLAG_INDIRECTJMPBUGGY))
 			Throw_warning("Assembling buggy JMP($xxff) instruction");

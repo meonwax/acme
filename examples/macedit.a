@@ -1,4 +1,4 @@
-;ACME 0.94.4
+;ACME 0.95
 ; ist der komplette Sourcecode von MacEdit
 ; (80-Zeichen-Version)
 ; Version 0.7
@@ -76,3 +76,5 @@ Spätere Änderungen am Source:
 	Converted to UTF-8
 27 Jun 2013:
 	Adjusted to change in library.
+ 1 Jun 2014:
+	Adjusted to experimental type system of ACME 0.95

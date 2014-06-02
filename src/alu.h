@@ -1,5 +1,5 @@
 // ACME - a crossassembler for producing 6502/65c02/65816 code.
-// Copyright (C) 1998-2009 Marco Baye
+// Copyright (C) 1998-2014 Marco Baye
 // Have a look at "acme.c" for further info
 //
 // ALU stuff (the expression parser)
@@ -12,9 +12,9 @@
 
 // constants
 
-// meaning of bits in "flags" of result_t and result_int_t structures:
+// meaning of bits in "flags" of result_t structure:
 #define MVALUE_IS_FP	(1u << 8)
-	// floating point value (never set in result_int_t)
+	// floating point value
 #define MVALUE_INDIRECT	(1u << 7)
 	// needless parentheses indicate use of indirect addressing modes
 #define MVALUE_EXISTS	(1u << 6)
@@ -50,9 +50,9 @@ extern intval_t ALU_defined_int(void);
 // stores int value if given. Returns whether stored. Throws error if undefined.
 extern int ALU_optional_defined_int(intval_t *);
 // stores int value and flags (floats are transformed to int)
-extern void ALU_int_result(struct result_int_t *);
+extern void ALU_int_result(struct result_t *);
 // stores int value and flags, allowing for one '(' too many (x-indirect addr)
-extern int ALU_liberal_int(struct result_int_t *);
+extern int ALU_liberal_int(struct result_t *);
 // stores value and flags (result may be either int or float)
 extern void ALU_any_result(struct result_t *);
 

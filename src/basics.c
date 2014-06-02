@@ -14,6 +14,7 @@
 #include "global.h"
 #include "output.h"
 #include "tree.h"
+#include "typesystem.h"
 
 
 // constants
@@ -139,6 +140,19 @@ static enum eos PO_fill(void)
 }
 
 
+// force explicit label definitions to set "address" flag ("!addr"). Has to be re-entrant.
+static enum eos PO_addr(void)	// Now GotByte = illegal char
+{
+	SKIPSPACE();
+	if (GotByte == CHAR_SOB) {
+		typesystem_force_address_block();
+		return ENSURE_EOS;
+	}
+	typesystem_force_address_statement(TRUE);
+	return PARSE_REMAINDER;
+}
+
+
 // show user-defined message
 static enum eos throw_string(const char prefix[], void (*fn)(const char *))
 {
@@ -240,6 +254,8 @@ static struct node_t	pseudo_opcodes[]	= {
 	PREDEFNODE("binary",	PO_binary),
 	PREDEFNODE("fi",	PO_fill),
 	PREDEFNODE("fill",	PO_fill),
+	PREDEFNODE("addr",	PO_addr),
+	PREDEFNODE("address",	PO_addr),
 //	PREDEFNODE("debug",	PO_debug),
 //	PREDEFNODE("info",	PO_info),
 //	PREDEFNODE("print",	PO_print),

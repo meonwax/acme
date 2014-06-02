@@ -1,4 +1,4 @@
-;ACME 0.94
+;ACME 0.95
 ;!sl "ddrv.l"
 ; Name		DuoDriver
 ; Purpose	Input driver for mouse and joystick
@@ -26,6 +26,7 @@
 ; 26 Mar 2006	Release 4.03. Adjusted source to ACME 0.91 capabilities.
 ; 25 Nov 2007	Release 4.04. Adjusted source to ACME 0.94 capabilities.
 ;  7 Apr 2013	Slightly reformatted.
+;  1 Jun 2014	Adjusted to experimental type system of ACME 0.95
 
 ; This source code file uses conditional assembly
 ; to decide which version to produce (C64 or C128).
@@ -47,12 +48,12 @@
 !if SYSTEM = 64 {
 	* = $c000
 	!to "ddrv64.prg", cbm
-	VIC_Base	= $d000
+!addr	VIC_Base	= $d000
 }
 !if SYSTEM = 128 {
 	* = $0c00
 	!to "ddrv128.prg", cbm
-	VIC_Base	= $11d6	; Location of mirror registers
+!addr	VIC_Base	= $11d6	; Location of mirror registers
 }
 
 ; Pointer's maximum coordinates
@@ -78,11 +79,14 @@
 ; Locations to store button states, $ff = pressed, $00 = not pressed.
 ; Mouse uses both buttons, joystick only uses "LeftButton".
 ; Location to store pointer's current character coordinates.
+!addr {
 !if SYSTEM = 64 {
 	LeftButton	= $a4
 	RightButton	= $a5
 	CharX		= $b3
 	CharY		= $b4
+	tapebuf		= $0340
+	spr_ptrs	= 2040
 }
 !if SYSTEM = 128 {
 	LeftButton	= $fa
@@ -96,7 +100,6 @@
 ; x low, x high, y low, y high
 	Coordinates	= $fb	; $fb..$fe
 
-
 ; --- System constants
 
 ; Interrupt vector
@@ -108,7 +111,7 @@
 	cia1_prb	= $dc01
 	cia1_ddrb	= $dc03
 	mmu_cr		= $ff00	; c128 only
-
+};addr
 
 ; --- Label definitions
 
@@ -168,15 +171,15 @@ Init		lda sys_iirq
 ; Copy sprites to tape buffer
 		ldx #127
 -			lda Sprites, x
-			sta $0340, x
+			sta tapebuf, x
 			dex
 			bpl -
 		lda #Sprites_Bitmask
 ; Set sprite block pointers
 		ldx #$0d
-		stx 2040 + Sprite_A
+		stx spr_ptrs + Sprite_A
 		inx
-		stx 2040 + Sprite_B
+		stx spr_ptrs + Sprite_B
 ; Activate pointer sprites
 		ora VIC_Base + 21
 		sta VIC_Base + 21
@@ -419,7 +422,7 @@ StoreOF		sta Sprites_OF	; set x overflow
 
 ; The initialisation routine sets the argument to the address of the
 ; previous IRQ routine.
-mod16 = * + 1:	jmp $ffff	; (self-modifying)
+mod16 = * + 1:	jmp addr($ffff)	; (self-modifying)
 
 ; This table is for part 8.
 ;OrTable	!byte 0, 32, 64	; VDC only

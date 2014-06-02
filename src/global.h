@@ -1,5 +1,5 @@
 // ACME - a crossassembler for producing 6502/65c02/65816 code.
-// Copyright (C) 1998-2009 Marco Baye
+// Copyright (C) 1998-2014 Marco Baye
 // Have a look at "acme.c" for further info
 //
 // Global stuff - things that are needed by several modules
@@ -47,7 +47,7 @@ extern const char	Byte_flags[];
 			// converted to lower case by OR-ing this bit(!)
 #define BYTEIS_SYNTAX	(1u << 4)	// special character for input syntax
 #define FOLLOWS_ANON	(1u << 3)	// preceding '-' are backward label
-// bits 2, 1 and 0 are unused
+// bits 2, 1 and 0 are currently unused
 
 
 // Variables
@@ -64,6 +64,8 @@ enum eos {
 extern int	pass_count;
 extern int	Process_verbosity;	// Level of additional output
 extern int	warn_on_indented_labels;	// warn if indented label is encountered
+extern int	warn_on_old_for;	// warn if "!for" with old syntax is found
+extern int	warn_on_type_mismatch;	// use type-checking system
 extern char	GotByte;	// Last byte read (processed)
 // Global counters
 extern int	pass_undefined_count;	// "NeedValue" type errors in current pass

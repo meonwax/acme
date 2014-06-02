@@ -55,9 +55,14 @@ Bug in ACME, code follows
 C-style "==" comparison detected.
     To check for equality, use a single '=' character instead.
 
-Found deprecated "!for" syntax.
+Found old "!for" syntax.
     Please update your sources to use the new "!for" syntax. See
     AllPOs.txt for details.
+    You can suppress this warning using the "-Wno-old-for" switch.
+
+Found new "!for" syntax.
+    When using the "-Wno-old-for" switch to disable the warning about
+    the older syntax, the new syntax will trigger this warning.
 
 Implicit label definition not in leftmost column.
     An implicit label definition has blanks before the label name.
@@ -127,6 +132,12 @@ Using oversized addressing mode.
     large to fit in 8 bits, ACME will show an error of course (To
     always truncate a value to 8 bits, use the '<' operator).
     More about the postfixing method can be found in "AddrModes.txt".
+
+Wrong type - expected address.
+Wrong type - expected integer.
+    These warnings are only given when type checking has been enabled
+    using the "-Wtype-mismatch" switch. Make sure the argument type
+    matches the instruction's addressing mode.
 
 
 ----------------------------------------------------------------------

@@ -21,7 +21,9 @@ Section:   Example of what an ACME source code file looks like
 		!to "tiny.o", cbm	; set output file and format
 		* = $c000		; set program counter
 
-		basout = $ffd2		; explicit global label def.
+	CLEAR = 147		; a global label definition
+!addr	basout = $ffd2		; another one, marked as an address
+
 		; a string output loop:
 		ldx #0
 		beq +			; enter loop
@@ -46,8 +48,19 @@ Here's the same fragment again, now with some additional info:
 ; respectively.
 		* = $c000		; set program counter
 ; This can also be done using the command line option "--setpc".
-		basout = $ffd2		; explicit global label def.
-; Now "basout" is defined as a global label having the value $ffd2.
+
+	; some global label definitions
+	CLEAR = 147	; this is a simple constant
+; Now "CLEAR" is defined as a global label having the value 147.
+!addr	basout = $ffd2	; this gets marked as an address
+; Now "basout" is defined as a global "address" type label having the
+; value $ffd2.
+	; The distinction between addresses and non-addresses only
+	; matters when the type check system gets activated using
+	; the "-Wtype-mismatch" switch. Then, a line like
+	; "lda CLEAR" would trigger a type mismatch warning because
+	; of the missing '#' character.
+
 		; a string output loop:
 		ldx #0
 		beq +			; enter loop
@@ -157,6 +170,9 @@ found in the file "AllPOs.txt". Here's just a short overview:
 !warn   !error   !serious
 ...for generating warnings, errors and serious errors.
 
+!addr
+...to mark labels as addresses, for the optional type check system.
+
 
 ----------------------------------------------------------------------
 Section:   Command line arguments
@@ -180,12 +196,12 @@ Available options are:
     -l, --labeldump FILE   select label dump file
         This can also be given using the "!sl" pseudo opcode.
 
+    --setpc NUMBER         set program counter
+        This can also be given in the source code using "* = NUMBER".
+
     --cpu CPU_TYPE         set processor type
         This can be changed in the source code using the "!cpu" pseudo
         opcode. Defaults to 6502.
-
-    --setpc NUMBER         set program counter
-        This can also be given in the source code using "* = NUMBER".
 
     --initmem NUMBER       define 'empty' memory
         This can also be given using the "!initmem" pseudo opcode.
@@ -200,22 +216,18 @@ Available options are:
     -vDIGIT                set verbosity level
         Sets how much additional informational output is generated.
         Higher values mean more output:
-
-            acme -v0 source.a
+        acme -v0 source.a
             This is the default: No additional output is generated,
             ACME will only display warnings and errors.
-
-            acme -v1 source.a
+        acme -v1 source.a
             Now the start and end addresses of the generated output
             file are displayed, along with its size (a CBM-style
             "load address" is *not* counted).
-
-            acme -v2 source.a
+        acme -v2 source.a
             In addition to the "-v1" output, ACME will announce each
             pass, will show amount and offset of "!binary" loads, and
             show start and end addresses and size of each segment.
-
-            acme -v3 source.a
+        acme -v3 source.a
             In addition to the "-v2" output, ACME will now announce
             each source file.
 
@@ -226,9 +238,14 @@ Available options are:
         (using conditional assembly in your source code file).
 
     -W                     fine-tune amount and type of warnings
-        Currently only sub-option is supported: "-Wno-label-indent"
-        will switch off warnings about implicit label definitions not
-        being in the leftmost column.
+        -Wno-label-indent
+            Disables warnings about implicit label definitions not
+            being in the leftmost column.
+        -Wno-old-for
+            Disables warnings about the old "!for" syntax and at the
+            same time enables warnings about the _new_ "!for" syntax.
+        -Wtype-mismatch
+            Enables type checking system (warns about wrong types).
 
     --use-stdout           fix for 'Relaunch64' IDE
         With this option, errors are written to the standard output
@@ -265,6 +282,7 @@ This is a list of the operators currently known by ACME:
        14     arcsin(v)   Inverse of sin()
        14     arccos(v)   Inverse of cos()
        14     arctan(v)   Inverse of tan()
+       14     addr(v)     Mark as address
        14     int(v)      Convert to integer
        14     float(v)    Convert to float
        13        !  v     Complement of             NOT

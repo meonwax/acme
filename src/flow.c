@@ -209,12 +209,15 @@ static enum eos PO_for(void)	// Now GotByte = illegal char
 	first_arg = ALU_defined_int();
 	if (Input_accept_comma()) {
 		old_algo = FALSE;	// new format - yay!
+		if (!warn_on_old_for)
+			Throw_first_pass_warning("Found new \"!for\" syntax.");
 		counter_first = first_arg;	// use given argument
 		counter_last = ALU_defined_int();	// read second argument
 		counter_increment = (counter_last < counter_first) ? -1 : 1;
 	} else {
 		old_algo = TRUE;	// old format - booo!
-		Throw_first_pass_warning("Found deprecated \"!for\" syntax.");
+		if (warn_on_old_for)
+			Throw_first_pass_warning("Found old \"!for\" syntax.");
 		if (first_arg < 0)
 			Throw_serious_error("Loop count is negative.");
 		counter_first = 0;	// CAUTION - old algo pre-increments and therefore starts with 1!
