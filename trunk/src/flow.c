@@ -18,9 +18,9 @@
 #include "dynabuf.h"
 #include "global.h"
 #include "input.h"
-#include "label.h"
 #include "macro.h"
 #include "mnemo.h"
+#include "symbol.h"
 #include "tree.h"
 
 
@@ -185,14 +185,14 @@ static enum eos PO_for(void)	// Now GotByte = illegal char
 {
 	struct input	loop_input,
 			*outer_input;
-	struct result_t	loop_counter;
+	struct result	loop_counter;
 	intval_t	first_arg,
 			counter_first,
 			counter_last,
 			counter_increment;
 	int		old_algo;	// actually bool
 	char		*loop_body;	// pointer to loop's body block
-	struct label	*label;
+	struct symbol	*symbol;
 	zone_t		zone;
 	int		force_bit,
 			loop_start;	// line number of "!for" pseudo opcode
@@ -201,7 +201,7 @@ static enum eos PO_for(void)	// Now GotByte = illegal char
 		return SKIP_REMAINDER;
 	// Now GotByte = illegal char
 	force_bit = Input_get_force_bit();	// skips spaces after
-	label = Label_find(zone, force_bit);
+	symbol = symbol_find(zone, force_bit);
 	if (!Input_accept_comma()) {
 		Throw_error(exception_syntax);
 		return SKIP_REMAINDER;
@@ -242,14 +242,14 @@ static enum eos PO_for(void)	// Now GotByte = illegal char
 	// init counter
 	loop_counter.flags = MVALUE_DEFINED | MVALUE_EXISTS;
 	loop_counter.val.intval = counter_first;
-	Label_set_value(label, &loop_counter, TRUE);
+	symbol_set_value(symbol, &loop_counter, TRUE);
 	if (old_algo) {
 		// old algo for old syntax:
 		// if count == 0, skip loop
 		if (counter_last) {
 			do {
 				loop_counter.val.intval += counter_increment;
-				Label_set_value(label, &loop_counter, TRUE);
+				symbol_set_value(symbol, &loop_counter, TRUE);
 				parse_ram_block(loop_start, loop_body);
 			} while (loop_counter.val.intval < counter_last);
 		}
@@ -258,7 +258,7 @@ static enum eos PO_for(void)	// Now GotByte = illegal char
 		do {
 			parse_ram_block(loop_start, loop_body);
 			loop_counter.val.intval += counter_increment;
-			Label_set_value(label, &loop_counter, TRUE);
+			symbol_set_value(symbol, &loop_counter, TRUE);
 		} while (loop_counter.val.intval != (counter_last + counter_increment));
 	}
 	// Free memory
@@ -337,30 +337,30 @@ static enum eos PO_if(void)	// Now GotByte = illegal char
 static enum eos ifdef_ifndef(int invert)	// Now GotByte = illegal char
 {
 	struct node_ra_t	*node;
-	struct label		*label;
+	struct symbol		*symbol;
 	zone_t			zone;
 	int			defined	= FALSE;
 
 	if (Input_read_zone_and_keyword(&zone) == 0)	// skips spaces before
 		return SKIP_REMAINDER;
 
-	Tree_hard_scan(&node, Label_forest, zone, FALSE);
+	Tree_hard_scan(&node, symbols_forest, zone, FALSE);
 	if (node) {
-		label = (struct label *) node->body;
+		symbol = (struct symbol *) node->body;
 		// in first pass, count usage
 		if (pass_count == 0)
-			label->usage++;
-		if (label->result.flags & MVALUE_DEFINED)
+			symbol->usage++;
+		if (symbol->result.flags & MVALUE_DEFINED)
 			defined = TRUE;
 	}
 	SKIPSPACE();
 	// if "ifndef", invert condition
 	if (invert)
 		defined = !defined;
-	if (GotByte == CHAR_SOB)
-		parse_block_else_block(defined);
-	else
+	if (GotByte != CHAR_SOB)
 		return defined ? PARSE_REMAINDER : SKIP_REMAINDER;
+
+	parse_block_else_block(defined);
 	return ENSURE_EOS;
 }
 

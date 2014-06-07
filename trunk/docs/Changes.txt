@@ -13,6 +13,18 @@ outlining the platform specific changes.
 
 
 ----------------------------------------------------------------------
+Section:   New in release 0.95.1
+----------------------------------------------------------------------
+
+Fixed a bug: Anonymous forward labels were allowed to be redefined.
+Tweaked type system: When negating a value, address reference count
+    will now be negated as well.
+When using type system, label dump file will now contain "!addr" to
+    mark addresses.
+Changed "label" to "symbol" in a lot of code, error messages and docs.
+
+
+----------------------------------------------------------------------
 Section:   New in release 0.95
 ----------------------------------------------------------------------
 

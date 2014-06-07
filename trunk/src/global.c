@@ -13,10 +13,10 @@
 #include "dynabuf.h"
 #include "global.h"
 #include "input.h"
-#include "label.h"
 #include "macro.h"
 #include "output.h"
 #include "section.h"
+#include "symbol.h"
 #include "tree.h"
 #include "typesystem.h"
 
@@ -183,8 +183,8 @@ static int first_label_of_statement(int *statement_flags)
 }
 
 
-// Parse global label definition or assembler mnemonic
-static void parse_mnemo_or_global_label_def(int *statement_flags)
+// Parse global symbol definition or assembler mnemonic
+static void parse_mnemo_or_global_symbol_def(int *statement_flags)
 {
 	// It is only a label if it isn't a mnemonic
 	if ((CPU_state.type->keyword_is_mnemonic(Input_read_keyword()) == FALSE)
@@ -195,23 +195,23 @@ static void parse_mnemo_or_global_label_def(int *statement_flags)
 		if ((*GLOBALDYNABUF_CURRENT == (char) 0xa0)
 		|| ((GlobalDynaBuf->size >= 2) && (GLOBALDYNABUF_CURRENT[0] == (char) 0xc2) && (GLOBALDYNABUF_CURRENT[1] == (char) 0xa0)))
 			Throw_first_pass_warning("Label name starts with a shift-space character.");
-		Label_parse_definition(ZONE_GLOBAL, *statement_flags);
+		symbol_parse_definition(ZONE_GLOBAL, *statement_flags);
 	}
 }
 
 
-// Parse local label definition
-static void parse_local_label_def(int *statement_flags)
+// parse local symbol definition
+static void parse_local_symbol_def(int *statement_flags)
 {
 	if (!first_label_of_statement(statement_flags))
 		return;
 	GetByte();	// start after '.'
 	if (Input_read_keyword())
-		Label_parse_definition(Section_now->zone, *statement_flags);
+		symbol_parse_definition(Section_now->zone, *statement_flags);
 }
 
 
-// Parse anonymous backward label definition. Called with GotByte == '-'
+// parse anonymous backward label definition. Called with GotByte == '-'
 static void parse_backward_anon_def(int *statement_flags)
 {
 	if (!first_label_of_statement(statement_flags))
@@ -221,15 +221,13 @@ static void parse_backward_anon_def(int *statement_flags)
 		DYNABUF_APPEND(GlobalDynaBuf, '-');
 	while (GetByte() == '-');
 	DynaBuf_append(GlobalDynaBuf, '\0');
-	Label_implicit_definition(Section_now->zone, *statement_flags, 0, TRUE);
+	symbol_set_label(Section_now->zone, *statement_flags, 0, TRUE);	// this "TRUE" is the whole secret
 }
 
 
-// Parse anonymous forward label definition. Called with GotByte == ?
+// parse anonymous forward label definition. called with GotByte == ?
 static void parse_forward_anon_def(int *statement_flags)
 {
-	struct label	*counter_label;
-
 	if (!first_label_of_statement(statement_flags))
 		return;
 	DYNABUF_CLEAR(GlobalDynaBuf);
@@ -238,10 +236,9 @@ static void parse_forward_anon_def(int *statement_flags)
 		DYNABUF_APPEND(GlobalDynaBuf, '+');
 		GetByte();
 	}
-	counter_label = Label_fix_forward_name();
-	counter_label->result.val.intval++;
+	symbol_fix_forward_anon_name(TRUE);	// TRUE: increment counter
 	DynaBuf_append(GlobalDynaBuf, '\0');
-	Label_implicit_definition(Section_now->zone, *statement_flags, 0, TRUE);
+	symbol_set_label(Section_now->zone, *statement_flags, 0, FALSE);
 }
 
 
@@ -294,11 +291,11 @@ void Parse_until_eob_or_eof(void)
 				parse_pc_def();
 				break;
 			case LOCAL_PREFIX:
-				parse_local_label_def(&statement_flags);
+				parse_local_symbol_def(&statement_flags);
 				break;
 			default:
 				if (BYTEFLAGS(GotByte) & STARTS_KEYWORD) {
-					parse_mnemo_or_global_label_def(&statement_flags);
+					parse_mnemo_or_global_symbol_def(&statement_flags);
 				} else {
 					Throw_error(exception_syntax);
 					Input_skip_remainder();

@@ -615,7 +615,7 @@ void PO_setpc(void)
 
 
 // get program counter
-void vcpu_read_pc(struct result_t *target)
+void vcpu_read_pc(struct result *target)
 {
 	*target = CPU_state.pc;
 }

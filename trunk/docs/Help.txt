@@ -98,8 +98,8 @@ ACME's maths parser has no problems concerning parentheses and
     indirect addressing modes.
 ACME's maths parser knows a shit load of different operations.
 ACME supports both integer and floating point maths operations.
-You can dump the global labels into a file.
-ACME supports a library of commonly used macros and labels.
+You can dump the global symbols into a file.
+ACME supports a library of commonly used macros and symbols.
 It always takes as many passes as are needed.
 ACME exists on several platforms, meaning you can easily exchange your
     sources with other people (preferring other OSes).
@@ -152,7 +152,7 @@ A minor problem is the different character tables used on different
 systems. As all predefined ACME keywords only use 7-bit ASCII, the
 assembler will work on any system that uses a superset of this
 character table: UTF-8, ANSI, ISO 8859, etc.
-Label names can contain top-bit-set characters - these may look
+Symbol names can contain top-bit-set characters - these may look
 strange if the sources are edited on a different platform, but ACME
 will still work.
 
