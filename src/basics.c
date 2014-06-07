@@ -156,7 +156,7 @@ static enum eos PO_addr(void)	// Now GotByte = illegal char
 // show user-defined message
 static enum eos throw_string(const char prefix[], void (*fn)(const char *))
 {
-	struct result_t	result;
+	struct result	result;
 
 	DYNABUF_CLEAR(user_message);
 	DynaBuf_add_string(user_message, prefix);

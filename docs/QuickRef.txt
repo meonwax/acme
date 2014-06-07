@@ -21,7 +21,7 @@ Section:   Example of what an ACME source code file looks like
 		!to "tiny.o", cbm	; set output file and format
 		* = $c000		; set program counter
 
-	CLEAR = 147		; a global label definition
+	CLEAR = 147		; a global symbol definition
 !addr	basout = $ffd2		; another one, marked as an address
 
 		; a string output loop:
@@ -49,11 +49,11 @@ Here's the same fragment again, now with some additional info:
 		* = $c000		; set program counter
 ; This can also be done using the command line option "--setpc".
 
-	; some global label definitions
+	; some global symbol definitions
 	CLEAR = 147	; this is a simple constant
-; Now "CLEAR" is defined as a global label having the value 147.
+; Now "CLEAR" is defined as a global symbol having the value 147.
 !addr	basout = $ffd2	; this gets marked as an address
-; Now "basout" is defined as a global "address" type label having the
+; Now "basout" is defined as a global "address" type symbol having the
 ; value $ffd2.
 	; The distinction between addresses and non-addresses only
 	; matters when the type check system gets activated using
@@ -65,20 +65,20 @@ Here's the same fragment again, now with some additional info:
 		ldx #0
 		beq +			; enter loop
 ; "+" is an anonymous forward label. Other ones are "++", "+++", etc.
-; They can be used like any other label, but they always reference
+; They can be used like any other symbol, but they always reference
 ; their *NEXT* definition. This saves having to think of names for
 ; unimportant labels. As the label's value is not defined yet, ACME
 ; will need to perform a second pass.
 -			jsr basout	; output character
 ; "-" is an anonymous backward label. Other ones are "--", "---", etc.
-; They can be used like any other label, but they always reference
+; They can be used like any other symbol, but they always reference
 ; their *PREVIOUS* definition. This saves having to think of names for
 ; unimportant labels. In the line above, the value of "-" is set to
 ; the current program counter.
 			inx		; advance pointer
 +			lda .string,x	; get character
 ; Here the value of "+" is set to the current program counter.
-; ".string" is a local label (because its name starts with a '.'
+; ".string" is a local symbol (because its name starts with a '.'
 ; character), but as its value is not defined yet, ACME will need to
 ; perform a second pass.
 			bne -		; check whether last
@@ -97,12 +97,12 @@ As you can see, pseudo opcodes are prefixed with an exclamation mark.
 That's non-standard, but: Backwards compatibility is the root of all
 evil. :)
 
-Summary about labels:
+Summary about symbols:
 
-There are global labels (their names starting with a letter or an
+There are global symbols (their names starting with a letter or an
 underscore character). These can be accessed throughout the whole
 assembly.
-Then there are local labels (their names starting with a '.'
+Then there are local symbols (their names starting with a '.'
 character). These can only be accessed from inside the macro or zone
 they were defined in (for more about macros and zones, see the file
 "AllPOs.txt").
@@ -112,7 +112,7 @@ macro/zone), but in addition to that, the "-" labels can only be used
 for backward references, while the "+" labels can only be used for
 forward references.
 In contrast to global and local labels, anonymous labels can not be
-defined explicitly (as in LABEL = VALUE).
+defined explicitly (as in SYMBOL = VALUE).
 
 Save the given example source code to a file called "tiny.a" and start
 acme by typing
@@ -144,7 +144,7 @@ found in the file "AllPOs.txt". Here's just a short overview:
 ...for directly placing values into the output file.
 
 !zone   !sl
-...for defining the scope of local labels and saving global labels.
+...for defining the scope of local symbols and saving global symbols.
 
 !convtab   !pet   !raw   !scr   !scrxor   !text
 ...for converting and outputting strings.
@@ -171,7 +171,7 @@ found in the file "AllPOs.txt". Here's just a short overview:
 ...for generating warnings, errors and serious errors.
 
 !addr
-...to mark labels as addresses, for the optional type check system.
+...to mark symbols as addresses, for the optional type check system.
 
 
 ----------------------------------------------------------------------
@@ -231,7 +231,7 @@ Available options are:
             In addition to the "-v2" output, ACME will now announce
             each source file.
 
-    -DLABEL=VALUE          define global label
+    -DSYMBOL=VALUE         define global symbol
         This option is useful if you build your projects using
         Makefiles: "-DSYSTEM=64" could build the C64 version while
         "-DSYSTEM=128" could build the C128 version of the software
@@ -239,8 +239,8 @@ Available options are:
 
     -W                     fine-tune amount and type of warnings
         -Wno-label-indent
-            Disables warnings about implicit label definitions not
-            being in the leftmost column.
+            Disables warnings about labels not being in the leftmost
+            column.
         -Wno-old-for
             Disables warnings about the old "!for" syntax and at the
             same time enables warnings about the _new_ "!for" syntax.
@@ -269,8 +269,8 @@ shifts, negation, boolean operations and some assembler-specific stuff
 like extracting the "low byte", the "high byte" or the "bank byte"
 of a value.
 Calculations are done using either signed 32-bit integer arithmetic or
-floating point arithmetic using the C "double" data type. Label values
-are stored the same way.
+floating point arithmetic using the C "double" data type. Symbol
+values are stored the same way.
 
 This is a list of the operators currently known by ACME:
 
@@ -350,8 +350,8 @@ $d011           hexadecimal values are indicated by either a
 'q'                 quotes. The actual numeric value depends on the
                     current conversion table (none/petscii/screen),
                     chosen using the "!ct" pseudo opcode.
-poll_joy2       a global label
-.fail           a local label, indicated by leading dot
+poll_joy2       a global symbol
+.fail           a local symbol, indicated by leading dot
 *               the current program counter. During offset assembly,
                     "*" gives the value of the "Pseudo PC". Just to
                     make sure: The value of the program counter is
@@ -376,24 +376,23 @@ optional comment. Statements have to be separated from each other
 using colon (":") characters, the comment has to be prefixed with a
 semicolon (";") character.
 
-Every statement consists of an optional "implicit label definition"
-and an optional "command". These are separated from each other using
-any number of SPACE or TAB characters. If an implicit label definition
-has blanks before it, a warning is given (to spot typing errors - see
-Errors.txt for more info).
+Every statement consists of an optional "label" and an optional
+"command". These are separated from each other using any number of
+SPACE or TAB characters. If a label has blanks before it, a warning is
+issued (to spot typing errors - see Errors.txt for more info).
 
-Every label consists of these characters: "a" to "z", "A" to "Z", "0"
-to "9", the underscore character "_" and all characters with values
-beyond 127. The first character must not be a digit though. But it can
-be a dot ("."), making the label a local one. Two other possibilities
-for label names are "all-characters-are-minus" (then it's an anonymous
-backward label) and "all-characters-are-plus" (then it's an anonymous
-forward label).
+Every symbol name consists of these characters: "a" to "z", "A" to
+"Z", "0" to "9", the underscore character "_" and all characters with
+values beyond 127. The first character must not be a digit though. But
+it can be a dot ("."), making the symbol a local one. Two other
+possibilities for label names are "all-characters-are-minus" (then it
+is an anonymous backward label) and "all-characters-are-plus" (then it
+is an anonymous forward label).
 
 Every command is one of the following:
     An assembler opcode
     A pseudo opcode, beginning with a "!" character
-    An explicit label definition (label=value)
+    A symbol definition (symbol=value)
     A pc definition, beginning with a "*" character
     A macro call, beginning with a "+" character
 ...and the syntax of those things varies. :)
@@ -404,5 +403,5 @@ whether you write "LDA" or "lda" or "LdA" does not make a difference.
 In earlier releases of ACME, arithmetic operators like MOD, XOR, LSL
 had to be written in UPPER CASE. This is no longer needed.
 
-Label names are case sensitive, so "label" and "Label" are two
+Symbol names are case sensitive, so "label" and "Label" are two
 different things.

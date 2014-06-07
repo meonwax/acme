@@ -11,8 +11,8 @@
 #include "dynabuf.h"
 #include "global.h"
 #include "input.h"
-#include "label.h"
 #include "section.h"
+#include "symbol.h"
 #include "tree.h"
 #include "macro.h"
 
@@ -42,8 +42,8 @@ struct macro {
 // gives us the possibility to find out which args are call-by-value and
 // which ones are call-by-reference.
 union macro_arg_t {
-	struct result_t	result;	// value and flags (call by value)
-	struct label	*label;	// pointer to label struct (call by reference)
+	struct result	result;	// value and flags (call by value)
+	struct symbol	*symbol;	// pointer to symbol struct (call by reference)
 };
 
 
@@ -187,12 +187,12 @@ void Macro_parse_definition(void)	// Now GotByte = illegal char after "!macro"
 				DynaBuf_append(GlobalDynaBuf, REFERENCE_CHAR);
 				GetByte();
 			}
-			// handle prefix for local labels (LOCAL_PREFIX, normally '.')
+			// handle prefix for local symbols (LOCAL_PREFIX, normally '.')
 			if (GotByte == LOCAL_PREFIX) {
 				DynaBuf_append(GlobalDynaBuf, LOCAL_PREFIX);
 				GetByte();
 			}
-			// handle label name
+			// handle symbol name
 			Input_append_keyword_to_global_dynabuf();
 		} while (pipe_comma());
 		// ensure CHAR_SOB ('{')
@@ -225,16 +225,16 @@ void Macro_parse_definition(void)	// Now GotByte = illegal char after "!macro"
 void Macro_parse_call(void)	// Now GotByte = dot or first char of macro name
 {
 	char			local_gotbyte;
-	struct label		*label;
+	struct symbol		*symbol;
 	struct section		new_section,
 				*outer_section;
 	struct input		new_input,
 				*outer_input;
 	struct macro		*actual_macro;
 	struct node_ra_t	*macro_node,
-				*label_node;
+				*symbol_node;
 	zone_t		macro_zone,
-			label_zone;
+			symbol_zone;
 	int		arg_count	= 0;
 
 	// Enter deeper nesting level
@@ -261,10 +261,9 @@ void Macro_parse_call(void)	// Now GotByte = dot or first char of macro name
 				// read call-by-reference arg
 				DynaBuf_append(internal_name, ARGTYPE_NUM_REF);
 				GetByte();	// skip '~' character
-				Input_read_zone_and_keyword(&label_zone);
+				Input_read_zone_and_keyword(&symbol_zone);
 				// GotByte = illegal char
-				arg_table[arg_count].label =
-					Label_find(label_zone, 0);
+				arg_table[arg_count].symbol = symbol_find(symbol_zone, 0);
 			} else {
 				// read call-by-value arg
 				DynaBuf_append(internal_name, ARGTYPE_NUM_VAL);
@@ -299,8 +298,7 @@ void Macro_parse_call(void)	// Now GotByte = dot or first char of macro name
 		outer_section = Section_now;
 		// start new section (with new zone)
 		// FALSE = title mustn't be freed
-		Section_new_zone(&new_section, "Macro",
-			actual_macro->original_name, FALSE);
+		Section_new_zone(&new_section, "Macro", actual_macro->original_name, FALSE);
 		GetByte();	// fetch first byte of parameter list
 		// assign arguments
 		if (GotByte != CHAR_EOS) {	// any at all?
@@ -312,19 +310,19 @@ void Macro_parse_call(void)	// Now GotByte = dot or first char of macro name
 				if (GotByte == REFERENCE_CHAR) {
 					// assign call-by-reference arg
 					GetByte();	// skip '~' character
-					Input_read_zone_and_keyword(&label_zone);
-					if ((Tree_hard_scan(&label_node, Label_forest, label_zone, TRUE) == FALSE)
+					Input_read_zone_and_keyword(&symbol_zone);
+					if ((Tree_hard_scan(&symbol_node, symbols_forest, symbol_zone, TRUE) == FALSE)
 					&& (pass_count == 0))
 						Throw_error("Macro parameter twice.");
-					label_node->body = arg_table[arg_count].label;
+					symbol_node->body = arg_table[arg_count].symbol;
 				} else {
 					// assign call-by-value arg
-					Input_read_zone_and_keyword(&label_zone);
-					label = Label_find(label_zone, 0);
-// FIXME - add a possibility to Label_find to make it possible to find out
-// whether label was just created. Then check for the same error message here
+					Input_read_zone_and_keyword(&symbol_zone);
+					symbol = symbol_find(symbol_zone, 0);
+// FIXME - add a possibility to symbol_find to make it possible to find out
+// whether symbol was just created. Then check for the same error message here
 // as above ("Macro parameter twice.").
-					label->result = arg_table[arg_count].result;
+					symbol->result = arg_table[arg_count].result;
 				}
 				arg_count++;
 			} while (Input_accept_comma());

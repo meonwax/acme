@@ -19,7 +19,7 @@
 // FIXME - move struct definition to .c file and change other .c files' accesses to fn calls
 struct vcpu {
 	const struct cpu_type	*type;		// current CPU type (default 6502)	(FIXME - move out of struct again?)
-	struct result_t		pc;		// current program counter (pseudo value)
+	struct result		pc;		// current program counter (pseudo value)
 	int			add_to_pc;	// add to PC after statement
 	int			a_is_long;
 	int			xy_are_long;
@@ -65,7 +65,7 @@ extern void Output_end_segment(void);
 // set program counter to defined value (FIXME - allow undefined!)
 extern void vcpu_set_pc(intval_t new_pc, int flags);
 // get program counter
-extern void vcpu_read_pc(struct result_t *target);
+extern void vcpu_read_pc(struct result *target);
 // get size of current statement (until now) - needed for "!bin" verbose output
 extern int vcpu_get_statement_size(void);
 // adjust program counter (called at end of each statement)

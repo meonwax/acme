@@ -396,9 +396,9 @@ static int get_index(int next)
 	return addressing_mode;
 }
 
-// This function stores the command's argument in the given result_t
+// This function stores the command's argument in the given result
 // structure (using the valueparser). The addressing mode is returned.
-static int get_argument(struct result_t *result)
+static int get_argument(struct result *result)
 {
 	int	open_paren,
 		addressing_mode	= HAM_ABS;
@@ -451,7 +451,7 @@ static int get_argument(struct result_t *result)
 
 // Helper function for calc_arg_size()
 // Only call with "size_bit = MVALUE_FORCE16" or "size_bit = MVALUE_FORCE24"
-static int check_oversize(int size_bit, struct result_t *argument)
+static int check_oversize(int size_bit, struct result *argument)
 {
 	// only check if value is *defined*
 	if ((argument->flags & MVALUE_DEFINED) == 0)
@@ -478,7 +478,7 @@ static int check_oversize(int size_bit, struct result_t *argument)
 // argument		value and flags of parameter
 // addressing_modes	adressing modes (8b, 16b, 24b or any combination)
 // Return value = force bit for number of parameter bytes to send (0 = error)
-static int calc_arg_size(int force_bit, struct result_t *argument, int addressing_modes)
+static int calc_arg_size(int force_bit, struct result *argument, int addressing_modes)
 {
 	// if there are no possible addressing modes, complain
 	if (addressing_modes == MAYBE______) {
@@ -588,7 +588,7 @@ static void not_in_bank(intval_t target)
 // Mnemonics using only 8bit relative addressing (short branch instructions).
 static void group_only_relative8_addressing(int opcode)
 {
-	struct result_t	target;
+	struct result	target;
 	intval_t	offset	= 0;	// dummy value, to not throw more errors than necessary
 
 	ALU_int_result(&target);
@@ -623,7 +623,7 @@ static void group_only_relative8_addressing(int opcode)
 // Mnemonics using only 16bit relative addressing (BRL and PER).
 static void group_only_relative16_addressing(int opcode)
 {
-	struct result_t	target;
+	struct result	target;
 	intval_t	offset	= 0;	// dummy value, to not throw more errors than necessary
 
 	ALU_int_result(&target);
@@ -644,7 +644,7 @@ static void group_only_relative16_addressing(int opcode)
 
 // set addressing mode bits depending on which opcodes exist, then calculate
 // argument size and output both opcode and argument
-static void make_command(int force_bit, struct result_t *result, unsigned long opcodes)
+static void make_command(int force_bit, struct result *result, unsigned long opcodes)
 {
 	int	addressing_modes	= MAYBE______;
 
@@ -695,7 +695,7 @@ static unsigned int imm_ops(int *force_bit, unsigned char opcode, int imm_flag)
 static void group_main(int index, int imm_flag)
 {
 	unsigned long	imm_opcodes;
-	struct result_t	result;
+	struct result	result;
 	int		force_bit	= Input_get_force_bit();	// skips spaces after
 
 	switch (get_argument(&result)) {
@@ -744,7 +744,7 @@ static void group_main(int index, int imm_flag)
 static void group_misc(int index, int imm_flag)
 {
 	unsigned long	imm_opcodes;
-	struct result_t	result;
+	struct result	result;
 	int		force_bit	= Input_get_force_bit();	// skips spaces after
 
 	switch (get_argument(&result)) {
@@ -802,7 +802,7 @@ static void group_move(int opcode)
 // The jump instructions.
 static void group_jump(int index)
 {
-	struct result_t	result;
+	struct result	result;
 	int		force_bit	= Input_get_force_bit();	// skips spaces after
 
 	switch (get_argument(&result)) {

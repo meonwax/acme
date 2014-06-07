@@ -21,16 +21,16 @@ Call:		!8 EXPRESSION [, EXPRESSION]*
 Purpose:	Insert 8-bit values.
 Parameters:	EXPRESSION: Any formula the value parser accepts.
 Aliases:	"!08", "!by", "!byte"
-Examples:	!08 127, label, -128	; output some values
+Examples:	!08 127, symbol, -128	; output some values
 		!by 14, $3d, %0110, &304, <*, "c"
-		!byte 3 - 4, label1 XOR label2, 2 ^ tz, (3+4)*7
+		!byte 3 - 4, symbol1 XOR symbol2, 2 ^ tz, (3+4)*7
 
 
 Call:		!16 EXPRESSION [, EXPRESSION]*
 Purpose:	Insert 16-bit values.
 Parameters:	EXPRESSION: Any formula the value parser accepts.
 Aliases:	"!wo", "!word"
-Examples:	!16 65535, label, -32768	; output some values
+Examples:	!16 65535, symbol, -32768	; output some values
 		!wo 14, $4f35, %100101010010110, &36304, *, "c"
 		!word 3000 - 4, a1 AND a2, 2 ^ tz, (3+4)*70, l1 & .j2
 
@@ -38,7 +38,7 @@ Examples:	!16 65535, label, -32768	; output some values
 Call:		!24 EXPRESSION [, EXPRESSION]*
 Purpose:	Insert 24-bit values.
 Parameters:	EXPRESSION: Any formula the value parser accepts.
-Examples:	!24 16777215, label, -8388608, 14, $6a4f35
+Examples:	!24 16777215, symbol, -8388608, 14, $6a4f35
 		!24 %10010110100101010010110, &47336304, *, "c"
 		!24 300000 - 4, a1 AND a2, 2 ^ tz, (3+4)*70, l1 & .j2
 
@@ -46,7 +46,7 @@ Examples:	!24 16777215, label, -8388608, 14, $6a4f35
 Call:		!32 EXPRESSION [, EXPRESSION]*
 Purpose:	Insert 32-bit values.
 Parameters:	EXPRESSION: Any formula the value parser accepts.
-Examples:	!32 $7fffffff, label, -$80000000, 14, $46a4f35
+Examples:	!32 $7fffffff, symbol, -$80000000, 14, $46a4f35
 		!32 %1001011010010101001011010010, &4733630435, *, "c"
 		!32 300000 - 4, a AND a2, 2 ^ tz, (3+4)*70, l1 & .j2
 
@@ -247,11 +247,11 @@ Examples:	!binary <Own/menudata.b>	; insert library file
 
 
 ----------------------------------------------------------------------
-Section:   Labels
+Section:   Symbols
 ----------------------------------------------------------------------
 
 Call:		!zone [TITLE] [ { BLOCK } ]
-Purpose:	Switch to new zone of local labels. Zones can either
+Purpose:	Switch to new zone of local symbols. Zones can either
 		be nested or used sequentially.
 Parameters:	TITLE: May consist of letters and digits. Its only
 		purpose is to be displayed in error messages, so it'll
@@ -262,9 +262,9 @@ Parameters:	TITLE: May consist of letters and digits. Its only
 		If a block is given, the old zone continues after the
 		block.
 Aliases:	"!zn"
-Examples:	.backgroundcolor = 0	; some local label
-		!zone File_IO		; new zone begins here
-		.backgroundcolor = 1	; so this is a different label
+Examples:	.backgroundcolor = 0	; some local symbol
+		!zone File_IO		; new zone begins here, so
+		.backgroundcolor = 1	; this is a different symbol
 		!zn LinkedList_Init
 		.backgroundcolor = 2
 		!zone LinkedList {	; start of nested zone
@@ -279,17 +279,17 @@ Examples:	.backgroundcolor = 0	; some local label
 			!zone LinkedList_End
 			; you know what to imagine here...
 		}
-		.backgroundcolor = 3	; => "Label already defined."
+		.backgroundcolor = 3	; => "Symbol already defined."
 
 
 Call:		!sl FILENAME
-Purpose:	Save all the global labels to the given file after the
-		assembly is finished. This table could be loaded
+Purpose:	Save all the global symbols to the given file after
+		the assembly is finished. This table could be loaded
 		during another assembly session using the "!source"
 		pseudo opcode.
 Parameters:	FILENAME: A file name given in "..." quoting.
-Examples:	!sl "Labels.a"	; produce label dump after assembly
-		!sl "global"	; produce label dump after assembly
+Examples:	!sl "Symbols.a"	; produce symbol dump after assembly
+		!sl "global"	; produce symbol dump after assembly
 
 
 ----------------------------------------------------------------------
@@ -305,7 +305,7 @@ Parameters:	CONDITION: Any formula the value parser accepts, but
 		it must be solvable even in the first pass.
 		BLOCK: A block of assembler statements.
 Examples:	!text "Black", 0	; Choose wording according to
-		!if country = uk {	; content of "country" label.
+		!if country = uk {	; content of "country" symbol.
 			!text "Grey"
 		} else {
 			!text "Gray"
@@ -313,38 +313,38 @@ Examples:	!text "Black", 0	; Choose wording according to
 		!byte 0
 		!text "White", 0
 
-		; Insert debug commands if label "debug" is not zero:
+		; Insert debug commands if symbol "debug" is not zero:
 		!if debug { lda #"z":jsr char_output }
 
 
-Call:		!ifdef LABEL { BLOCK } [ else { BLOCK } ]
-or:		!ifdef LABEL STATEMENT
-Call:		!ifndef LABEL { BLOCK } [ else { BLOCK } ]
-or:		!ifndef LABEL STATEMENT
-Purpose:	Conditional assembly, depending on whether a label is
+Call:		!ifdef SYMBOL { BLOCK } [ else { BLOCK } ]
+or:		!ifdef SYMBOL STATEMENT
+Call:		!ifndef SYMBOL { BLOCK } [ else { BLOCK } ]
+or:		!ifndef SYMBOL STATEMENT
+Purpose:	Conditional assembly, depending on whether a symbol is
 		already defined or not.
-		With "ifdef", if the label is defined, the first block
-		of statements will be parsed; if it isn't, the second
-		block will be parsed instead (if present).
-		With "ifndef", it's the other way around: If the label
-		isn't defined, the first block of statements will be
-		parsed; if it is defined, the second block will be
-		parsed instead (if present).
+		With "ifdef", if the symbol is defined, the first
+		block of statements will be parsed; if it isn't, the
+		second block will be parsed instead (if present).
+		With "ifndef", it's the other way around: If the
+		symbol isn't defined, the first block of statements
+		will be parsed; if it is defined, the second block
+		will be parsed instead (if present).
 		CAUTION: These opcodes were added to speed up parsing
 		of library files (see example below). They can be used
 		to tell passes apart, therefore only use them in your
 		own files if you're sure you *really* know what you
 		are doing - using them in the wrong way will result in
 		loads of error messages.
-Parameters:	LABEL: Any valid label name.
+Parameters:	SYMBOL: Any valid symbol name.
 		BLOCK: A block of assembler statements.
 		STATEMENT: Any assembler statement.
 Examples:	; this was taken from <6502/std.a>:
 		!ifdef Lib_6502_std_a !eof	; in later passes,
 		Lib_6502_std_a = 1		; skip this file.
-		; During the first pass, the label is not defined,
+		; During the first pass, the symbol is not defined,
 		; therefore the file will get parsed. During all
-		; further passes, the label is already defined,
+		; further passes, the symbol is already defined,
 		; therefore the file will be skipped.
 
 		; if the following code gets included several times,
@@ -358,32 +358,32 @@ Examples:	; this was taken from <6502/std.a>:
 		}
 
 
-Call:		!for LABEL, START, END { BLOCK }
+Call:		!for SYMBOL, START, END { BLOCK }
 Purpose:	Looping assembly. The block of statements will be
 		parsed a fixed number of times, as specified by the
 		values of START and END. For a more flexible
 		possibility, have a look at "!do" below.
-Parameters:	LABEL: Any valid label name.
+Parameters:	SYMBOL: Any valid symbol name.
 		START: Any formula the value parser accepts, but it
-		must be solvable even in the first pass. LABEL will 
+		must be solvable even in the first pass. SYMBOL will 
 		have this value during the first loop cycle.
 		END: Any formula the value parser accepts, but it must
-		be solvable even in the first pass. LABEL will have
+		be solvable even in the first pass. SYMBOL will have
 		this value during the last loop cycle.
 		BLOCK: A block of assembler statements.
 		If START or END are floats, they will be converted to
 		integers (never use floats for loop counters). If
-		START is less than or equal to END, LABEL will get
+		START is less than or equal to END, SYMBOL will get
 		incremented at the end of each cycle; if START is
-		greater than END, LABEL will get decremented at the
-		end of each cycle. So after leaving the loop, LABEL
+		greater than END, SYMBOL will get decremented at the
+		end of each cycle. So after leaving the loop, SYMBOL
 		will have an "illegal" value (END + 1 if counting up,
 		END - 1 if counting down).
 		Please note that it is impossible to change the number
 		of loop cycles "inside" the loop by fiddling with the
 		counter using the "!set" pseudo opcode: The "!for"
 		routine keeps its own copy of the counter value and
-		only sets the label value, it never reads it back.
+		only sets the symbol value, it never reads it back.
 		This was done to eliminate a possibility to hang ACME.
 Examples:
 	int2BCD ; conversion table: integer to BCD
@@ -409,7 +409,7 @@ Examples:
 			sta $0400 + i
 		}
 
-Miscellaneous:	The old syntax ("!for LABEL, END { BLOCK }" where
+Miscellaneous:	The old syntax ("!for SYMBOL, END { BLOCK }" where
 		START was always implied to be 1) is still fully
 		supported, but gives a warning to get people to change
 		to the new syntax. You can disable this warning using
@@ -418,19 +418,19 @@ Miscellaneous:	The old syntax ("!for LABEL, END { BLOCK }" where
 		When migrating your sources, bear in mind that it is
 		no longer possible to skip the block completely by
 		specifying a loop count of zero.
-		Also note that with the new algorithm, LABEL has a
+		Also note that with the new algorithm, SYMBOL has a
 		different value after the block than during the last
 		loop cycle, while the old algorithm kept that last
 		value.
 
 
-Call:		!set LABEL = VALUE
-Purpose:	Assign given value to label even if the label already
-		has a different value. Needed for loop counters when
-		using "!do", for example. Only use this opcode for
-		something else if you're sure you *really* know what
-		you are doing... :)
-Parameters:	LABEL: Any valid label name.
+Call:		!set SYMBOL = VALUE
+Purpose:	Assign given value to symbol even if the symbol
+		already has a different value. Needed for loop
+		counters when using "!do", for example. Only use this
+		opcode for something else if you're sure you *really*
+		know what you are doing... :)
+Parameters:	SYMBOL: Any valid symbol name.
 		VALUE: Any formula the value parser accepts.
 Example:	see "!do" below
 
@@ -523,20 +523,20 @@ Example:	!source "part1.a"	; sets part1_version
 Section:   Macro usage
 ----------------------------------------------------------------------
 
-Call:		!macro TITLE [[~]LABEL [, [~]LABEL]*] { BLOCK }
+Call:		!macro TITLE [[~]SYMBOL [, [~]SYMBOL]*] { BLOCK }
 Purpose:	Define a macro.
 Parameters:	TITLE: The macro's desired name (same rules as for
-		label names). If the title's first character is a dot
+		symbol names). If the title's first character is a dot
 		("."), the macro will be local (though why anyone
 		could want this is beyond me).
-		LABEL: The desired name for the parameter value at
-		call time. Normally, these parameter labels should be
+		SYMBOL: The desired name for the parameter value at
+		call time. Normally, these parameter symbols should be
 		local (first character a dot), as different macro
 		calls will almost for sure have different parameter
 		values.
-		If you prefix LABEL with a '~' character, it will be
+		If you prefix SYMBOL with a '~' character, it will be
 		called by reference, not by value: Changing the value
-		inside the macro will result in the "outer" label to
+		inside the macro will result in the "outer" symbol to
 		be changed as well.
 		BLOCK: A block of assembler statements.
 Examples:	; far branch, as defined in <6502/std.a>
@@ -586,10 +586,10 @@ Purpose:	Call a macro, using the given parameter values.
 Parameters:	TITLE: The macro's name as given in its definition.
 		ARGUMENT: This is either any formula the value parser
 		accepts, or (new in release 0.86) a '~' character
-		followed by a label name. The '~'-prefix indicates
+		followed by a symbol name. The '~'-prefix indicates
 		call-by-reference semantics, which means that when the
-		macro changes the label's value, the caller's label's
-		value will change as well.
+		macro changes the symbol's value, the caller's
+		symbol's value will change as well.
 Examples:	inc label
 		bne mark	; "near" branch
 		inc label2
@@ -819,15 +819,15 @@ Section:   Type system
 ----------------------------------------------------------------------
 
 Call:		!address [ { BLOCK } ]
-or:		!address LABEL = VALUE
+or:		!address SYMBOL = VALUE
 Purpose:	Mark a block or a statement as "explicitly defined
-		labels are holding addresses".
+		symbols are holding addresses".
 Parameters:	BLOCK: A block of assembler statements
 		Everything inside the block will be parsed as usual,
-		but labels getting explicitly defined will be marked
-		as referencing memory.
+		but explicitly defined symbols will be marked as
+		referencing memory.
 		If no block is given, only the current statement will
-		be affected, which should then be an explicit label
+		be affected, which should then be an explicit symbol
 		definition.
 Aliases:	"!addr"
 Examples:	!addr	k_chrout = $ffd2	; this is an address

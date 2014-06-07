@@ -33,7 +33,7 @@ void typesystem_force_address_statement(int value)
 	in_address_statement = value;
 }
 
-void typesystem_want_imm(struct result_t *result)
+void typesystem_want_imm(struct result *result)
 {
 	if (!warn_on_type_mismatch)
 		return;
@@ -42,7 +42,7 @@ void typesystem_want_imm(struct result_t *result)
 	if (result->addr_refs != 0)
 		Throw_warning("Wrong type - expected integer.");
 }
-void typesystem_want_addr(struct result_t *result)
+void typesystem_want_addr(struct result *result)
 {
 	if (!warn_on_type_mismatch)
 		return;

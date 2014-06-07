@@ -30,7 +30,7 @@ The two exceptions are:
 
 
 
-***   1) Labels are defined too late
+***   1) Symbols are defined too late
 
 If ACME cannot figure out the argument value in the first pass, it
 assumes that the command uses 16-bit addressing.
@@ -39,7 +39,7 @@ If it later finds out that the argument only needs 8 bits, ACME gives
 a warning ("using oversized addressing mode") and continues. However,
 if it finds out that the argument needs 24 bits, it gives an error.
 
-These problems can be solved by defining the labels *before* using
+These problems can be solved by defining the symbols *before* using
 them, so that the value can be figured out in the first pass. If this
 is not possible, you can use the postfix method, effectively exactly
 defining what addressing mode to use. The postfix method is described
@@ -65,16 +65,16 @@ target location using leading zeros. ACME will then use an addressing
 mode that is big enough even if the leading zeros would have been
 other digits:
 
-	label1 = $fb
-	label2 = $00fd
-	label3 = $0000ff
+	symbol1 = $fb
+	symbol2 = $00fd
+	symbol3 = $0000ff
 
 		lda $fa
 		sta $00fc
 		lda $0000fe
-		sta label1
-		lda label2
-		sta label3
+		sta symbol1
+		lda symbol2
+		sta symbol3
 
 will be assembled to
 
@@ -108,17 +108,17 @@ priorities.
 
 Here's an (overly complicated) example:
 
-	label1   = $fb
-	label2   = $fd
-	label3+3 = $ff	; set Force Bit 3 and store in label's flags
+	symbol1   = $fb
+	symbol2   = $fd
+	symbol3+3 = $ff	; set Force Bit 3 and store in symbol's flags
 
 		ldx   $fa
 		ldy+2 $fc	; set Force Bit 2 (16-bit addressing)
 		lda+3 $fe	; set Force Bit 3 (24-bit addressing)
-		stx   label1
-		sty+2 label2	; set Force Bit 2 (16-bit addressing)
-		sta   label3	; no need to set Force Bit 3 as it is
-				; already set in "label3".
+		stx   symbol1
+		sty+2 symbol2	; set Force Bit 2 (16-bit addressing)
+		sta   symbol3	; no need to set Force Bit 3 as it is
+				; already set in "symbol3".
 
 will be assembled to
 
@@ -131,13 +131,13 @@ will be assembled to
 
 Postfixes given directly after the command have higher priority than
 those given to the argument. As you can see, you can add the postfix
-to the label definition as well (equivalent to leading zeros).
+to the symbol definition as well (equivalent to leading zeros).
 
 Applying the byte extraction operators ("<" gives the low byte, ">"
 gives the high byte and "^" gives the bank byte of a value) to any
 value will clear the argument's Force Bits 2 and 3 and set Force
-Bit 1 instead. So "lda <label" will use 8-bit addressing, regardless
-of the label's Force Bits. Of course, you can change this by
+Bit 1 instead. So "lda <symbol" will use 8-bit addressing, regardless
+of the symbol's Force Bits. Of course, you can change this by
 postfixing the command again... :)
 
 
@@ -154,9 +154,9 @@ ACME acts upon it. So postfixes have the highest priority.
 
 Otherwise, ACME checks whether the argument has any Force Bits set
 (because of leading zeros or byte extraction operators, for example)
-or references to labels that have. If any Force Bit is set, ACME acts
+or references symbols that have. If any Force Bit is set, ACME acts
 upon it. This is the next priority level: Leading zeros or postfixes
-added to the label definition.
+added to the symbol definition.
 
 Otherwise, ACME checks whether the argument could be figured out in
 the first pass. If it couldn't, ACME tries to use a default addressing

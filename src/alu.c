@@ -19,9 +19,9 @@
 #include "encoding.h"
 #include "global.h"
 #include "input.h"
-#include "label.h"
 #include "output.h"
 #include "section.h"
+#include "symbol.h"
 #include "tree.h"
 
 
@@ -146,7 +146,7 @@ static struct dynabuf	*function_dyna_buf;	// dynamic buffer for fn names
 static struct operator	**operator_stack	= NULL;
 static int		operator_stk_size	= HALF_INITIAL_STACK_SIZE;
 static int		operator_sp;		// operator stack pointer
-static struct result_t	*operand_stack		= NULL;	// flags and value
+static struct result	*operand_stack		= NULL;	// flags and value
 static int		operand_stk_size	= HALF_INITIAL_STACK_SIZE;
 static int		operand_sp;		// value stack pointer
 static int		indirect_flag;	// Flag for indirect addressing
@@ -313,21 +313,21 @@ static intval_t my_asr(intval_t left, intval_t right)
 }
 
 
-// Lookup (and create, if necessary) label tree item and return its value.
-// DynaBuf holds the label's name and "zone" its zone.
+// Lookup (and create, if necessary) symbol tree item and return its value.
+// DynaBuf holds the symbol's name and "zone" its zone.
 // This function is not allowed to change DynaBuf because that's where the
-// label name is stored!
-static void get_label_value(zone_t zone)
+// symbol name is stored!
+static void get_symbol_value(zone_t zone)
 {
-	struct label	*label;
+	struct symbol	*symbol;
 
-	// if the label gets created now, mark it as unsure
-	label = Label_find(zone, MVALUE_UNSURE);
+	// if the symbol gets created now, mark it as unsure
+	symbol = symbol_find(zone, MVALUE_UNSURE);
 	// in first pass, count usage
 	if (pass_count == 0)
-		label->usage++;
+		symbol->usage++;
 	// push operand, regardless of whether int or float
-	operand_stack[operand_sp] = label->result;
+	operand_stack[operand_sp] = symbol->result;
 	operand_stack[operand_sp++].flags |= MVALUE_EXISTS;
 }
 
@@ -542,7 +542,7 @@ static void parse_octal_value(void)	// Now GotByte = "&"
 // Parse program counter ('*')
 static void parse_program_counter(void)	// Now GotByte = "*"
 {
-	struct result_t	pc;
+	struct result	pc;
 
 	GetByte();
 	vcpu_read_pc(&pc);
@@ -579,8 +579,8 @@ static void expect_operand_or_monadic_operator(void)
 		do
 			DYNABUF_APPEND(GlobalDynaBuf, '+');
 		while (GetByte() == '+');
-		Label_fix_forward_name();
-		get_label_value(Section_now->zone);
+		symbol_fix_forward_anon_name(FALSE);	// FALSE: do not increment counter
+		get_symbol_value(Section_now->zone);
 		goto now_expect_dyadic;
 
 	case '-':	// NEGATION operator or anonymous backward label
@@ -594,7 +594,7 @@ static void expect_operand_or_monadic_operator(void)
 		SKIPSPACE();
 		if (BYTEFLAGS(GotByte) & FOLLOWS_ANON) {
 			DynaBuf_append(GlobalDynaBuf, '\0');
-			get_label_value(Section_now->zone);
+			get_symbol_value(Section_now->zone);
 			goto now_expect_dyadic;
 		}
 
@@ -656,7 +656,7 @@ static void expect_operand_or_monadic_operator(void)
 		goto now_expect_dyadic;
 
 // FIXME - find a way to tell decimal point and LOCAL_PREFIX apart!
-	case '.':	// Local label or fractional part of float value
+	case '.':	// local symbol or fractional part of float value
 		GetByte();	// start after '.'
 		// check for fractional part of float value
 		if ((GotByte >= '0') && (GotByte <= '9')) {
@@ -667,13 +667,13 @@ static void expect_operand_or_monadic_operator(void)
 
 		if (Input_read_keyword()) {
 			// Now GotByte = illegal char
-			get_label_value(Section_now->zone);
+			get_symbol_value(Section_now->zone);
 			goto now_expect_dyadic;
 		}
 
 		alu_state = STATE_ERROR;
 		break;
-	// Decimal values and global labels
+	// decimal values and global symbols
 	default:	// all other characters
 		if ((GotByte >= '0') && (GotByte <= '9')) {
 			parse_decimal_value();
@@ -698,7 +698,7 @@ static void expect_operand_or_monadic_operator(void)
 				if (GotByte == '(') {
 					parse_function_call();
 				} else {
-					get_label_value(ZONE_GLOBAL);
+					get_symbol_value(ZONE_GLOBAL);
 					goto now_expect_dyadic;
 				}
 
@@ -1061,6 +1061,7 @@ static void try_to_reduce_stacks(int *open_parentheses)
 		else
 			RIGHT_INTVAL = -(RIGHT_INTVAL);
 		RIGHT_FLAGS &= ~MVALUE_ISBYTE;
+		RIGHT_ADDRREFS = -RIGHT_ADDRREFS;	// negate address ref count as well
 		goto remove_next_to_last_operator;
 
 	case OPHANDLE_LOWBYTEOF:
@@ -1346,7 +1347,7 @@ RNTLObutDontTouchIndirectFlag:
 
 // The core of it. Returns number of parentheses left open.
 // FIXME - make state machine using function pointers? or too slow?
-static int parse_expression(struct result_t *result)
+static int parse_expression(struct result *result)
 {
 	int	open_parentheses	= 0;
 
@@ -1427,31 +1428,13 @@ static int parse_expression(struct result_t *result)
 }
 
 
-// These functions handle numerical expressions.
-// There are several different ways to call the core function:
-// intval_t ALU_any_int(void);
-//		returns int value (0 if result was undefined)
-// intval_t ALU_defined_int(void);
-//		returns int value
-//		if result was undefined, serious error is thrown
-// void ALU_int_result(result_int_t*);
-//		stores int value and flags (floats are transformed to int)
-// void ALU_any_result(result_t*);
-//		stores value and flags (result may be either int or float)
-// int ALU_liberal_int(result_int_t*);
-//		stores int value and flags. allows one '(' too many (for x-
-//		indirect addressing). returns number of additional '(' (1 or 0).
-// int ALU_optional_defined_int(intval_t*);
-//		stores int value if given. Returns whether stored.
-//		Throws error if undefined.
-
 // return int value (if result is undefined, returns zero)
 // If the result's "exists" flag is clear (=empty expression), it throws an
 // error.
 // If the result's "defined" flag is clear, result_is_undefined() is called.
 intval_t ALU_any_int(void)
 {
-	struct result_t	result;
+	struct result	result;
 
 	if (parse_expression(&result))
 		Throw_error(exception_paren_open);
@@ -1469,7 +1452,7 @@ intval_t ALU_any_int(void)
 // return int value (if result is undefined, serious error is thrown)
 intval_t ALU_defined_int(void)
 {
-	struct result_t	result;
+	struct result	result;
 
 	if (parse_expression(&result))
 		Throw_error(exception_paren_open);
@@ -1489,7 +1472,7 @@ intval_t ALU_defined_int(void)
 // throws a serious error and therefore stops assembly.
 int ALU_optional_defined_int(intval_t *target)
 {
-	struct result_t	result;
+	struct result	result;
 
 	if (parse_expression(&result))
 		Throw_error(exception_paren_open);
@@ -1510,7 +1493,7 @@ int ALU_optional_defined_int(intval_t *target)
 // It the result's "exists" flag is clear (=empty expression), it throws an
 // error.
 // If the result's "defined" flag is clear, result_is_undefined() is called.
-void ALU_int_result(struct result_t *intresult)
+void ALU_int_result(struct result *intresult)
 {
 	if (parse_expression(intresult))
 		Throw_error(exception_paren_open);
@@ -1530,7 +1513,7 @@ void ALU_int_result(struct result_t *intresult)
 // This function allows for one '(' too many. Needed when parsing indirect
 // addressing modes where internal indices have to be possible. Returns number
 // of parentheses still open (either 0 or 1).
-int ALU_liberal_int(struct result_t *intresult)
+int ALU_liberal_int(struct result *intresult)
 {
 	int	parentheses_still_open;
 
@@ -1555,7 +1538,7 @@ int ALU_liberal_int(struct result_t *intresult)
 // It the result's "exists" flag is clear (=empty expression), it throws an
 // error.
 // If the result's "defined" flag is clear, result_is_undefined() is called.
-void ALU_any_result(struct result_t *result)
+void ALU_any_result(struct result *result)
 {
 	if (parse_expression(result))
 		Throw_error(exception_paren_open);

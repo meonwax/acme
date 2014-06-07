@@ -15,9 +15,9 @@
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-#define RELEASE		"0.95"		// update before release (FIXME)
+#define RELEASE		"0.95.1"	// update before release (FIXME)
 #define CODENAME	"Fenchurch"	// update before release
-#define CHANGE_DATE	"2 Jun"		// update before release
+#define CHANGE_DATE	"7 Jun"		// update before release
 #define CHANGE_YEAR	"2014"		// update before release
 //#define HOME_PAGE	"http://home.pages.de/~mac_bacon/smorbrod/acme/"	// FIXME
 #define HOME_PAGE	"http://sourceforge.net/p/acme-crossass/"	// FIXME
@@ -36,12 +36,12 @@
 #include "flow.h"
 #include "global.h"
 #include "input.h"
-#include "label.h"
 #include "macro.h"
 #include "mnemo.h"
 #include "output.h"
 #include "platform.h"
 #include "section.h"
+#include "symbol.h"
 
 
 // constants
@@ -75,7 +75,7 @@ static int		toplevel_src_count	= 0;
 static signed long	start_address		= ILLEGAL_START_ADDRESS;
 static signed long	fill_value		= MEMINIT_USE_DEFAULT;
 static const struct cpu_type	*default_cpu	= NULL;
-const char		*labeldump_filename	= NULL;
+const char		*symboldump_filename	= NULL;
 const char		*output_filename	= NULL;
 // maximum recursion depth for macro calls and "!source"
 signed long	macro_recursions_left	= MAX_NESTING;
@@ -124,7 +124,7 @@ static void show_help_and_exit(void)
 "      --" OPTION_MAXERRORS " NUMBER set number of errors before exiting\n"
 "      --" OPTION_MAXDEPTH " NUMBER  set recursion depth for macro calls and !src\n"
 "  -vDIGIT                set verbosity level\n"
-"  -DLABEL=VALUE          define global label\n"
+"  -DSYMBOL=VALUE         define global symbol\n"
 // as long as there is only one -W option:
 #define OPTIONWNO_LABEL_INDENT	"no-label-indent"
 "  -W" OPTIONWNO_LABEL_INDENT "      suppress warnings about indented labels\n"
@@ -141,20 +141,20 @@ PLATFORM_OPTION_HELP
 
 // error handling
 
-// tidy up before exiting by saving label dump
+// tidy up before exiting by saving symbol dump
 int ACME_finalize(int exit_code)
 {
 	FILE	*fd;
 
-	if (labeldump_filename) {
-		fd = fopen(labeldump_filename, FILE_WRITETEXT);
+	if (symboldump_filename) {
+		fd = fopen(symboldump_filename, FILE_WRITETEXT);
 		if (fd) {
-			Label_dump_all(fd);
+			symbols_dump_all(fd);
 			fclose(fd);
 		} else {
 			fprintf(stderr,
 				"Error: Cannot open label dump file \"%s\".\n",
-				labeldump_filename);
+				symboldump_filename);
 			exit_code = EXIT_FAILURE;
 		}
 	}
@@ -344,8 +344,8 @@ static void set_mem_contents(void)
 }
 
 
-// define label
-static void define_label(const char definition[])
+// define symbol
+static void define_symbol(const char definition[])
 {
 	const char	*walk	= definition;
 	signed long	value;
@@ -358,7 +358,7 @@ static void define_label(const char definition[])
 		could_not_parse(definition);
 	value =  string_to_number(walk + 1);
 	DynaBuf_append(GlobalDynaBuf, '\0');
-	Label_define(value);
+	symbol_define(value);
 }
 
 
@@ -372,7 +372,7 @@ static const char *long_option(const char *string)
 	else if (strcmp(string, OPTION_OUTFILE) == 0)
 		output_filename = cliargs_safe_get_next(name_outfile);
 	else if (strcmp(string, OPTION_LABELDUMP) == 0)
-		labeldump_filename = cliargs_safe_get_next(name_dumpfile);
+		symboldump_filename = cliargs_safe_get_next(name_dumpfile);
 	else if (strcmp(string, OPTION_SETPC) == 0)
 		set_starting_pc();
 	else if (strcmp(string, OPTION_CPU) == 0)
@@ -402,7 +402,7 @@ static char short_option(const char *argument)
 	while (*argument) {
 		switch (*argument) {
 		case 'D':	// "-D" define constants
-			define_label(argument + 1);
+			define_symbol(argument + 1);
 			goto done;
 		case 'h':	// "-h" shows help
 			show_help_and_exit();
@@ -412,8 +412,8 @@ static char short_option(const char *argument)
 		case 'o':	// "-o" selects output filename
 			output_filename = cliargs_safe_get_next(name_outfile);
 			break;
-		case 'l':	// "-l" selects label dump filename
-			labeldump_filename = cliargs_safe_get_next(name_dumpfile);
+		case 'l':	// "-l" selects symbol dump filename
+			symboldump_filename = cliargs_safe_get_next(name_dumpfile);
 			break;
 		case 'v':	// "-v" changes verbosity
 			Process_verbosity++;
@@ -465,7 +465,7 @@ int main(int argc, const char *argv[])
 	PLATFORM_INIT;
 	// init some keyword trees needed for argument handling
 	CPUtype_init();
-	Label_clear_init();	// needed so 
+	symbols_clear_init();	// needed so 
 	Outputfile_init();
 	// prepare a buffer large enough to hold pointers to "-D" switch values
 //	cli_defines = safe_malloc(argc * sizeof(*cli_defines));
@@ -481,7 +481,7 @@ int main(int argc, const char *argv[])
 	Encoding_init();
 	Flow_init();
 	Input_init();
-	Label_register_init();
+	symbols_register_init();
 	Macro_init();
 	Mnemo_init();
 	Output_init(fill_value);

@@ -55,6 +55,13 @@ Bug in ACME, code follows
 C-style "==" comparison detected.
     To check for equality, use a single '=' character instead.
 
+Converted to integer for binary logic operator.
+    Applying binary logic to float values does not make much sense,
+    therefore floats will be converted to integer in this case.
+
+"EOR" is deprecated; use "XOR" instead.
+    This means the operator, not the mnemonic.
+
 Found old "!for" syntax.
     Please update your sources to use the new "!for" syntax. See
     AllPOs.txt for details.
@@ -64,22 +71,22 @@ Found new "!for" syntax.
     When using the "-Wno-old-for" switch to disable the warning about
     the older syntax, the new syntax will trigger this warning.
 
-Implicit label definition not in leftmost column.
-    An implicit label definition has blanks before the label name.
+Label dump file already chosen.
+    The "!sl" command was given more than once (or in addition to the
+    "--labeldump" command line option). Only use it once.
+
+Label name not in leftmost column.
+    A label definition has blanks before the label name.
     Imagine this source code:
 		lda #00
 		imx
 		rts
     Obviously, there's a typo in the middle line (imx instead of inx),
-    but ACME does not recognize this: It looks just like an implicit
-    label definition! Therefore releases 0.89 and higher warn you when
-    an implicit label does not start in column 1. Releases 0.94 and
-    higher support a command line option to switch off this warning
+    but ACME does not recognize this: It looks just like a label
+    definition! Therefore releases 0.89 and higher warn you when a
+    label name does not start in column 1. Releases 0.94 and higher
+    support a command line option to switch off this warning
     ("-Wno-label-indent").
-
-Label dump file already chosen.
-    The "!sl" command was given more than once (or in addition to the
-    "--labeldump" command line option). Only use it once.
 
 Label name starts with a shift-space character.
     The name of a global label starts with a shift-space character. It
@@ -122,7 +129,7 @@ Using oversized addressing mode.
     the argument's value in the first pass, therefore assuming a 16-
     bit addressing mode. If, in a later pass, ACME finds out that the
     argument is small enough to fit in 8 bits, then this warning is
-    shown. If you define all your zeropage labels *before* they are
+    shown. If you define all your zeropage symbols *before* they are
     first used, this shouldn't happen. If you know that a specific
     argument fits in 8 bits, you can force ACME to use 8 bits
     addressing by postfixing the command with "+1". Example:
@@ -202,10 +209,6 @@ Illegal combination of command and postfix.
 Illegal postfix.
     You used a postfix other than "+1", "+2" or "+3".
 
-Label already defined.
-    You defined a label that already had a different value. To change
-    a label's value, use the "!set" pseudo opcode.
-
 Macro already defined.
     Macros can only be defined once. If you define a macro twice, ACME
     will help you find the definitions by giving a warning for the
@@ -219,7 +222,7 @@ Macro not defined (or wrong signature).
     formal parameters and the call's actual arguments.
 
 Macro parameter twice.
-    The same label name is used two (or more) times in the same macro
+    The same symbol name is used two (or more) times in the same macro
     parameter list.
 
 Negative value - cannot choose addressing mode.
@@ -244,6 +247,10 @@ Quotes still open at end of line.
 Source file contains illegal character.
     Your source code file contained a null byte.
 
+Symbol already defined.
+    You defined a symbol that already had a different value. To change
+    a symbol's value, use the "!set" pseudo opcode.
+
 Syntax error.
     Guess what - there's a syntax error.
 
@@ -263,7 +270,7 @@ There's more than one character.
     contained more than a single character.
 
 Too late for postfix.
-    You can only postfix labels at the start, before they are used for
+    You can only postfix symbols at the start, before they are used for
     the first time.
 
 Too many '('.
@@ -291,7 +298,7 @@ Unknown "* =" segment modifier.
     You used a modifier keyword ACME does not know.
 
 Value not yet defined.
-    A value could not be worked out. Maybe you mistyped a label name.
+    A value could not be worked out. Maybe you mistyped a symbol name.
     Whether this is given as a "normal" or as a serious error depends
     on the currently parsed pseudo opcode.
 
@@ -346,7 +353,7 @@ Too deeply nested. Recursive "!source"?
     64.
 
 Value not yet defined.
-    A value could not be worked out. Maybe you mistyped a label name.
+    A value could not be worked out. Maybe you mistyped a symbol name.
     Whether this is given as a "normal" or as a serious error depends
     on the currently parsed pseudo opcode.
 

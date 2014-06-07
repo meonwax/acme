@@ -12,7 +12,7 @@ typedef unsigned int	zone_t;
 typedef signed long	intval_t;	// at least 32 bits
 typedef unsigned long	uintval_t;	// just for logical shift right
 // result structure type definition with support for floating point
-struct result_t {	// either int or float
+struct result {	// either int or float
 	int	flags;	// expression flags
 	union {
 		intval_t	intval;	// integer value
