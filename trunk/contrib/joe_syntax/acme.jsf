@@ -1,0 +1,297 @@
+# JOE syntax highlight file for ACME assembly language
+# new in version 3: added jml, jsl
+# new in version 4: added !warn, !error, !serious
+# new in version 5: changed mnemo colors
+# new in version 6: added !ifndef, !addr
+
+# define colors
+#
+# bold inverse blink dim underline
+# white cyan magenta blue yellow green red black
+# bg_white bg_cyan bg_magenta bg_blue bg_yellow bg_green bg_red bg_black
+
+=Idle
+=Ident
+=Anon		bold
+=Bad		bold red
+=Call		bold
+=Comment 	green
+=Constant 	cyan
+=Keyword 	bold
+=Pseudo		bold
+=Mnemo6502	bold yellow
+=PCMnemo6502	bold red
+=Mnemo6510	bg_red bold yellow
+=PCMnemo6510	bg_red bold red
+=Mnemo65c02	bg_cyan bold yellow
+=PCMnemo65c02	bg_cyan bold red
+=Mnemo65816	bg_blue bold yellow
+=PCMnemo65816	bg_blue bold red
+
+:reset Idle
+	*		idle		noeat
+	" \t"		reset
+
+:idle Idle
+	*		idle
+	";"		line_comment	recolor=-1
+	":{\n"		reset
+	"!.a-zA-Z_€-"	checkstring	recolor=-1 buffer
+	"+"		anonf_or_macro	recolor=-1
+	"-"		anonb		recolor=-1
+	"0"		got_zero	recolor=-1
+	"%"		binary		recolor=-1
+	"&"		octal		recolor=-1
+	"1-9"		decimal		recolor=-1
+	"$"		hex		recolor=-1
+	"'"		char		recolor=-1
+	"\""		string		recolor=-1
+# *=	"*"
+#	",:=()><[]*&|!~+\-%^"	control		recolor=-1
+
+:line_comment Comment
+	*		line_comment
+	"\n"		reset
+
+:call	Call
+	*		idle		noeat
+	"a-zA-Z0-9€-"	call
+
+:anonf_or_macro Anon
+	*		idle		noeat
+	"+"		anonf
+	".a-zA-Z0-9€-"	call		recolor=-2
+
+:anonf Anon
+	*		idle		noeat
+	"+"		anonf
+
+:anonb	Anon
+	*		idle		noeat
+	"-"		anonb
+
+:got_zero Constant
+	*		idle	noeat
+	"xX"		hex
+	"0-9"		decimal	noeat
+
+:binary Constant
+	*		idle	noeat
+	"01.#"		binary
+	"2-9"		badnum	noeat
+
+:octal Constant
+	*		idle	noeat
+	"0-7"		octal
+	"89"		badnum	noeat
+
+:hex Constant
+	*		idle	noeat
+	"0-9A-Fa-f"	hex
+
+:decimal Constant
+	*		idle	noeat
+	"0-9"		decimal
+
+:badnum Bad
+	*		idle	noeat
+	"0-9"		badnum
+
+:string	Constant
+	*		string
+	"\""		idle
+
+:char Constant
+	*		char
+	"'"		idle
+
+:ident Idle
+	*		idle		noeat
+	"a-zA-Z0-9_"	ident
+
+:checkstring Ident
+	*		idle		noeat istrings
+	"!8"		pseudo
+	"!08"		pseudo
+	"!by"		pseudo
+	"!byte"		pseudo
+	"!16"		pseudo
+	"!wo"		pseudo
+	"!word"		pseudo
+	"!24"		pseudo
+	"!32"		pseudo
+	"!tx"		pseudo
+	"!text"		pseudo
+	"!raw"		pseudo
+	"!pet"		pseudo
+	"!scr"		pseudo
+	"!scrxor"	pseudo
+	"!ct"		pseudo
+	"!convtab"	pseudo
+	"!fi"		pseudo
+	"!fill"		pseudo
+	"!zn"		pseudo
+	"!zone"		pseudo
+	"!sl"		pseudo
+	"!src"		pseudo
+	"!source"	pseudo
+	"!bin"		pseudo
+	"!binary"	pseudo
+	"!eof"		pseudo
+	"!endoffile"	pseudo
+	"!pseudopc"	pseudo
+	"!align"	pseudo
+	"!cpu"		pseudo
+	"!to"		pseudo
+	"!set"		pseudo
+	"!macro"	pseudo
+	"!if"		pseudo
+	"!do"		pseudo
+	"!for"		pseudo
+	"!ifdef"	pseudo
+	"!ifndef"	pseudo
+	"!al"		pseudo
+	"!as"		pseudo
+	"!rl"		pseudo
+	"!rs"		pseudo
+	"!initmem"	pseudo
+	"!warn"		pseudo
+	"!error"	pseudo
+	"!serious"	pseudo
+	"!addr"		pseudo
+	"!address"	pseudo
+	"ora"	mnemo6502
+	"asl"	mnemo6502
+	"and"	mnemo6502
+	"rol"	mnemo6502
+	"eor"	mnemo6502
+	"lsr"	mnemo6502
+	"adc"	mnemo6502
+	"ror"	mnemo6502
+	"sta"	mnemo6502
+	"stx"	mnemo6502
+	"lda"	mnemo6502
+	"ldx"	mnemo6502
+	"cmp"	mnemo6502
+	"dec"	mnemo6502
+	"sbc"	mnemo6502
+	"inc"	mnemo6502 
+	"bit"	mnemo6502
+	"cpx"	mnemo6502
+	"cpy"	mnemo6502
+	"ldy"	mnemo6502
+	"sty"	mnemo6502 
+	"php"	mnemo6502
+	"clc"	mnemo6502
+	"plp"	mnemo6502
+	"sec"	mnemo6502
+	"pha"	mnemo6502
+	"cli"	mnemo6502
+	"pla"	mnemo6502
+	"sei"	mnemo6502
+	"dey"	mnemo6502
+	"txa"	mnemo6502
+	"tya"	mnemo6502
+	"txs"	mnemo6502
+	"tay"	mnemo6502
+	"tax"	mnemo6502
+	"clv"	mnemo6502
+	"tsx"	mnemo6502
+	"iny"	mnemo6502
+	"dex"	mnemo6502
+	"cld"	mnemo6502
+	"inx"	mnemo6502
+	"nop"	mnemo6502
+	"sed"	mnemo6502
+	"brk"	pcmnemo6502
+	"jmp"	pcmnemo6502
+	"jsr"	pcmnemo6502
+	"bpl"	pcmnemo6502
+	"bmi"	pcmnemo6502
+	"bvc"	pcmnemo6502
+	"bvs"	pcmnemo6502
+	"bcc"	pcmnemo6502
+	"bcs"	pcmnemo6502
+	"bne"	pcmnemo6502
+	"beq"	pcmnemo6502
+	"rti"	pcmnemo6502
+	"rts"	pcmnemo6502
+	"phy"	mnemo65c02
+	"ply"	mnemo65c02
+	"phx"	mnemo65c02
+	"plx"	mnemo65c02
+	"tsb"	mnemo65c02
+	"trb"	mnemo65c02
+	"stz"	mnemo65c02
+	"bra"	pcmnemo65c02
+	"wai"	mnemo65816
+	"pei"	mnemo65816
+	"per"	mnemo65816
+	"mvp"	mnemo65816
+	"mvn"	mnemo65816
+	"rep"	mnemo65816
+	"sep"	mnemo65816
+	"pea"	mnemo65816
+	"phd"	mnemo65816
+	"tcs"	mnemo65816
+	"pld"	mnemo65816
+	"tsc"	mnemo65816
+	"wdm"	mnemo65816
+	"phk"	mnemo65816
+	"tcd"	mnemo65816
+	"tdc"	mnemo65816
+	"phb"	mnemo65816
+	"txy"	mnemo65816
+	"plb"	mnemo65816
+	"tyx"	mnemo65816
+	"xba"	mnemo65816
+	"xce"	mnemo65816
+	"brl"	pcmnemo65816
+	"cop"	pcmnemo65816
+	"jml"	pcmnemo65816
+	"jsl"	pcmnemo65816
+	"rtl"	pcmnemo65816
+	"stp"	pcmnemo65816
+	"slo"	mnemo6510
+	"rla"	mnemo6510
+	"sre"	mnemo6510
+	"rra"	mnemo6510
+	"sax"	mnemo6510
+	"lax"	mnemo6510
+	"dcp"	mnemo6510
+	"isc"	mnemo6510
+	"anc"	mnemo6510
+	"asr"	mnemo6510
+	"arr"	mnemo6510
+	"sbx"	mnemo6510
+	"dop"	mnemo6510
+	"top"	mnemo6510
+	"lxa"	mnemo6510
+	"jam"	pcmnemo6510
+	"else"	keyword
+	"until"	keyword
+	"while"	keyword
+done
+	"!a-zA-Z0-9"	checkstring
+#	" \t"		idle		noeat
+
+:pseudo		Pseudo
+	*		idle		noeat
+:mnemo6502	Mnemo6502
+	*		idle		noeat
+:pcmnemo6502	PCMnemo6502
+	*		idle		noeat
+:mnemo65c02	Mnemo65c02
+	*		idle		noeat
+:pcmnemo65c02	PCMnemo65c02
+	*		idle		noeat
+:mnemo65816	Mnemo65816
+	*		idle		noeat
+:pcmnemo65816	PCMnemo65816
+	*		idle		noeat
+:mnemo6510	Mnemo6510
+	*		idle		noeat
+:pcmnemo6510	PCMnemo6510
+	*		idle		noeat
+:keyword	Keyword
+	*		idle		noeat
