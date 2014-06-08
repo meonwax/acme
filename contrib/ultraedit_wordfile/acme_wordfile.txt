@@ -1,0 +1,131 @@
+/L10"ACME 65xx Asm" Nocase Line Comment = ; Escape Char = \ String Chars = "' File Extensions = A ASM ASS
+/Delimiters = :;#$"'()<>^-*/%+=&| ,	?
+/Function String = "%[a-zA-Z_][a-zA-Z0-9_]+"
+/Indent Strings = "{"
+/Unindent Strings = "}"
+/C1"General opcodes"
+,
+ADC
+AND
+ASL
+CLC COP
+CLD
+CLI
+CLV
+CMP
+CPX
+CPY
+DEC
+DEX
+DEY
+DCP
+EOR
+INC
+INX
+INY
+ISC
+LDA
+LDX
+LDY
+LSR
+LAX
+MVN MVP
+NOP
+ORA
+PHA PEA PEI PER PHB PHD PHK PLB PLD PHX PHY PLX PLY
+PHP
+PLA
+PLP
+ROL REP
+ROR
+RLA RRA
+SBC SEP STZ S
+SEC
+SED
+SEI
+STA
+STX
+STY
+SLO SRE SAX
+TAX TCD TCS TDC TSC TXY TYX TRB TSB
+TAY
+TSX
+TXA
+TXS
+TYA
+WDM
+X XBA XCE
+Y
+/C2"Program flow opcodes"
+BCC BRL BRA
+BCS
+BEQ
+BIT
+BMI
+BNE
+BPL
+BRK
+BVC
+BVS
+JMP JML JSL
+JSR
+RTI RTL
+RTS
+STP
+WAI
+/C3"Pseudo opcodes"
+!08 !by !byte !8
+!16 !wo !word
+!24
+!32
+!fill !fi
+!addr !address
+!convtab !ct
+!text !tx
+!pet
+!raw
+!scr
+!scrxor
+!to
+!source !src
+!binary !bin
+!sl
+!zone !zn
+!if
+!ifdef
+!ifndef
+!for
+!set
+!do
+!endoffile !eof
+!macro
+!initmem
+!pseudopc
+!align
+!cpu
+!al
+!as
+!rl
+!rs
+!warn !error !serious
+else
+/C4 "operators"
+>> > >=
+=
++
+! !=
+^
+-
+*
+// /
+%
++
+-
+<< < <=
+&
+|
+DIV
+NOT
+MOD
+OR
+XOR

@@ -1,0 +1,51 @@
+Just to make sure:
+The syntax file and this help text come with ABSOLUTELY NO WARRANTY!
+If you destroy your system, don't come whining to me.
+
+
+--------------------
+ systemwide install
+--------------------
+
+1) Copy the syntax file to the correct directory by typing:
+cp acme.jsf /etc/joe/syntax/
+
+2) Add the following lines to the "SECOND SECTION" of "/etc/joe/joerc":
+
+*.a
+-indentc 9
+-istep 1
+-autoindent
+-syntax acme
+
+3) done!
+
+
+--------------
+ user install
+--------------
+
+1) Copy the syntax file to the correct directory by typing:
+mkdir -p ~/.joe/syntax
+cp acme.jsf ~/.joe/syntax/
+
+2) If you do not have a ~/.joerc file yet, create one by typing:
+if [ -e ~/.joerc ] ; then echo :include /etc/joe/joerc > ~/.joerc ; fi
+
+3) Add the following lines to the "SECOND SECTION" of your .joerc file:
+
+*.a
+-indentc 9
+-istep 1
+-autoindent
+-syntax acme
+
+4) done!
+
+
+---------
+ testing
+---------
+
+After installing the syntax file, open the file "color.a" in joe to
+check whether it works (and to see what it looks like).
