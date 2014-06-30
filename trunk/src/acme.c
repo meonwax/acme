@@ -267,7 +267,8 @@ static void set_output_format(void)
 {
 	keyword_to_dynabuf(cliargs_safe_get_next("output format"));
 	if (!Output_set_output_format()) {
-		fprintf(stderr, "%sUnknown output format (use 'cbm' or 'plain').\n", cliargs_error);
+		// FIXME - define error message near the actual format list, so they match!
+		fprintf(stderr, "%sUnknown output format (use 'cbm', 'plain' or 'apple').\n", cliargs_error);
 		exit(EXIT_FAILURE);
 	}
 }
