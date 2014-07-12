@@ -15,7 +15,7 @@ USERBIN		= $(HOME)/bin
 
 all: $(PROGS)
 
-acme.exe: acme.o alu.o basics.o cliargs.o cpu.o dynabuf.o encoding.o flow.o global.o input.o macro.o mnemo.o output.o platform.o section.o symbol.o tree.o typesystem.o_dos.o resource.res
+acme.exe: acme.o alu.o basics.o cliargs.o cpu.o dynabuf.o encoding.o flow.o global.o input.o macro.o mnemo.o output.o platform.o section.o symbol.o tree.o typesystem.o _dos.o resource.res
 	$(CC) $(LIBS) $(CFLAGS) -o acme acme.o alu.o basics.o cliargs.o cpu.o dynabuf.o encoding.o flow.o global.o input.o macro.o mnemo.o output.o platform.o section.o symbol.o tree.o typesystem.o resource.res
 	strip acme.exe
 
