@@ -1,0 +1,50 @@
+;ACME 0.95
+
+!ifdef lib_cbm_kernal_a !eof
+lib_cbm_kernal_a = 1
+
+; Taken from the web.
+; Sorry, I can't give credit because I don't have the URL anymore.
+; There are alternative names for some calls.
+
+!address {
+	k_cint		= $ff81
+	k_ioinit	= $ff84
+	k_ramtas	= $ff87
+	k_restor	= $ff8a
+	k_vector	= $ff8d
+	k_setmsg	= $ff90
+	k_secnd		= $ff93
+	k_tksa		= $ff96
+	k_memtop	= $ff99
+	k_membot	= $ff9c
+	k_key		= $ff9f
+	k_settmo	= $ffa2
+	k_iecin		= $ffa5:k_acptr		= $ffa5
+	k_iecout	= $ffa8:k_ciout		= $ffa8
+	k_untalk	= $ffab:k_untlk		= $ffab
+	k_unlisten	= $ffae:k_unlsn		= $ffae
+	k_listen	= $ffb1:k_listn		= $ffb1
+	k_talk		= $ffb4
+	k_readss	= $ffb7
+	k_setlfs	= $ffba
+	k_setnam	= $ffbd	; A is length, X is ptr-low, Y is ptr-high
+	k_open		= $ffc0
+	k_close		= $ffc3:k_close_A	= $ffc3
+	k_chkin		= $ffc6:k_chkin_X	= $ffc6
+	k_chkout	= $ffc9:k_chkout_X	= $ffc9:k_ckout		= $ffc9
+	k_clrchn	= $ffcc:k_clrch		= $ffcc
+	k_chrin		= $ffcf:k_basin		= $ffcf
+	k_chrout	= $ffd2:k_basout	= $ffd2:k_bsout		= $ffd2
+	k_load		= $ffd5:k_load_AXY	= $ffd5	; A means verify, YYXX is desired load address (if channel == 0), returns end+1 in YYXX
+	k_save		= $ffd8:k_save_AXY	= $ffd8	; A is zp address of start ptr(!), YYXX is end address (+1)
+	k_settim	= $ffdb
+	k_rdtim		= $ffde
+	k_stop		= $ffe1
+	k_getin		= $ffe4:k_get		= $ffe4
+	k_clall		= $ffe7
+	k_udtim		= $ffea
+	k_scrorg	= $ffed
+	k_plot		= $fff0	; get/set cursor (to set, clear carry)
+	k_iobase	= $fff3
+}
