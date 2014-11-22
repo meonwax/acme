@@ -1,4 +1,4 @@
-CFLAGS		= -Wall -s
+CFLAGS		= -Wall -s -Wstrict-prototypes
 LIBS		= -lm
 CC		= gcc
 RM		= rm

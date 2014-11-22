@@ -13,6 +13,19 @@ outlining the platform specific changes.
 
 
 ----------------------------------------------------------------------
+Section:   New in release 0.95.2
+----------------------------------------------------------------------
+
+Changed "save labels" to "symbol list" in a lot of code, error
+    messages and docs.
+Added "!symbollist" alias for "!sl" pseudo opcode.
+Change in undocumented ("illegal") opcodes: ANC #8 now generates 0x0b
+    instead of 0x2b (both opcodes do the same thing).
+Added experimental support for generating a report listing. Thanks to
+    Johann Klasek for writing this extension patch.
+
+
+----------------------------------------------------------------------
 Section:   New in release 0.95.1
 ----------------------------------------------------------------------
 

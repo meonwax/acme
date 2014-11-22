@@ -27,27 +27,31 @@ In release 0.89, more were added; and in 0.94.8, another one (lxa):
       |           addressing mode           |
 Mnemo | implied #8    8    8,x    16   16,x |  performs:
 ------+-------------------------------------+------------------------
- anc  |   --    2b    --    --    --    --  |  A = A & arg, then C=N
+ anc  |   --    0b*   --    --    --    --  |  A = A & arg, then C=N
  asr  |   --    4b    --    --    --    --  |  A = A & arg, then lsr
  arr  |   --    6b    --    --    --    --  |  A = A & arg, then ror
  sbx  |   --    cb    --    --    --    --  |  X = (A & X) - arg
- dop  |   80*   80    04    14    --    --  |  skips next byte
- top  |   0c*   --    --    --    0c    1c  |  skips next two bytes
+ dop  |   80**  80    04    14    --    --  |  skips next byte
+ top  |   0c**  --    --    --    0c    1c  |  skips next two bytes
  jam  |   02    --    --    --    --    --  |  crash (wait for reset)
- lxa  |   --    ab**  --    --    --    --  |  A/X = (A | ??) & arg
+ lxa  |   --    ab*** --    --    --    --  |  A/X = (A | ??) & arg
 
 Example:
 		!cpu 6510	; activate additional mnemonics...
 		lax (some_zp_label,x)	; ...and use them. No, this
 		dcp (other_zp_label),y	; example does not make sense.
 
-*) Note that "dop" and "top" can be used with implied addressing, but
+*) Up until ACME version 0.95.1, anc#8 generated opcode 0x2b. Since
+ACME version 0.95.2, anc#8 generates opcode 0x0b. Both opcodes work
+the same way.
+
+**) Note that "dop" and "top" can be used with implied addressing, but
 the generated opcodes are those for immediate and 16-bit absolute
 addressing, respectively. Using dop/top with x-indexed addressing
 might have its uses when timing is critical (crossing a page border
 adds a penalty cycle).
 
-**) This opcode is said to first perform an ORA with an arbitrary(!)
+***) This opcode is said to first perform an ORA with an arbitrary(!)
 value, then do an AND with the given argument, then do a TAX.
 This means it is unstable and therefore useless - unless the given
 argument is zero, in which case it reliably clears both A and X.
@@ -70,10 +74,10 @@ Just for the sake of completeness: Here are all the remaining opcodes
 
 Opcode|  Description
 ------+--------------------------------------------------------------
-  0b  |  same as 2b               anc #8
   12  |  same as 02 and others    jam                 CRASH
   1a  |  same as (*legal*) ea     nop
   22  |  same as 02 and others    jam                 CRASH
+  2b  |  same as 0b               anc #8
   32  |  same as 02 and others    jam                 CRASH
   34  |  same as 14 and others    dop 8,x
   3a  |  same as (*legal*) ea     nop

@@ -6,6 +6,7 @@
 //  4 Oct 2006	Fixed a typo in a comment
 // 22 Nov 2007	Added warn_on_indented_labels
 //  2 Jun 2014	Added warn_on_old_for and warn_on_type_mismatch
+// 19 Nov 2014	Merged Johann Klasek's report listing generator patch
 #include <stdio.h>
 #include "platform.h"
 #include "acme.h"
@@ -107,6 +108,7 @@ int		pass_undefined_count;	// "NeedValue" type errors
 int		pass_real_errors;	// Errors yet
 signed long	max_errors		= MAXERRORS;	// errors before giving up
 FILE		*msg_stream		= NULL;	// set to stdout by --use-stdout
+struct report 	*report			= NULL;
 
 
 // memory allocation stuff

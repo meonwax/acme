@@ -71,10 +71,6 @@ Found new "!for" syntax.
     When using the "-Wno-old-for" switch to disable the warning about
     the older syntax, the new syntax will trigger this warning.
 
-Label dump file already chosen.
-    The "!sl" command was given more than once (or in addition to the
-    "--labeldump" command line option). Only use it once.
-
 Label name not in leftmost column.
     A label definition has blanks before the label name.
     Imagine this source code:
@@ -117,6 +113,10 @@ Segment starts inside another one, overwriting it.
     "* =".
     Future versions of ACME might throw an error instead of a warning
     in this case.
+
+Symbol list file name already chosen.
+    The "!sl" command was given more than once (or in addition to the
+    "--symbollist" command line option). Only use it once.
 
 Used "!to" without file format indicator. Defaulting to "cbm".
     Now that "!to" can be given a file format keyword (either "plain"
@@ -362,7 +362,7 @@ Value not yet defined.
 Section:   Errors on closedown
 ----------------------------------------------------------------------
 
-Cannot open label dump file "FILENAME".
+Cannot open symbol list file "FILENAME".
 Cannot open output file "FILENAME".
     Make sure the name doesn't contain wildcard characters and you
     have write access to the directory.

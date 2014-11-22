@@ -143,7 +143,7 @@ found in the file "AllPOs.txt". Here's just a short overview:
 !byte   !word   !24   !32   !fill   !align
 ...for directly placing values into the output file.
 
-!zone   !sl
+!zone   !symbollist
 ...for defining the scope of local symbols and saving global symbols.
 
 !convtab   !pet   !raw   !scr   !scrxor   !text
@@ -187,14 +187,16 @@ Available options are:
         This is more or less useless, because the help is also shown
         if ACME is run without any arguments at all.
 
-    -f, --format FORMAT    select output format ("plain", "cbm" or "apple")
-    -o, --outfile FILE     select output file
-        Output filename and format can also be given using the "!to"
+    -f, --format FORMAT    set output file format ("plain", "cbm" or "apple")
+    -o, --outfile FILE     set output file name
+        Output file name and format can also be given using the "!to"
         pseudo opcode. If the format is not specified, "!to" defaults
         to "cbm", while the command line option defaults to "plain".
 
-    -l, --labeldump FILE   select label dump file
-        This can also be given using the "!sl" pseudo opcode.
+    -l, --symbollist FILE  set symbol list file name
+        This can also be given using the "!symbollist"/"!sl" pseudo
+        opcode. The switch was called "--labeldump" in older versions,
+        that name still works, too.
 
     --setpc NUMBER         set program counter
         This can also be given in the source code using "* = NUMBER".

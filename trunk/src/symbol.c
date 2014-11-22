@@ -36,8 +36,8 @@ static void dump_one_symbol(struct node_ra_t *node, FILE *fd)
 	// output name
 	if (warn_on_type_mismatch
 	&& symbol->result.addr_refs == 1)
-		fprintf(fd, "!addr\t");
-	fprintf(fd, "%s", node->id_string);
+		fprintf(fd, "!addr");
+	fprintf(fd, "\t%s", node->id_string);
 	switch (symbol->result.flags & MVALUE_FORCEBITS) {
 	case MVALUE_FORCE16:
 		fprintf(fd, "+2\t= ");
@@ -169,7 +169,7 @@ static enum eos PO_set(void)	// Now GotByte = illegal char
 }
 
 
-// Select dump file
+// set file name for symbol list
 static enum eos PO_sl(void)
 {
 	// bugfix: first read filename, *then* check for first pass.
@@ -186,14 +186,14 @@ static enum eos PO_sl(void)
 	if (pass_count)
 		return SKIP_REMAINDER;
 
-	// if symbol dump file already chosen, complain and exit
-	if (symboldump_filename) {
-		Throw_warning("Label dump file already chosen.");
+	// if symbol list file name already set, complain and exit
+	if (symbollist_filename) {
+		Throw_warning("Symbol list file name already chosen.");
 		return SKIP_REMAINDER;
 	}
 
 	// get malloc'd copy of filename
-	symboldump_filename = DynaBuf_get_copy(GlobalDynaBuf);
+	symbollist_filename = DynaBuf_get_copy(GlobalDynaBuf);
 	// ensure there's no garbage at end of line
 	return ENSURE_EOS;
 }
@@ -201,8 +201,9 @@ static enum eos PO_sl(void)
 
 // predefined stuff
 static struct node_t	pseudo_opcodes[]	= {
-	PREDEFNODE("set",	PO_set),
-	PREDEFLAST(s_sl,	PO_sl),
+	PREDEFNODE("set",		PO_set),
+	PREDEFNODE("symbollist",	PO_sl),
+	PREDEFLAST(s_sl,		PO_sl),
 	//    ^^^^ this marks the last element
 };
 
@@ -268,10 +269,10 @@ void symbol_define(intval_t value)
 
 
 // dump global symbols to file
-void symbols_dump_all(FILE *fd)
+void symbols_list(FILE *fd)
 {
 	Tree_dump_forest(symbols_forest, ZONE_GLOBAL, dump_one_symbol, fd);
-	PLATFORM_SETFILETYPE_TEXT(symboldump_filename);
+	PLATFORM_SETFILETYPE_TEXT(symbollist_filename);
 }
 
 
