@@ -3,6 +3,7 @@
 # new in version 4: added !warn, !error, !serious
 # new in version 5: changed mnemo colors
 # new in version 6: added !ifndef, !addr
+# new in version 7: added !symbollist
 
 # define colors
 #
@@ -133,6 +134,7 @@
 	"!zn"		pseudo
 	"!zone"		pseudo
 	"!sl"		pseudo
+	"!symbollist"	pseudo
 	"!src"		pseudo
 	"!source"	pseudo
 	"!bin"		pseudo

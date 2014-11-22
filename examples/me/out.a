@@ -512,12 +512,12 @@ init		ldx repeatedtry	; first start ?
 		stx addr($11e7)
 		lda mode	; which mode ?
 		bmi +		; if 40 then
-			jsr kernel_switchmode	; switch mode
+			jsr e_switchmode	; switch mode
 +		lda #111	; DIN on
 		sta D8502
 		lda #%..##..##
 		sta R8502
-		jsr kernel_copyfont
+		jsr e_copyfont
 		lda #47		; DIN off
 		sta D8502
 		lda #<addfont1_start	; adjust font...
@@ -744,7 +744,7 @@ gonot		rts		; fixme - could save a byte here
 F_goout		jsr willblost	; changes saved ?
 		beq gonot
 F_gosys		+bank15
-		jsr kernel_cls	; CLS
+		jsr e_cls	; CLS
 		lda #0		; '0' for
 		sta locks	; 'CBM-Shift' on
 		sta addr($0ac5)	; 'ASC/DIN' on

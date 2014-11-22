@@ -1,4 +1,4 @@
-CFLAGS		= -O3 -mthrowback -mlibscl -Wall
+CFLAGS		= -O3 -mthrowback -mlibscl -Wall -Wstrict-prototypes
 LIBS		= -lm
 CC		= gcc
 RM		= rm

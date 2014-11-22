@@ -73,12 +73,8 @@ Parameters:	ANDVALUE: Any formula the value parser accepts, but it
 		FILLVALUE: Any formula the value parser accepts. If it
 		is omitted, a default value is used (currently 234,
 		that's the 6502 CPU's NOP command).
-Examples:	; eliminate the 6502's JMP($xxff)-Bug:
-		!align 1, 0	; wait for even address
-	Label	!word Pointer
-
-		; align code to page border for speed increase
-		!align 255, 0
+Examples:	!align 255, 0	; align to page (256 bytes)
+		!align 63, 0	; align to C64 sprite block (64 bytes)
 
 
 ----------------------------------------------------------------------
@@ -282,14 +278,15 @@ Examples:	.backgroundcolor = 0	; some local symbol
 		.backgroundcolor = 3	; => "Symbol already defined."
 
 
-Call:		!sl FILENAME
-Purpose:	Save all the global symbols to the given file after
-		the assembly is finished. This table could be loaded
-		during another assembly session using the "!source"
-		pseudo opcode.
+Call:		!symbollist FILENAME
+Purpose:	Write a symbol list to the given file after assembly
+		is finished. The list will contain all global symbols.
+		This table could be loaded during another assembly
+		session using the "!source" pseudo opcode.
 Parameters:	FILENAME: A file name given in "..." quoting.
-Examples:	!sl "Symbols.a"	; produce symbol dump after assembly
-		!sl "global"	; produce symbol dump after assembly
+Aliases:	"!sl"
+Examples:	!sl "Symbols.a"	; produce symbol list after assembly
+		!sl "global"	; produce symbol list after assembly
 
 
 ----------------------------------------------------------------------

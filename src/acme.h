@@ -11,8 +11,9 @@
 
 
 // Variables
-extern const char	*symboldump_filename;
+extern const char	*symbollist_filename;
 extern const char	*output_filename;
+extern const char	*report_filename;
 // maximum recursion depth for macro calls and "!source"
 extern signed long	macro_recursions_left;
 extern signed long	source_recursions_left;

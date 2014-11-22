@@ -3,12 +3,14 @@
 // Have a look at "acme.c" for further info
 //
 // Global stuff - things that are needed by several modules
+// 19 Nov 2014	Merged Johann Klasek's report listing generator patch
 #ifndef global_H
 #define global_H
 
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include "config.h"
 
 #define PSEUDO_OPCODE_PREFIX	'!'	// FIXME - this is not yet used consistently!
@@ -72,6 +74,20 @@ extern int	pass_undefined_count;	// "NeedValue" type errors in current pass
 extern int	pass_real_errors;	// Errors yet
 extern signed long	max_errors;	// errors before giving up
 extern FILE	*msg_stream;		// set to stdout by --errors_to_stdout
+
+// report stuff
+#define REPORT_ASCBUFSIZE	1024
+#define REPORT_BINBUFSIZE	9	// eight are shown, then "..."
+struct report {
+	FILE		*fd;		// report file descriptor (NULL => no report)
+	struct input	*last_input;
+	size_t		asc_used;
+	size_t		bin_used;
+	int		bin_address;	// address at start of bin_buf[]
+	char		asc_buf[REPORT_ASCBUFSIZE];	// source bytes
+	char		bin_buf[REPORT_BINBUFSIZE];	// output bytes
+};
+extern struct report	*report;
 
 // Macros for skipping a single space character
 #define SKIPSPACE()		\

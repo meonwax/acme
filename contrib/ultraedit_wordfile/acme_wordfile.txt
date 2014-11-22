@@ -89,7 +89,7 @@ WAI
 !to
 !source !src
 !binary !bin
-!sl
+!symbollist !sl
 !zone !zn
 !if
 !ifdef

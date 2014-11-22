@@ -15,9 +15,9 @@
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-#define RELEASE		"0.95.1"	// update before release (FIXME)
+#define RELEASE		"0.95.2"	// update before release (FIXME)
 #define CODENAME	"Fenchurch"	// update before release
-#define CHANGE_DATE	"7 Jun"		// update before release
+#define CHANGE_DATE	"22 Nov"	// update before release
 #define CHANGE_YEAR	"2014"		// update before release
 //#define HOME_PAGE	"http://home.pages.de/~mac_bacon/smorbrod/acme/"	// FIXME
 #define HOME_PAGE	"http://sourceforge.net/p/acme-crossass/"	// FIXME
@@ -49,12 +49,15 @@ static const char	FILE_WRITETEXT[]	= "w";
 static const char	FILE_WRITEBINARY[]	= "wb";
 // names for error messages
 static const char	name_outfile[]		= "output filename";
-static const char	name_dumpfile[]		= "label dump filename";
+static const char	arg_symbollist[]	= "symbol list filename";
+static const char	arg_reportfile[]	= "report filename";
 // long options
 #define OPTION_HELP		"help"
 #define OPTION_FORMAT		"format"
 #define OPTION_OUTFILE		"outfile"
-#define OPTION_LABELDUMP	"labeldump"
+#define OPTION_LABELDUMP	"labeldump"	// old
+#define OPTION_SYMBOLLIST	"symbollist"	// new
+#define OPTION_REPORT		"report"
 #define OPTION_SETPC		"setpc"
 #define OPTION_CPU		"cpu"
 #define OPTION_INITMEM		"initmem"
@@ -75,8 +78,9 @@ static int		toplevel_src_count	= 0;
 static signed long	start_address		= ILLEGAL_START_ADDRESS;
 static signed long	fill_value		= MEMINIT_USE_DEFAULT;
 static const struct cpu_type	*default_cpu	= NULL;
-const char		*symboldump_filename	= NULL;
+const char		*symbollist_filename	= NULL;
 const char		*output_filename	= NULL;
+const char		*report_filename	= NULL;
 // maximum recursion depth for macro calls and "!source"
 signed long	macro_recursions_left	= MAX_NESTING;
 signed long	source_recursions_left	= MAX_NESTING;
@@ -115,11 +119,13 @@ static void show_help_and_exit(void)
 "\n"
 "Options:\n"
 "  -h, --" OPTION_HELP "             show this help and exit\n"
-"  -f, --" OPTION_FORMAT " FORMAT    select output format\n"
-"  -o, --" OPTION_OUTFILE " FILE     select output file\n"
-"  -l, --" OPTION_LABELDUMP " FILE   select label dump file\n"
+"  -f, --" OPTION_FORMAT " FORMAT    set output file format\n"
+"  -o, --" OPTION_OUTFILE " FILE     set output file name\n"
+"  -r, --" OPTION_REPORT " FILE      set report file name\n"
+"  -l, --" OPTION_SYMBOLLIST " FILE  set symbol list file name\n"
+"      --" OPTION_LABELDUMP "        (old name for --" OPTION_SYMBOLLIST ")\n"
 "      --" OPTION_SETPC " NUMBER     set program counter\n"
-"      --" OPTION_CPU " CPU          select target processor\n"
+"      --" OPTION_CPU " CPU          set target processor\n"
 "      --" OPTION_INITMEM " NUMBER   define 'empty' memory\n"
 "      --" OPTION_MAXERRORS " NUMBER set number of errors before exiting\n"
 "      --" OPTION_MAXDEPTH " NUMBER  set recursion depth for macro calls and !src\n"
@@ -139,22 +145,49 @@ PLATFORM_OPTION_HELP
 }
 
 
+// initialise report struct
+static void report_init(struct report *report)
+{
+	report->fd = NULL;
+	report->asc_used = 0;
+	report->bin_used = 0;
+	report->last_input = NULL;
+}
+// open report file
+static int report_open(struct report *report, const char *filename)
+{
+	report->fd = fopen(filename, FILE_WRITETEXT);
+	if (report->fd == NULL) {
+		fprintf(stderr, "Error: Cannot open report file \"%s\".\n", filename);
+		return 1;
+	}
+	return 0;	// success
+}
+// close report file
+static void report_close(struct report *report)
+{
+	if (report->fd) {
+		fclose(report->fd);
+		report->fd = NULL;
+	}
+}
+
+
 // error handling
 
-// tidy up before exiting by saving symbol dump
+// tidy up before exiting by saving symbol list and close other output files
 int ACME_finalize(int exit_code)
 {
 	FILE	*fd;
 
-	if (symboldump_filename) {
-		fd = fopen(symboldump_filename, FILE_WRITETEXT);
+	report_close(report);
+	if (symbollist_filename) {
+		fd = fopen(symbollist_filename, FILE_WRITETEXT);
 		if (fd) {
-			symbols_dump_all(fd);
+			symbols_list(fd);
 			fclose(fd);
 		} else {
-			fprintf(stderr,
-				"Error: Cannot open label dump file \"%s\".\n",
-				symboldump_filename);
+			fprintf(stderr, "Error: Cannot open symbol list file \"%s\".\n", symbollist_filename);
 			exit_code = EXIT_FAILURE;
 		}
 	}
@@ -221,9 +254,12 @@ static int perform_pass(void)
 // do passes until done (or errors occured). Return whether output is ready.
 static int do_actual_work(void)
 {
-	int	undefined_prev,	// "NeedValue" errors of previous pass
-		undefined_curr;	// "NeedValue" errors of current pass
+	struct report	my_report;
+	int		undefined_prev,	// "NeedValue" errors of previous pass
+			undefined_curr;	// "NeedValue" errors of current pass
 
+	report = &my_report;	// let global pointer point to something
+	report_init(report);	// we must init struct before doing passes
 	if (Process_verbosity > 1)
 		puts("First pass.");
 	pass_count = 0;
@@ -233,20 +269,33 @@ static int do_actual_work(void)
 	// As long as the number of "NeedValue" errors is decreasing but
 	// non-zero, keep doing passes.
 	while (undefined_curr && (undefined_curr < undefined_prev)) {
-		pass_count++;
+		++pass_count;
 		undefined_prev = undefined_curr;
 		if (Process_verbosity > 1)
 			puts("Further pass.");
 		undefined_curr = perform_pass();
 	}
-	// If still errors (unsolvable by doing further passes),
-	// perform additional pass to find and show them
-	if (undefined_curr == 0)
+	// any errors left?
+	if (undefined_curr == 0) {
+		// if listing report is wanted and there were no errors,
+		// do another pass to generate listing report
+		if (report_filename) {
+			if (Process_verbosity > 1)
+				puts("Extra pass to generate listing report.");
+			if (report_open(report, report_filename) == 0) {
+				++pass_count;
+				perform_pass();
+				report_close(report);
+			}
+		}
 		return 1;
+	}
+	// There are still errors (unsolvable by doing further passes),
+	// so perform additional pass to find and show them.
 	if (Process_verbosity > 1)
-		puts("Further pass needed to find error.");
+		puts("Extra pass needed to find error.");
 	ALU_throw_errors();	// activate error output (CAUTION - one-way!)
-	pass_count++;
+	++pass_count;
 	perform_pass();	// perform pass, but now show "value undefined"
 	return 0;
 }
@@ -372,8 +421,12 @@ static const char *long_option(const char *string)
 		set_output_format();
 	else if (strcmp(string, OPTION_OUTFILE) == 0)
 		output_filename = cliargs_safe_get_next(name_outfile);
-	else if (strcmp(string, OPTION_LABELDUMP) == 0)
-		symboldump_filename = cliargs_safe_get_next(name_dumpfile);
+	else if (strcmp(string, OPTION_LABELDUMP) == 0)	// old
+		symbollist_filename = cliargs_safe_get_next(arg_symbollist);
+	else if (strcmp(string, OPTION_SYMBOLLIST) == 0)	// new
+		symbollist_filename = cliargs_safe_get_next(arg_symbollist);
+	else if (strcmp(string, OPTION_REPORT) == 0)
+		report_filename = cliargs_safe_get_next(arg_reportfile);
 	else if (strcmp(string, OPTION_SETPC) == 0)
 		set_starting_pc();
 	else if (strcmp(string, OPTION_CPU) == 0)
@@ -383,8 +436,7 @@ static const char *long_option(const char *string)
 	else if (strcmp(string, OPTION_MAXERRORS) == 0)
 		max_errors = string_to_number(cliargs_safe_get_next("maximum error count"));
 	else if (strcmp(string, OPTION_MAXDEPTH) == 0)
-		macro_recursions_left = (source_recursions_left =
-			string_to_number(cliargs_safe_get_next("recursion depth")));
+		macro_recursions_left = (source_recursions_left = string_to_number(cliargs_safe_get_next("recursion depth")));
 //	else if (strcmp(string, "strictsyntax") == 0)
 //		strict_syntax = TRUE;
 	else if (strcmp(string, OPTION_USE_STDOUT) == 0)
@@ -392,7 +444,8 @@ static const char *long_option(const char *string)
 	PLATFORM_LONGOPTION_CODE
 	else if (strcmp(string, OPTION_VERSION) == 0)
 		show_version(TRUE);
-	else return string;
+	else
+		return string;
 	return NULL;
 }
 
@@ -413,8 +466,11 @@ static char short_option(const char *argument)
 		case 'o':	// "-o" selects output filename
 			output_filename = cliargs_safe_get_next(name_outfile);
 			break;
-		case 'l':	// "-l" selects symbol dump filename
-			symboldump_filename = cliargs_safe_get_next(name_dumpfile);
+		case 'l':	// "-l" selects symbol list filename
+			symbollist_filename = cliargs_safe_get_next(arg_symbollist);
+			break;
+		case 'r':	// "-r" selects report filename
+			report_filename = cliargs_safe_get_next(arg_reportfile);
 			break;
 		case 'v':	// "-v" changes verbosity
 			Process_verbosity++;
@@ -473,8 +529,7 @@ int main(int argc, const char *argv[])
 	// handle command line arguments
 	cliargs_handle_options(short_option, long_option);
 	// generate list of files to process
-	cliargs_get_rest(&toplevel_src_count, &toplevel_sources,
-		"No top level sources given");
+	cliargs_get_rest(&toplevel_src_count, &toplevel_sources, "No top level sources given");
 	// Init modules (most of them will just build keyword trees)
 	ALU_init();
 	Basics_init();

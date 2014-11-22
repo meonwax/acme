@@ -1,4 +1,4 @@
-;ACME 0.95
+;ACME 0.95.1
 
 ; Konstanten:
 	FALSE	= 0	; Das Programm verläßt sich an etlichen Stellen
@@ -76,15 +76,15 @@
 	texttop		= $1210	; Basic-Ende+1
 	maxmem0		= $1212	; Ende Bank 0
 	basic		= $12fd	; Basic-IRQ
-	kernel_copyfont		= $c027	; Systemroutine, kopiert Font in VDC-RAM
-	kernel_cls		= $c142	; Systemroutine, löscht Screen
-	kernel_switchmode	= $cd2e	; Systemroutine, switcht aktiven Monitor
+	e_copyfont	= $c027	; Systemroutine, kopiert Font in VDC-RAM
+	e_cls		= $c142	; Systemroutine, löscht Screen
+	e_switchmode	= $cd2e	; Systemroutine, switcht aktiven Monitor
 	takt	= $d030	; 2 MHz ; register (**mark**)
 	vdc	= $d600	; VDC
 	reg	= $d601
 	conreg	= $ff00	; MMU-CR
 	nmiend	= $ff33	; NMI-Ende
-	primm	= $ff7d	; Kernel
+	primm	= $ff7d	; Kernal
 	open	= $ffc0
 	close	= $ffc3
 	chkin	= $ffc6

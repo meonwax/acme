@@ -6,6 +6,7 @@
 // 24 Nov 2007	Added possibility to suppress segment overlap warnings 
 // 25 Sep 2011	Fixed bug in !to (colons in filename could be interpreted as EOS)
 //  5 Mar 2014	Fixed bug where setting *>0xffff resulted in hangups.
+// 19 Nov 2014	Merged Johann Klasek's report listing generator patch
 #include <stdlib.h>
 //#include <stdio.h>
 #include <string.h>	// for memset()
@@ -89,6 +90,16 @@ static struct node_t	segment_modifiers[]	= {
 };
 
 
+// report binary output
+static void report_binary(char value)
+{
+	if (report->bin_used == 0)
+		report->bin_address = out->write_idx;	// remember address at start of line
+	if (report->bin_used < REPORT_BINBUFSIZE)
+		report->bin_buf[report->bin_used++] = value;
+}
+
+
 // set up new out->segment.max value according to the given address.
 // just find the next segment start and subtract 1.
 static void find_segment_max(intval_t new_pc)
@@ -138,6 +149,8 @@ static void real_output(intval_t byte)
 	if (out->write_idx > out->highest_written)
 		out->highest_written = out->write_idx;
 	// write byte and advance ptrs
+	if (report->fd)
+		report_binary(byte & 0xff);	// file for reporting, taking also CPU_2add
 	out->buffer[out->write_idx++] = byte & 0xff;
 	CPU_state.add_to_pc++;
 }
@@ -154,6 +167,8 @@ static void no_output(intval_t byte)
 
 
 // call this if really calling Output_byte would be a waste of time
+// FIXME - check all users of this, because future changes
+// ("several-projects-at-once") may be incompatible with this!
 void Output_fake(int size)
 {
 	if (size < 1)
@@ -584,6 +599,10 @@ when encountering "* = VALUE":
 
 Problem: always check for "undefined"; there are some problematic combinations.
 I need a way to return the size of a generated code block even if PC undefined.
+Maybe like this:
+	* = new_address [, invisible] [, overlay] [, &size_symbol_ref {]
+		...code...
+	[} ; at end of block, size is written to size symbol given above!]
 */
 
 

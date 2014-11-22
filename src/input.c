@@ -3,6 +3,7 @@
 // Have a look at "acme.c" for further info
 //
 // Input stuff
+// 19 Nov 2014	Merged Johann Klasek's report listing generator patch
 #include "config.h"
 #include "alu.h"
 #include "dynabuf.h"
@@ -75,6 +76,61 @@ void Input_new_file(const char *filename, FILE *fd)
 	Input_now->src.fd		= fd;
 }
 
+
+// remember source code character for report generator
+#define IF_WANTED_REPORT_SRCCHAR(c)	do { if (report->fd) report_srcchar(c); } while(0)
+static void report_srcchar(char new_char)
+{
+	static char	prev_char	= '\0';
+	int		ii;
+	char		hex_address[5];
+	char		hexdump[2 * REPORT_BINBUFSIZE + 2];	// +2 for '.' and terminator
+
+	// if input has changed, insert explanation
+	if (Input_now != report->last_input) {
+		fprintf(report->fd, "\n; ******** Source: %s\n", Input_now->original_filename);
+		report->last_input = Input_now;
+		report->asc_used = 0;	// clear buffer
+		prev_char = '\0';
+	}
+	if ((prev_char == '\n' || prev_char == '\r')) {
+// this check makes empty lines screw up line numbers:
+//	&& new_char != '\n') {
+		// line start after line break detected and EOS processed,
+		// build report line:
+		// show line number...
+		fprintf(report->fd, "%6d  ", Input_now->line_number - 1);
+		// prepare outbytes' start address
+		if (report->bin_used)
+			snprintf(hex_address, 5, "%04x", report->bin_address);
+		else
+			hex_address[0] = '\0';
+		// prepare outbytes
+		hexdump[0] = '\0';
+		for (ii = 0; ii < report->bin_used; ++ii)
+			sprintf(hexdump + 2 * ii, "%02x", (unsigned int) (unsigned char) (report->bin_buf[ii]));
+		// if binary buffer is full, overwrite last byte with "..."
+		if (report->bin_used == REPORT_BINBUFSIZE)
+			sprintf(hexdump + 2 * (REPORT_BINBUFSIZE - 1), "...");
+		// show address and bytes
+		fprintf(report->fd, "%-4s %-19s", hex_address, hexdump);
+		// at this point the output should be a multiple of 8 characters
+		// so far to preserve tabs of the source...
+		if (report->asc_used == REPORT_ASCBUFSIZE)
+			--report->asc_used;
+		report->asc_buf[report->asc_used] = '\0';
+		fprintf(report->fd, "%s\n", report->asc_buf);	// show source line
+		report->asc_used = 0;	// reset buffers
+		report->bin_used = 0;
+	}
+	if (new_char != '\n' && new_char != '\r') {	// detect line break
+		if (report->asc_used < REPORT_ASCBUFSIZE)
+			report->asc_buf[report->asc_used++] = new_char;
+	}
+	prev_char = new_char;
+}
+
+
 // Deliver source code from current file (!) in shortened high-level format
 static char get_processed_from_file(void)
 {
@@ -85,6 +141,7 @@ static char get_processed_from_file(void)
 		case INPUTSTATE_NORMAL:
 			// fetch a fresh byte from the current source file
 			from_file = getc(Input_now->src.fd);
+			IF_WANTED_REPORT_SRCCHAR(from_file);
 			// now process it
 			/*FALLTHROUGH*/
 		case INPUTSTATE_AGAIN:
@@ -147,9 +204,10 @@ static char get_processed_from_file(void)
 			}
 		case INPUTSTATE_SKIPBLANKS:
 			// read until non-blank, then deliver that
-			do
+			do {
 				from_file = getc(Input_now->src.fd);
-			while ((from_file == CHAR_TAB) || (from_file == ' '));
+				IF_WANTED_REPORT_SRCCHAR(from_file);
+			} while ((from_file == CHAR_TAB) || (from_file == ' '));
 			// re-process last byte
 			Input_now->state = INPUTSTATE_AGAIN;
 			break;
@@ -165,6 +223,7 @@ static char get_processed_from_file(void)
 
 		case INPUTSTATE_SKIPLF:
 			from_file = getc(Input_now->src.fd);
+			IF_WANTED_REPORT_SRCCHAR(from_file);
 			// if LF, ignore it and fetch another byte
 			// otherwise, process current byte
 			if (from_file == CHAR_LF)
@@ -174,9 +233,10 @@ static char get_processed_from_file(void)
 			break;
 		case INPUTSTATE_COMMENT:
 			// read until end-of-line or end-of-file
-			do
+			do {
 				from_file = getc(Input_now->src.fd);
-			while ((from_file != EOF) && (from_file != CHAR_CR) && (from_file != CHAR_LF));
+				IF_WANTED_REPORT_SRCCHAR(from_file);
+			} while ((from_file != EOF) && (from_file != CHAR_CR) && (from_file != CHAR_LF));
 			// re-process last byte
 			Input_now->state = INPUTSTATE_AGAIN;
 			break;
@@ -236,6 +296,7 @@ char GetQuotedByte(void)
 	} else {
 		// fetch a fresh byte from the current source file
 		from_file = getc(Input_now->src.fd);
+		IF_WANTED_REPORT_SRCCHAR(from_file);
 		switch (from_file) {
 		case EOF:
 			// remember to send an end-of-file

@@ -908,7 +908,7 @@ static void perform_ranged_fp(double (*fn)(double))
 
 
 // convert right-hand value from fp to int
-static void right_fp_to_int()
+static void right_fp_to_int(void)
 {
 	RIGHT_INTVAL = RIGHT_FPVAL;
 	RIGHT_FLAGS &= ~MVALUE_IS_FP;
