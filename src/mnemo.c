@@ -109,13 +109,13 @@ SCB accu_lindy8[] = {      0,      0,      0,      0,      0,      0,      0,   
 // mnemotable), the assembler finds out the column to use here. The row
 // depends on the used addressing mode. A zero entry in these tables means
 // that the combination of mnemonic and addressing mode is illegal.
-//                |                                                 6502                                                  |                     65c02                     |                 65816                 |                         6510 illegals                         |
-enum {             IDX_BIT,IDX_ASL,IDX_ROL,IDX_LSR,IDX_ROR,IDX_STY,IDX_STX,IDX_LDY,IDX_LDX,IDX_CPY,IDX_CPX,IDX_DEC,IDX_INC,IDXcTSB,IDXcTRB,IDXcBIT,IDXcDEC,IDXcINC,IDXcSTZ,IDX816COP,IDX816REP,IDX816SEP,IDX816PEA,IDX_ANC,IDX_ASR,IDX_ARR,IDX_SBX,IDX_DOP,IDX_TOP,IDX_JAM,IDX_LXA};
-SCS misc_abs[]  = { 0x2c24, 0x0e06, 0x2e26, 0x4e46, 0x6e66, 0x8c84, 0x8e86, 0xaca4, 0xaea6, 0xccc4, 0xece4, 0xcec6, 0xeee6, 0x0c04, 0x1c14, 0x2c24, 0xcec6, 0xeee6, 0x9c64,     0x02,        0,        0,   0xf400,      0,      0,      0,      0,   0x04, 0x0c00,      0,      0};	// $ff      $ffff
-SCS misc_xabs[] = {      0, 0x1e16, 0x3e36, 0x5e56, 0x7e76,   0x94,      0, 0xbcb4,      0,      0,      0, 0xded6, 0xfef6,      0,      0, 0x3c34, 0xded6, 0xfef6, 0x9e74,        0,        0,        0,        0,      0,      0,      0,      0,   0x14, 0x1c00,      0,      0};	// $ff,x    $ffff,x
-SCS misc_yabs[] = {      0,      0,      0,      0,      0,      0,   0x96,      0, 0xbeb6,      0,      0,      0,      0,      0,      0,      0,      0,      0,      0,        0,        0,        0,        0,      0,      0,      0,      0,      0,      0,      0,      0};	// $ff,y    $ffff,y
-SCB misc_imm[]  = {      0,      0,      0,      0,      0,      0,      0,   0xa0,   0xa2,   0xc0,   0xe0,      0,      0,      0,      0,   0x89,      0,      0,      0,        0,     0xc2,     0xe2,        0,   0x0b,   0x4b,   0x6b,   0xcb,   0x80,      0,      0,   0xab};	// #$ff
-SCB misc_impl[] = {      0,   0x0a,   0x2a,   0x4a,   0x6a,      0,      0,      0,      0,      0,      0,      0,      0,      0,      0,      0,   0x3a,   0x1a,      0,        0,        0,        0,        0,      0,      0,      0,      0,   0x80,   0x0c,   0x02,      0};	// implied/accu
+//                |                                                 6502                                                  |                     65c02                     |                 65816                 |                         6510 illegals                         |    C64DTV2    |
+enum {             IDX_BIT,IDX_ASL,IDX_ROL,IDX_LSR,IDX_ROR,IDX_STY,IDX_STX,IDX_LDY,IDX_LDX,IDX_CPY,IDX_CPX,IDX_DEC,IDX_INC,IDXcTSB,IDXcTRB,IDXcBIT,IDXcDEC,IDXcINC,IDXcSTZ,IDX816COP,IDX816REP,IDX816SEP,IDX816PEA,IDX_ANC,IDX_ASR,IDX_ARR,IDX_SBX,IDX_DOP,IDX_TOP,IDX_JAM,IDX_LXA,IDX_SAC,IDX_SIR};
+SCS misc_abs[]  = { 0x2c24, 0x0e06, 0x2e26, 0x4e46, 0x6e66, 0x8c84, 0x8e86, 0xaca4, 0xaea6, 0xccc4, 0xece4, 0xcec6, 0xeee6, 0x0c04, 0x1c14, 0x2c24, 0xcec6, 0xeee6, 0x9c64,     0x02,        0,        0,   0xf400,      0,      0,      0,      0,   0x04, 0x0c00,      0,      0,      0,      0};	// $ff      $ffff
+SCS misc_xabs[] = {      0, 0x1e16, 0x3e36, 0x5e56, 0x7e76,   0x94,      0, 0xbcb4,      0,      0,      0, 0xded6, 0xfef6,      0,      0, 0x3c34, 0xded6, 0xfef6, 0x9e74,        0,        0,        0,        0,      0,      0,      0,      0,   0x14, 0x1c00,      0,      0,      0,      0};	// $ff,x    $ffff,x
+SCS misc_yabs[] = {      0,      0,      0,      0,      0,      0,   0x96,      0, 0xbeb6,      0,      0,      0,      0,      0,      0,      0,      0,      0,      0,        0,        0,        0,        0,      0,      0,      0,      0,      0,      0,      0,      0,      0,      0};	// $ff,y    $ffff,y
+SCB misc_imm[]  = {      0,      0,      0,      0,      0,      0,      0,   0xa0,   0xa2,   0xc0,   0xe0,      0,      0,      0,      0,   0x89,      0,      0,      0,        0,     0xc2,     0xe2,        0,   0x0b,   0x4b,   0x6b,   0xcb,   0x80,      0,      0,   0xab,   0x32,   0x42};	// #$ff
+SCB misc_impl[] = {      0,   0x0a,   0x2a,   0x4a,   0x6a,      0,      0,      0,      0,      0,      0,      0,      0,      0,      0,      0,   0x3a,   0x1a,      0,        0,        0,        0,        0,      0,      0,      0,      0,   0x80,   0x0c,   0x02,      0,      0,      0};	// implied/accu
 
 // Code tables for group GROUP_ALLJUMPS:
 // These tables are needed for finding out the correct code when the mnemonic
@@ -146,6 +146,7 @@ static struct dynabuf	*mnemo_dyna_buf;	// dynamic buffer for mnemonics
 // predefined stuff
 static struct node_t	*mnemo_6502_tree	= NULL;	// holds 6502 mnemonics
 static struct node_t	*mnemo_6510_tree	= NULL;	// holds 6510 extensions
+static struct node_t	*mnemo_c64dtv2_tree	= NULL;	// holds C64DTV2 extensions
 static struct node_t	*mnemo_65c02_tree	= NULL;	// holds 65c02 extensions
 //static struct node_t	*mnemo_Rockwell65c02_tree	= NULL;	// Rockwell
 static struct node_t	*mnemo_WDC65c02_tree	= NULL;	// WDC's "stp"/"wai"
@@ -241,6 +242,13 @@ static struct node_t	mnemos_6510[]	= {
 	//    ^^^^ this marks the last element
 };
 
+static struct node_t	mnemos_c64dtv2[]	= {
+	PREDEFNODE(s_bra, MERGE(GROUP_RELATIVE8,  0x12)),	// branch always
+	PREDEFNODE("sac", MERGE(GROUP_MISC, IDX_SAC)),	// set accumulator mapping
+	PREDEFLAST("sir", MERGE(GROUP_MISC, IDX_SIR)),	// set index register mapping
+	//    ^^^^ this marks the last element
+};
+
 static struct node_t	mnemos_65c02[]	= {
 	PREDEFNODE("ora", MERGE(GROUP_ACCU,	IDXcORA | IMM_ACCU)),
 	PREDEFNODE(s_and, MERGE(GROUP_ACCU,	IDXcAND | IMM_ACCU)),
@@ -254,7 +262,7 @@ static struct node_t	mnemos_65c02[]	= {
 	PREDEFNODE("bit", MERGE(GROUP_MISC,	IDXcBIT | IMM_ACCU)),
 	PREDEFNODE("dec", MERGE(GROUP_MISC,	IDXcDEC)),
 	PREDEFNODE("inc", MERGE(GROUP_MISC,	IDXcINC)),
-	PREDEFNODE("bra", MERGE(GROUP_RELATIVE8,	128)),
+	PREDEFNODE(s_bra, MERGE(GROUP_RELATIVE8,	128)),
 	PREDEFNODE("phy", MERGE(GROUP_IMPLIEDONLY,	 90)),
 	PREDEFNODE("ply", MERGE(GROUP_IMPLIEDONLY,	122)),
 	PREDEFNODE("phx", MERGE(GROUP_IMPLIEDONLY,	218)),
@@ -356,6 +364,7 @@ void Mnemo_init(void)
 	mnemo_dyna_buf = DynaBuf_create(MNEMO_DYNABUF_INITIALSIZE);
 	Tree_add_table(&mnemo_6502_tree, mnemos_6502);
 	Tree_add_table(&mnemo_6510_tree, mnemos_6510);
+	Tree_add_table(&mnemo_c64dtv2_tree, mnemos_c64dtv2);
 	Tree_add_table(&mnemo_65c02_tree, mnemos_65c02);
 //	Tree_add_table(&mnemo_Rockwell65c02_tree, mnemos_Rockwell65c02);
 	Tree_add_table(&mnemo_WDC65c02_tree, mnemos_WDC65c02);
@@ -888,7 +897,27 @@ int keyword_is_6510mnemo(int length)
 
 	// make lower case version of mnemonic in local dynamic buffer
 	DynaBuf_to_lower(mnemo_dyna_buf, GlobalDynaBuf);
-	// first check extensions...
+	// first check undocumented ("illegal") opcodes...
+	if (check_mnemo_tree(mnemo_6510_tree, mnemo_dyna_buf))
+		return TRUE;
+
+	// ...then check original opcodes
+	return check_mnemo_tree(mnemo_6502_tree, mnemo_dyna_buf) ? TRUE : FALSE;
+}
+
+// Check whether mnemonic in GlobalDynaBuf is supported by C64DTV2 cpu.
+int keyword_is_c64dtv2mnemo(int length)
+{
+	if (length != 3)
+		return FALSE;
+
+	// make lower case version of mnemonic in local dynamic buffer
+	DynaBuf_to_lower(mnemo_dyna_buf, GlobalDynaBuf);
+	// first check C64DTV2 extensions...
+	if (check_mnemo_tree(mnemo_c64dtv2_tree, mnemo_dyna_buf))
+		return TRUE;
+
+	// ...then check undocumented ("illegal") opcodes...
 	if (check_mnemo_tree(mnemo_6510_tree, mnemo_dyna_buf))
 		return TRUE;
 

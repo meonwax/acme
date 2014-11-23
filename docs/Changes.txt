@@ -13,6 +13,19 @@ outlining the platform specific changes.
 
 
 ----------------------------------------------------------------------
+Section:   New in release 0.95.3
+----------------------------------------------------------------------
+
+Added "c64dtv2" cpu type so you can use its SIR, SAC and BRA opcodes;
+    along with the undocumented ("illegal") opcodes of the 6510.
+Added Martin Piper's "--msvc" patch so error output can be configured
+    to be in Visual Studio format.
+Merged third-party patch (who wrote it?) to output label dump in VICE
+    format. Still needs work to be configurable about the types of
+    symbols actually output.
+
+
+----------------------------------------------------------------------
 Section:   New in release 0.95.2
 ----------------------------------------------------------------------
 

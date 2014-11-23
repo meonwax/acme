@@ -764,6 +764,7 @@ Parameters:	KEYWORD: Currently valid keywords are:
 		6502	allows official mnemonics and addressing modes
 		6510	adds mnemonics for some undocumented opcodes
 			(but includes all the official 6502 stuff)
+		c64dtv2	allows DTV2 extensions (includes 6510)
 		65c02	allows official 65c02 stuff (includes 6502)
 		65816	allows official 65816 stuff (includes 65c02)
 		BLOCK: A block of assembler statements.

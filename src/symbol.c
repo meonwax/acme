@@ -6,6 +6,7 @@
 //
 // 22 Nov 2007	"warn on indented labels" is now a CLI switch
 // 25 Sep 2011	Fixed bug in !sl (colons in filename could be interpreted as EOS)
+// 23 Nov 2014	Added label output in VICE format
 #include <stdio.h>
 #include "acme.h"
 #include "alu.h"
@@ -66,6 +67,41 @@ static void dump_one_symbol(struct node_ra_t *node, FILE *fd)
 }
 
 
+// output symbols in VICE format (example: "al C:09ae .nmi1")
+static void dump_vice_address(struct node_ra_t *node, FILE *fd)
+{
+	struct symbol	*symbol	= node->body;
+
+	// dump address symbols even if they are not used
+	if ((symbol->result.flags & MVALUE_DEFINED)
+	&& !(symbol->result.flags & MVALUE_IS_FP)
+	&& (symbol->result.addr_refs == 1))
+		fprintf(fd, "al C:%04x .%s\n", (unsigned) symbol->result.val.intval, node->id_string);
+}
+static void dump_vice_usednonaddress(struct node_ra_t *node, FILE *fd)
+{
+	struct symbol	*symbol	= node->body;
+
+	// dump non-addresses that are used
+	if (symbol->usage
+	&& (symbol->result.flags & MVALUE_DEFINED)
+	&& !(symbol->result.flags & MVALUE_IS_FP)
+	&& (symbol->result.addr_refs != 1))
+		fprintf(fd, "al C:%04x .%s\n", (unsigned) symbol->result.val.intval, node->id_string);
+}
+static void dump_vice_unusednonaddress(struct node_ra_t *node, FILE *fd)
+{
+	struct symbol	*symbol	= node->body;
+
+	// dump non-addresses that are unused
+	if (!symbol->usage
+	&& (symbol->result.flags & MVALUE_DEFINED)
+	&& !(symbol->result.flags & MVALUE_IS_FP)
+	&& (symbol->result.addr_refs != 1))
+		fprintf(fd, "al C:%04x .%s\n", (unsigned) symbol->result.val.intval, node->id_string);
+}
+
+
 // search for symbol. create if nonexistant. if created, give it flags "flags".
 // the symbol name must be held in GlobalDynaBuf.
 struct symbol *symbol_find(zone_t zone, int flags)
@@ -112,9 +148,7 @@ void symbol_set_value(struct symbol *symbol, struct result *new_value, int chang
 		// symbol is already defined, so compare new and old values
 		// if different type OR same type but different value, complain
 		if (((oldflags ^ new_value->flags) & MVALUE_IS_FP)
-		|| ((oldflags & MVALUE_IS_FP)
-		? (symbol->result.val.fpval != new_value->val.fpval)
-		: (symbol->result.val.intval != new_value->val.intval)))
+		|| ((oldflags & MVALUE_IS_FP) ? (symbol->result.val.fpval != new_value->val.fpval) : (symbol->result.val.intval != new_value->val.intval)))
 			Throw_error("Symbol already defined.");
 	} else {
 		// symbol is not defined yet OR redefinitions are allowed
@@ -272,9 +306,21 @@ void symbol_define(intval_t value)
 void symbols_list(FILE *fd)
 {
 	Tree_dump_forest(symbols_forest, ZONE_GLOBAL, dump_one_symbol, fd);
-	PLATFORM_SETFILETYPE_TEXT(symbollist_filename);
 }
 
+
+void symbols_vicelabels(FILE *fd)
+{
+	// the order of dumped labels is important because VICE will prefer later defined labels
+	// dump unused labels
+	Tree_dump_forest(symbols_forest, ZONE_GLOBAL, dump_vice_unusednonaddress, fd);
+	fputc('\n', fd);
+	// dump other used labels
+	Tree_dump_forest(symbols_forest, ZONE_GLOBAL, dump_vice_usednonaddress, fd);
+	fputc('\n', fd);
+	// dump address symbols
+	Tree_dump_forest(symbols_forest, ZONE_GLOBAL, dump_vice_address, fd);
+}
 
 // clear symbols forest (is done early)
 void symbols_clear_init(void)

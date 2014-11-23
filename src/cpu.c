@@ -26,6 +26,12 @@ static struct cpu_type	cpu_type_6510	= {
 		CPUFLAG_AB_NEEDS_0_ARG,	// LXA #$xx is unstable unless arg is $00
 	234			// !align fills with "NOP"
 };
+static struct cpu_type	cpu_type_c64dtv2	= {
+	keyword_is_c64dtv2mnemo,
+	CPUFLAG_INDIRECTJMPBUGGY |	// JMP ($xxFF) is buggy
+		CPUFLAG_AB_NEEDS_0_ARG,	// LXA #$xx is unstable unless arg is $00 (FIXME - correct?)
+	234			// !align fills with "NOP"
+};
 static struct cpu_type	cpu_type_65c02	= {
 	keyword_is_65c02mnemo,
 	0,			// no flags
@@ -59,6 +65,7 @@ static struct node_t	CPUs[]	= {
 //	PREDEFNODE("z80",		&cpu_type_Z80),
 	PREDEFNODE("6502",		&cpu_type_6502),
 	PREDEFNODE("6510",		&cpu_type_6510),
+	PREDEFNODE("c64dtv2",		&cpu_type_c64dtv2),
 	PREDEFNODE("65c02",		&cpu_type_65c02),
 //	PREDEFNODE("Rockwell65c02",	&cpu_type_Rockwell65c02),
 //	PREDEFNODE("WDC65c02",		&cpu_type_WDC65c02),

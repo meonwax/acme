@@ -42,6 +42,8 @@ extern struct symbol *symbol_find(zone_t, int flags);
 extern void symbol_define(intval_t value);
 // dump global symbols to file
 extern void symbols_list(FILE *fd);
+// dump global labels to file in VICE format
+extern void symbols_vicelabels(FILE *fd);
 // fix name of anonymous forward label (held in GlobalDynaBuf, NOT TERMINATED!)
 // so it references the *next* anonymous forward label definition.
 extern void symbol_fix_forward_anon_name(int increment);
