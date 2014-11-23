@@ -7,8 +7,14 @@
                --- Undocumented ("illegal") opcodes ---
 
 
-Since release 0.87, ACME contains support for some of the undocumented
-opcodes of the 6502 processor. Here they are:
+In release 0.87, support for some of the undocumented opcodes of the
+6502 processor was added.
+In release 0.89, some more were added.
+In release 0.94.8, another one was added (lxa).
+In release 0.95.3, C64DTV2 support was added, which includes these
+opcodes as well.
+
+Here are the mnemonics, addressing modes and generated opcodes:
 
       |                 addressing  mode                 |
 Mnemo |   8    8,x   8,y    16   16,x  16,y  (8,x) (8),y |  performs:
@@ -21,8 +27,6 @@ Mnemo |   8    8,x   8,y    16   16,x  16,y  (8,x) (8),y |  performs:
  lax  |   a7    --    b7    af    --    bf    a3    b3   |  ldx + lda
  dcp  |   c7    d7    --    cf    df    db    c3    d3   |  dec + cmp
  isc  |   e7    f7    --    ef    ff    fb    e3    f3   |  inc + sbc
-
-In release 0.89, more were added; and in 0.94.8, another one (lxa):
 
       |           addressing mode           |
 Mnemo | implied #8    8    8,x    16   16,x |  performs:
@@ -43,7 +47,7 @@ Example:
 
 *) Up until ACME version 0.95.1, anc#8 generated opcode 0x2b. Since
 ACME version 0.95.2, anc#8 generates opcode 0x0b. Both opcodes work
-the same way.
+the same way on a 6510. I am told 0x2b does not work on the C64DTV2.
 
 **) Note that "dop" and "top" can be used with implied addressing, but
 the generated opcodes are those for immediate and 16-bit absolute
@@ -70,19 +74,19 @@ people use different names for them. I hope my choices are not too
 exotic for your taste.
 
 Just for the sake of completeness: Here are all the remaining opcodes
-(the ones ACME won't generate):
+(the ones ACME won't generate even with "6510" cpu):
 
-Opcode|  Description
+Opcode|  Description                                          C64DTV2
 ------+--------------------------------------------------------------
-  12  |  same as 02 and others    jam                 CRASH
+  12  |  same as 02 and others    jam                 CRASH   bra rel
   1a  |  same as (*legal*) ea     nop
   22  |  same as 02 and others    jam                 CRASH
-  2b  |  same as 0b               anc #8
-  32  |  same as 02 and others    jam                 CRASH
+  2b  |  same as 0b               anc #8                      dop
+  32  |  same as 02 and others    jam                 CRASH   sac #8
   34  |  same as 14 and others    dop 8,x
   3a  |  same as (*legal*) ea     nop
   3c  |  same as 1c and others    top 16,x
-  42  |  same as 02 and others    jam                 CRASH
+  42  |  same as 02 and others    jam                 CRASH   sir #8
   44  |  same as 04               dop 8
   52  |  same as 02 and others    jam                 CRASH
   54  |  same as 14 and others    dop 8,x

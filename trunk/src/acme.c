@@ -15,9 +15,9 @@
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-#define RELEASE		"0.95.2"	// update before release (FIXME)
+#define RELEASE		"0.95.3"	// update before release (FIXME)
 #define CODENAME	"Fenchurch"	// update before release
-#define CHANGE_DATE	"22 Nov"	// update before release
+#define CHANGE_DATE	"23 Nov"	// update before release
 #define CHANGE_YEAR	"2014"		// update before release
 //#define HOME_PAGE	"http://home.pages.de/~mac_bacon/smorbrod/acme/"	// FIXME
 #define HOME_PAGE	"http://sourceforge.net/p/acme-crossass/"	// FIXME
@@ -51,12 +51,14 @@ static const char	FILE_WRITEBINARY[]	= "wb";
 static const char	name_outfile[]		= "output filename";
 static const char	arg_symbollist[]	= "symbol list filename";
 static const char	arg_reportfile[]	= "report filename";
+static const char	arg_vicelabels[]	= "VICE labels filename";
 // long options
 #define OPTION_HELP		"help"
 #define OPTION_FORMAT		"format"
 #define OPTION_OUTFILE		"outfile"
 #define OPTION_LABELDUMP	"labeldump"	// old
 #define OPTION_SYMBOLLIST	"symbollist"	// new
+#define OPTION_VICELABELS	"vicelabels"
 #define OPTION_REPORT		"report"
 #define OPTION_SETPC		"setpc"
 #define OPTION_CPU		"cpu"
@@ -65,6 +67,7 @@ static const char	arg_reportfile[]	= "report filename";
 #define OPTION_MAXDEPTH		"maxdepth"
 #define OPTION_USE_STDOUT	"use-stdout"
 #define OPTION_VERSION		"version"
+#define OPTION_MSVC		"msvc"
 // options for "-W"
 #define OPTIONWNO_LABEL_INDENT	"no-label-indent"
 #define OPTIONWNO_OLD_FOR	"no-old-for"
@@ -79,6 +82,7 @@ static signed long	start_address		= ILLEGAL_START_ADDRESS;
 static signed long	fill_value		= MEMINIT_USE_DEFAULT;
 static const struct cpu_type	*default_cpu	= NULL;
 const char		*symbollist_filename	= NULL;
+const char		*vicelabels_filename	= NULL;
 const char		*output_filename	= NULL;
 const char		*report_filename	= NULL;
 // maximum recursion depth for macro calls and "!source"
@@ -124,6 +128,7 @@ static void show_help_and_exit(void)
 "  -r, --" OPTION_REPORT " FILE      set report file name\n"
 "  -l, --" OPTION_SYMBOLLIST " FILE  set symbol list file name\n"
 "      --" OPTION_LABELDUMP "        (old name for --" OPTION_SYMBOLLIST ")\n"
+"      --" OPTION_VICELABELS " FILE  set file name for label dump in VICE format\n"
 "      --" OPTION_SETPC " NUMBER     set program counter\n"
 "      --" OPTION_CPU " CPU          set target processor\n"
 "      --" OPTION_INITMEM " NUMBER   define 'empty' memory\n"
@@ -139,6 +144,7 @@ static void show_help_and_exit(void)
 // when there are more, use next line and add a separate function:
 //"  -W                     show warning level options\n"
 "      --" OPTION_USE_STDOUT "       fix for 'Relaunch64' IDE (see docs)\n"
+"      --" OPTION_MSVC "             set output error message format to that of MS Visual Studio\n"
 PLATFORM_OPTION_HELP
 "  -V, --" OPTION_VERSION "          show version and exit\n");
 	exit(EXIT_SUCCESS);
@@ -186,8 +192,20 @@ int ACME_finalize(int exit_code)
 		if (fd) {
 			symbols_list(fd);
 			fclose(fd);
+			PLATFORM_SETFILETYPE_TEXT(symbollist_filename);
 		} else {
 			fprintf(stderr, "Error: Cannot open symbol list file \"%s\".\n", symbollist_filename);
+			exit_code = EXIT_FAILURE;
+		}
+	}
+	if (vicelabels_filename) {
+		fd = fopen(vicelabels_filename, FILE_WRITETEXT);
+		if (fd) {
+			symbols_vicelabels(fd);
+			fclose(fd);
+			PLATFORM_SETFILETYPE_TEXT(vicelabels_filename);
+		} else {
+			fprintf(stderr, "Error: Cannot open VICE label dump file \"%s\".\n", vicelabels_filename);
 			exit_code = EXIT_FAILURE;
 		}
 	}
@@ -316,7 +334,8 @@ static void set_output_format(void)
 {
 	keyword_to_dynabuf(cliargs_safe_get_next("output format"));
 	if (!Output_set_output_format()) {
-		// FIXME - define error message near the actual format list, so they match!
+		// FIXME - list actual formats instead of outputting a fixed list!
+		// FIXME - or AT LEAST define error message near the actual format list, so they match!
 		fprintf(stderr, "%sUnknown output format (use 'cbm', 'plain' or 'apple').\n", cliargs_error);
 		exit(EXIT_FAILURE);
 	}
@@ -328,7 +347,9 @@ static void set_starting_cpu(void)
 {
 	keyword_to_dynabuf(cliargs_safe_get_next("CPU type"));
 	if (!CPU_find_cpu_struct(&default_cpu)) {
-		fprintf(stderr, "%sUnknown CPU type (use 6502, 6510, 65c02 or 65816).\n", cliargs_error);
+		// FIXME - list actual types instead of outputting a fixed list!
+		// FIXME - or AT LEAST define error message near the actual type list, so they match!
+		fprintf(stderr, "%sUnknown CPU type (use 6502, 6510, c64dtv2, 65c02 or 65816).\n", cliargs_error);
 		exit(EXIT_FAILURE);
 	}
 }
@@ -425,6 +446,8 @@ static const char *long_option(const char *string)
 		symbollist_filename = cliargs_safe_get_next(arg_symbollist);
 	else if (strcmp(string, OPTION_SYMBOLLIST) == 0)	// new
 		symbollist_filename = cliargs_safe_get_next(arg_symbollist);
+	else if (strcmp(string, OPTION_VICELABELS) == 0)
+		vicelabels_filename = cliargs_safe_get_next(arg_vicelabels);
 	else if (strcmp(string, OPTION_REPORT) == 0)
 		report_filename = cliargs_safe_get_next(arg_reportfile);
 	else if (strcmp(string, OPTION_SETPC) == 0)
@@ -441,6 +464,8 @@ static const char *long_option(const char *string)
 //		strict_syntax = TRUE;
 	else if (strcmp(string, OPTION_USE_STDOUT) == 0)
 		msg_stream = stdout;
+	else if (strcmp(string, OPTION_MSVC) == 0)
+		format_msvc = TRUE;
 	PLATFORM_LONGOPTION_CODE
 	else if (strcmp(string, OPTION_VERSION) == 0)
 		show_version(TRUE);

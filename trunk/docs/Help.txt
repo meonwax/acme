@@ -40,7 +40,8 @@ Section:   Introduction
 ACME is a crossassembler for the 65xx range of processors. It knows
 about the standard 6502, the 65c02 and the 65816. It also supports
 the undocumented ("illegal") opcodes of the 6510 processor (a 6502-
-variant that is used in the Commodore C=64).
+variant that is used in the Commodore C=64), and the extensions added
+in the C64DTV2.
 
 This text and the other files in the same directory only describe the
 basic functions independent of the platform used. There should be

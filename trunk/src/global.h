@@ -4,6 +4,7 @@
 //
 // Global stuff - things that are needed by several modules
 // 19 Nov 2014	Merged Johann Klasek's report listing generator patch
+// 23 Nov 2014	Merged Martin Piper's "--msvc" error output patch
 #ifndef global_H
 #define global_H
 
@@ -24,6 +25,7 @@ extern const char	s_65816[];
 extern const char	s_and[];
 extern const char	s_asl[];
 extern const char	s_asr[];
+extern const char	s_bra[];
 extern const char	s_brl[];
 extern const char	s_cbm[];
 extern const char	s_eor[];
@@ -74,6 +76,7 @@ extern int	pass_undefined_count;	// "NeedValue" type errors in current pass
 extern int	pass_real_errors;	// Errors yet
 extern signed long	max_errors;	// errors before giving up
 extern FILE	*msg_stream;		// set to stdout by --errors_to_stdout
+extern int	format_msvc;		// actually bool, enabled by --msvc
 
 // report stuff
 #define REPORT_ASCBUFSIZE	1024

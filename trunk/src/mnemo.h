@@ -15,6 +15,8 @@ extern void Mnemo_init(void);
 extern int keyword_is_6502mnemo(int length);
 // Check whether mnemonic in GlobalDynaBuf is supported by 6510 cpu.
 extern int keyword_is_6510mnemo(int length);
+// Check whether mnemonic in GlobalDynaBuf is supported by C64DTV2 cpu.
+extern int keyword_is_c64dtv2mnemo(int length);
 // Check whether mnemonic in GlobalDynaBuf is supported by 65c02 cpu.
 extern int keyword_is_65c02mnemo(int length);
 // Check whether mnemonic in GlobalDynaBuf is supported by Rockwell 65c02 cpu.

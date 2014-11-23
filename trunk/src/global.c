@@ -7,6 +7,7 @@
 // 22 Nov 2007	Added warn_on_indented_labels
 //  2 Jun 2014	Added warn_on_old_for and warn_on_type_mismatch
 // 19 Nov 2014	Merged Johann Klasek's report listing generator patch
+// 23 Nov 2014	Merged Martin Piper's "--msvc" error output patch
 #include <stdio.h>
 #include "platform.h"
 #include "acme.h"
@@ -28,6 +29,7 @@ const char	s_65816[]	= "65816";
 const char	s_and[]		= "and";
 const char	s_asl[]		= "asl";
 const char	s_asr[]		= "asr";
+const char	s_bra[]		= "bra";
 const char	s_brl[]		= "brl";
 const char	s_cbm[]		= "cbm";
 const char	s_eor[]		= "eor";
@@ -108,6 +110,7 @@ int		pass_undefined_count;	// "NeedValue" type errors
 int		pass_real_errors;	// Errors yet
 signed long	max_errors		= MAXERRORS;	// errors before giving up
 FILE		*msg_stream		= NULL;	// set to stdout by --use-stdout
+int		format_msvc		= FALSE;	// actually bool, enabled by --msvc
 struct report 	*report			= NULL;
 
 
@@ -334,10 +337,14 @@ int Parse_optional_block(void)
 // context: file name, line number, source type and source title.
 static void throw_message(const char *message, const char *type)
 {
-	fprintf(msg_stream, "%s - File %s, line %d (%s %s): %s\n", type,
-		Input_now->original_filename, Input_now->line_number,
-		Section_now->type, Section_now->title,
-		message);
+	if (format_msvc)
+		fprintf(msg_stream, "%s(%d) : %s (%s %s): %s\n",
+			Input_now->original_filename, Input_now->line_number,
+			type, Section_now->type, Section_now->title, message);
+	else
+		fprintf(msg_stream, "%s - File %s, line %d (%s %s): %s\n",
+			type, Input_now->original_filename, Input_now->line_number,
+			Section_now->type, Section_now->title, message);
 }
 
 
