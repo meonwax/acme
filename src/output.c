@@ -59,7 +59,7 @@ struct vcpu		CPU_state;	// current CPU state
 
 // FIXME - move file format stuff to some other .c file!
 // predefined stuff
-static struct node_t	*file_format_tree	= NULL;	// tree to hold output formats
+static struct ronode	*file_format_tree	= NULL;	// tree to hold output formats
 // possible file formats
 enum output_format {
 	OUTPUT_FORMAT_UNSPECIFIED,	// default (uses "plain" actually)
@@ -67,7 +67,7 @@ enum output_format {
 	OUTPUT_FORMAT_CBM,		// load address, code (default for "!to" pseudo opcode)
 	OUTPUT_FORMAT_PLAIN		// code only
 };
-static struct node_t	file_formats[]	= {
+static struct ronode	file_formats[]	= {
 	PREDEFNODE("apple",	OUTPUT_FORMAT_APPLE),
 	PREDEFNODE(s_cbm,	OUTPUT_FORMAT_CBM),
 //	PREDEFNODE("o65",	OUTPUT_FORMAT_O65),
@@ -79,11 +79,11 @@ static enum output_format	output_format	= OUTPUT_FORMAT_UNSPECIFIED;
 
 
 // predefined stuff
-static struct node_t	*segment_modifier_tree	= NULL;	// tree to hold segment modifiers
+static struct ronode	*segment_modifier_tree	= NULL;	// tree to hold segment modifiers
 // segment modifiers
 #define	SEGMENT_FLAG_OVERLAY	(1u << 0)
 #define	SEGMENT_FLAG_INVISIBLE	(1u << 1)
-static struct node_t	segment_modifiers[]	= {
+static struct ronode	segment_modifiers[]	= {
 	PREDEFNODE("overlay",	SEGMENT_FLAG_OVERLAY),
 	PREDEFLAST("invisible",	SEGMENT_FLAG_INVISIBLE),
 	//    ^^^^ this marks the last element
@@ -350,7 +350,7 @@ static enum eos PO_to(void)
 
 // pseudo ocpode table
 // FIXME - move to basics.c
-static struct node_t	pseudo_opcodes[]	= {
+static struct ronode	pseudo_opcodes[]	= {
 	PREDEFNODE("initmem",	PO_initmem),
 	PREDEFLAST("to",	PO_to),
 	//    ^^^^ this marks the last element

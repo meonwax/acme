@@ -51,7 +51,7 @@ static enum eos PO_eof(void)
 }
 
 // predefined stuff
-static struct node_t	pseudo_opcodes[]	= {
+static struct ronode	pseudo_opcodes[]	= {
 	PREDEFNODE("eof",	PO_eof),
 	PREDEFLAST("endoffile",	PO_eof),
 	//    ^^^^ this marks the last element

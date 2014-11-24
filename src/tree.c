@@ -15,7 +15,7 @@
 // Compute hash value by exclusive ORing the node's ID string and write
 // output to struct.
 // This function is not allowed to change GlobalDynaBuf!
-hash_t make_hash(struct node_t *node) {
+hash_t make_hash(struct ronode *node) {
 	register char		byte;
 	register const char	*read;
 	register hash_t		tmp	= 0;
@@ -28,7 +28,7 @@ hash_t make_hash(struct node_t *node) {
 }
 
 // Link a predefined data set to a tree
-void add_node_to_tree(struct node_t **tree, struct node_t *node_to_add)
+void add_node_to_tree(struct ronode **tree, struct ronode *node_to_add)
 {
 	hash_t	hash;
 
@@ -50,7 +50,7 @@ void add_node_to_tree(struct node_t **tree, struct node_t *node_to_add)
 
 // Add predefined tree items to given tree. The PREDEF* macros set HashValue
 // to 1 in all entries but the last. The last entry contains 0.
-void Tree_add_table(struct node_t **tree, struct node_t *table_to_add)
+void Tree_add_table(struct ronode **tree, struct ronode *table_to_add)
 {
 	// Caution when trying to optimise this. :)
 	while (table_to_add->hash_value)
@@ -61,11 +61,11 @@ void Tree_add_table(struct node_t **tree, struct node_t *table_to_add)
 // Search for a given ID string in a given tree.
 // Compute the hash of the given string and then use that to try to find a
 // tree item that matches the given data (HashValue and DynaBuf-String).
-// Store "Body" component in NodeBody and return TRUE.
+// Store "body" component in node_body and return TRUE.
 // Return FALSE if no matching item found.
-int Tree_easy_scan(struct node_t *tree, void **node_body, struct dynabuf *dyna_buf)
+int Tree_easy_scan(struct ronode *tree, void **node_body, struct dynabuf *dyna_buf)
 {
-	struct node_t	wanted;	// temporary storage
+	struct ronode	wanted;	// temporary storage
 	const char	*p1,
 			*p2;
 	char		b1,
@@ -106,15 +106,15 @@ int Tree_easy_scan(struct node_t *tree, void **node_body, struct dynabuf *dyna_b
 // and then use that to try to find a tree item that matches the given data
 // (HashValue, ID_Number, GlobalDynaBuf-String). Save pointer to found tree
 // item in given location.
-// If no matching item is found, check the "Create" flag. If it is set, create
+// If no matching item is found, check the "create" flag. If it is set, create
 // a new tree item, link to tree, fill with data and store its pointer. If the
-// "Create" flag is clear, store NULL as result.
+// "create" flag is zero, store NULL as result.
 // Returns whether item was created.
-int Tree_hard_scan(struct node_ra_t **result, struct node_ra_t **forest, int id_number, int create)
+int Tree_hard_scan(struct rwnode **result, struct rwnode **forest, int id_number, int create)
 {
-	struct node_t		wanted;	// temporary storage
-	struct node_ra_t	**current_node;
-	struct node_ra_t	*new_leaf_node;
+	struct ronode	wanted;	// temporary storage
+	struct rwnode	**current_node;
+	struct rwnode	*new_leaf_node;
 	const char	*p1,
 			*p2;
 	char		b1,
@@ -178,7 +178,7 @@ int Tree_hard_scan(struct node_ra_t **result, struct node_ra_t **forest, int id_
 
 // Call given function for each object of matching type in the given tree.
 // Calls itself recursively.
-void dump_tree(struct node_ra_t *node, int id_number, void (*fn)(struct node_ra_t *, FILE *), FILE *env)
+void dump_tree(struct rwnode *node, int id_number, void (*fn)(struct rwnode *, FILE *), FILE *env)
 {
 
 	if (node->id_number == id_number)
@@ -190,7 +190,7 @@ void dump_tree(struct node_ra_t *node, int id_number, void (*fn)(struct node_ra_
 }
 
 // Calls Tree_dump_tree for each non-zero entry of the given tree table.
-void Tree_dump_forest(struct node_ra_t **forest, int id_number, void (*fn)(struct node_ra_t *, FILE *), FILE *env)
+void Tree_dump_forest(struct rwnode **forest, int id_number, void (*fn)(struct rwnode *, FILE *), FILE *env)
 {
 	int	ii;
 

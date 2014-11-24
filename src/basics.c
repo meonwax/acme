@@ -240,7 +240,7 @@ static enum eos PO_serious(void)
 
 
 // pseudo ocpode table
-static struct node_t	pseudo_opcodes[]	= {
+static struct ronode	pseudo_opcodes[]	= {
 	PREDEFNODE(s_08,	PO_08),
 	PREDEFNODE(s_8,		PO_08),
 	PREDEFNODE("by",	PO_08),

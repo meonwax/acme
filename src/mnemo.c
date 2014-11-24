@@ -144,13 +144,13 @@ static const char	exception_highbyte_zero[]	= "Using oversized addressing mode."
 
 static struct dynabuf	*mnemo_dyna_buf;	// dynamic buffer for mnemonics
 // predefined stuff
-static struct node_t	*mnemo_6502_tree	= NULL;	// holds 6502 mnemonics
-static struct node_t	*mnemo_6510_tree	= NULL;	// holds 6510 extensions
-static struct node_t	*mnemo_c64dtv2_tree	= NULL;	// holds C64DTV2 extensions
-static struct node_t	*mnemo_65c02_tree	= NULL;	// holds 65c02 extensions
-//static struct node_t	*mnemo_Rockwell65c02_tree	= NULL;	// Rockwell
-static struct node_t	*mnemo_WDC65c02_tree	= NULL;	// WDC's "stp"/"wai"
-static struct node_t	*mnemo_65816_tree	= NULL;	// holds 65816 extensions
+static struct ronode	*mnemo_6502_tree	= NULL;	// holds 6502 mnemonics
+static struct ronode	*mnemo_6510_tree	= NULL;	// holds 6510 extensions
+static struct ronode	*mnemo_c64dtv2_tree	= NULL;	// holds C64DTV2 extensions
+static struct ronode	*mnemo_65c02_tree	= NULL;	// holds 65c02 extensions
+//static struct ronode	*mnemo_Rockwell65c02_tree	= NULL;	// Rockwell
+static struct ronode	*mnemo_WDC65c02_tree	= NULL;	// WDC's "stp"/"wai"
+static struct ronode	*mnemo_65816_tree	= NULL;	// holds 65816 extensions
 
 // Command's code and group values are stored together in a single integer.
 // To extract the code, use "& CODEMASK".
@@ -162,7 +162,7 @@ static struct node_t	*mnemo_65816_tree	= NULL;	// holds 65816 extensions
 #define GROUPSHIFT	10	// shift right by this to extract group
 #define MERGE(g, v)	((g << GROUPSHIFT) | v)
 
-static struct node_t	mnemos_6502[]	= {
+static struct ronode	mnemos_6502[]	= {
 	PREDEFNODE("ora", MERGE(GROUP_ACCU, IDX_ORA | IMM_ACCU)),
 	PREDEFNODE(s_and, MERGE(GROUP_ACCU, IDX_AND | IMM_ACCU)),
 	PREDEFNODE(s_eor, MERGE(GROUP_ACCU, IDX_EOR | IMM_ACCU)),
@@ -222,7 +222,7 @@ static struct node_t	mnemos_6502[]	= {
 	//    ^^^^ this marks the last element
 };
 
-static struct node_t	mnemos_6510[]	= {
+static struct ronode	mnemos_6510[]	= {
 	PREDEFNODE("slo", MERGE(GROUP_ACCU, IDX_SLO)),	// ASL + ORA (aka ASO)
 	PREDEFNODE("rla", MERGE(GROUP_ACCU, IDX_RLA)),	// ROL + AND
 	PREDEFNODE("sre", MERGE(GROUP_ACCU, IDX_SRE)),	// LSR + EOR (aka LSE)
@@ -242,14 +242,14 @@ static struct node_t	mnemos_6510[]	= {
 	//    ^^^^ this marks the last element
 };
 
-static struct node_t	mnemos_c64dtv2[]	= {
+static struct ronode	mnemos_c64dtv2[]	= {
 	PREDEFNODE(s_bra, MERGE(GROUP_RELATIVE8,  0x12)),	// branch always
 	PREDEFNODE("sac", MERGE(GROUP_MISC, IDX_SAC)),	// set accumulator mapping
 	PREDEFLAST("sir", MERGE(GROUP_MISC, IDX_SIR)),	// set index register mapping
 	//    ^^^^ this marks the last element
 };
 
-static struct node_t	mnemos_65c02[]	= {
+static struct ronode	mnemos_65c02[]	= {
 	PREDEFNODE("ora", MERGE(GROUP_ACCU,	IDXcORA | IMM_ACCU)),
 	PREDEFNODE(s_and, MERGE(GROUP_ACCU,	IDXcAND | IMM_ACCU)),
 	PREDEFNODE(s_eor, MERGE(GROUP_ACCU,	IDXcEOR | IMM_ACCU)),
@@ -273,7 +273,7 @@ static struct node_t	mnemos_65c02[]	= {
 	//    ^^^^ this marks the last element
 };
 
-//static struct node_t	mnemos_Rockwell65c02[]	= {
+//static struct ronode	mnemos_Rockwell65c02[]	= {
 //	PREDEFNODE("rmb0", MERGE(G_	, 0x07)),
 //	PREDEFNODE("rmb1", MERGE(G_	, 0x17)),
 //	PREDEFNODE("rmb2", MERGE(G_	, 0x27)),
@@ -309,13 +309,13 @@ static struct node_t	mnemos_65c02[]	= {
 //	//    ^^^^ this marks the last element
 //};
 
-static struct node_t	mnemos_WDC65c02[]	= {
+static struct ronode	mnemos_WDC65c02[]	= {
 	PREDEFNODE("stp", MERGE(GROUP_IMPLIEDONLY, 219)),
 	PREDEFLAST("wai", MERGE(GROUP_IMPLIEDONLY, 203)),
 	//    ^^^^ this marks the last element
 };
 
-static struct node_t	mnemos_65816[]	= {
+static struct ronode	mnemos_65816[]	= {
 	PREDEFNODE("ora", MERGE(GROUP_ACCU,	IDX816ORA | IMM_ACCU)),
 	PREDEFNODE(s_and, MERGE(GROUP_ACCU,	IDX816AND | IMM_ACCU)),
 	PREDEFNODE(s_eor, MERGE(GROUP_ACCU,	IDX816EOR | IMM_ACCU)),
@@ -838,7 +838,7 @@ static void group_jump(int index)
 }
 
 // Work function
-static int check_mnemo_tree(struct node_t *tree, struct dynabuf *dyna_buf)
+static int check_mnemo_tree(struct ronode *tree, struct dynabuf *dyna_buf)
 {
 	void	*node_body;
 	int	code,

@@ -56,7 +56,7 @@ extern const char	Byte_flags[];
 
 // Variables
 
-extern struct node_t	*pseudo_opcode_tree;	// tree to hold pseudo opcodes
+extern struct ronode	*pseudo_opcode_tree;	// tree to hold pseudo opcodes (FIXME - move when grouping all POs)
 // structures
 // different ways to handle end-of-statement:
 enum eos {

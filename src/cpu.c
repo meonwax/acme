@@ -60,8 +60,8 @@ static struct cpu_type	cpu_type_65816	= {
 // variables
 
 // predefined stuff
-static struct node_t	*CPU_tree	= NULL;	// tree to hold CPU types
-static struct node_t	CPUs[]	= {
+static struct ronode	*CPU_tree	= NULL;	// tree to hold CPU types
+static struct ronode	CPUs[]	= {
 //	PREDEFNODE("z80",		&cpu_type_Z80),
 	PREDEFNODE("6502",		&cpu_type_6502),
 	PREDEFNODE("6510",		&cpu_type_6510),
@@ -230,7 +230,7 @@ static enum eos PO_rs(void)
 
 // pseudo opcode table
 // FIXME - move to basics.c
-static struct node_t	pseudo_opcodes[]	= {
+static struct ronode	pseudo_opcodes[]	= {
 	PREDEFNODE("align",	PO_align),
 	PREDEFNODE("cpu",	PO_cpu),
 	PREDEFNODE("pseudopc",	PO_pseudopc),

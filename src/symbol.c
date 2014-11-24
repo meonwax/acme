@@ -26,11 +26,11 @@
 
 
 // variables
-struct node_ra_t	*symbols_forest[256];	// ... (because of 8-bit hash)
+struct rwnode	*symbols_forest[256];	// ... (because of 8-bit hash)
 
 
 // Dump symbol value and flags to dump file
-static void dump_one_symbol(struct node_ra_t *node, FILE *fd)
+static void dump_one_symbol(struct rwnode *node, FILE *fd)
 {
 	struct symbol	*symbol	= node->body;
 
@@ -68,7 +68,7 @@ static void dump_one_symbol(struct node_ra_t *node, FILE *fd)
 
 
 // output symbols in VICE format (example: "al C:09ae .nmi1")
-static void dump_vice_address(struct node_ra_t *node, FILE *fd)
+static void dump_vice_address(struct rwnode *node, FILE *fd)
 {
 	struct symbol	*symbol	= node->body;
 
@@ -78,7 +78,7 @@ static void dump_vice_address(struct node_ra_t *node, FILE *fd)
 	&& (symbol->result.addr_refs == 1))
 		fprintf(fd, "al C:%04x .%s\n", (unsigned) symbol->result.val.intval, node->id_string);
 }
-static void dump_vice_usednonaddress(struct node_ra_t *node, FILE *fd)
+static void dump_vice_usednonaddress(struct rwnode *node, FILE *fd)
 {
 	struct symbol	*symbol	= node->body;
 
@@ -89,7 +89,7 @@ static void dump_vice_usednonaddress(struct node_ra_t *node, FILE *fd)
 	&& (symbol->result.addr_refs != 1))
 		fprintf(fd, "al C:%04x .%s\n", (unsigned) symbol->result.val.intval, node->id_string);
 }
-static void dump_vice_unusednonaddress(struct node_ra_t *node, FILE *fd)
+static void dump_vice_unusednonaddress(struct rwnode *node, FILE *fd)
 {
 	struct symbol	*symbol	= node->body;
 
@@ -106,10 +106,10 @@ static void dump_vice_unusednonaddress(struct node_ra_t *node, FILE *fd)
 // the symbol name must be held in GlobalDynaBuf.
 struct symbol *symbol_find(zone_t zone, int flags)
 {
-	struct node_ra_t	*node;
-	struct symbol		*symbol;
-	int			node_created,
-				force_bits	= flags & MVALUE_FORCEBITS;
+	struct rwnode	*node;
+	struct symbol	*symbol;
+	int		node_created,
+			force_bits	= flags & MVALUE_FORCEBITS;
 
 	node_created = Tree_hard_scan(&node, symbols_forest, zone, TRUE);
 	// if node has just been created, create symbol as well
@@ -234,7 +234,7 @@ static enum eos PO_sl(void)
 
 
 // predefined stuff
-static struct node_t	pseudo_opcodes[]	= {
+static struct ronode	pseudo_opcodes[]	= {
 	PREDEFNODE("set",		PO_set),
 	PREDEFNODE("symbollist",	PO_sl),
 	PREDEFLAST(s_sl,		PO_sl),
@@ -325,8 +325,8 @@ void symbols_vicelabels(FILE *fd)
 // clear symbols forest (is done early)
 void symbols_clear_init(void)
 {
-	struct node_ra_t	**ptr;
-	int			ii;
+	struct rwnode	**ptr;
+	int		ii;
 
 	// cut down all the trees (clear pointer table)
 	ptr = symbols_forest;

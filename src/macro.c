@@ -50,7 +50,7 @@ union macro_arg_t {
 // Variables
 static struct dynabuf	*user_macro_name;	// original macro title
 static struct dynabuf	*internal_name;		// plus param type chars
-static struct node_ra_t	*macro_forest[256];	// trees (because of 8b hash)
+static struct rwnode	*macro_forest[256];	// trees (because of 8b hash)
 // Dynamic argument table
 static union macro_arg_t	*arg_table	= NULL;
 static int			argtable_size	= HALF_INITIAL_ARG_TABLE_SIZE;
@@ -125,7 +125,7 @@ static char *get_string_copy(const char *original)
 // Terminate macro name and copy from internal_name to GlobalDynaBuf
 // (because that's where Tree_hard_scan() looks for the search string).
 // Then try to find macro and return whether it was created.
-static int search_for_macro(struct node_ra_t **result, zone_t zone, int create)
+static int search_for_macro(struct rwnode **result, zone_t zone, int create)
 {
 	DynaBuf_append(internal_name, '\0');	// terminate macro name
 	// now internal_name = macro_title SPC argument_specifiers NUL
@@ -139,7 +139,7 @@ static int search_for_macro(struct node_ra_t **result, zone_t zone, int create)
 // It first outputs a warning and then a serious error, stopping assembly.
 // Showing the first message as a warning guarantees that ACME does not reach
 // the maximum error limit inbetween.
-static void report_redefinition(struct node_ra_t *macro_node)
+static void report_redefinition(struct rwnode *macro_node)
 {
 	struct macro	*original_macro	= macro_node->body;
 
@@ -160,10 +160,10 @@ static void report_redefinition(struct node_ra_t *macro_node)
 // Return with GotByte = '}'
 void Macro_parse_definition(void)	// Now GotByte = illegal char after "!macro"
 {
-	char			*formal_parameters;
-	struct node_ra_t	*macro_node;
-	struct macro		*new_macro;
-	zone_t			macro_zone	= get_zone_and_title();
+	char		*formal_parameters;
+	struct rwnode	*macro_node;
+	struct macro	*new_macro;
+	zone_t		macro_zone	= get_zone_and_title();
 
 	// now GotByte = first non-space after title
 	DYNABUF_CLEAR(GlobalDynaBuf);	// prepare to hold formal parameters
@@ -224,15 +224,15 @@ void Macro_parse_definition(void)	// Now GotByte = illegal char after "!macro"
 // Parse macro call ("+MACROTITLE"). Has to be re-entrant.
 void Macro_parse_call(void)	// Now GotByte = dot or first char of macro name
 {
-	char			local_gotbyte;
-	struct symbol		*symbol;
-	struct section		new_section,
-				*outer_section;
-	struct input		new_input,
-				*outer_input;
-	struct macro		*actual_macro;
-	struct node_ra_t	*macro_node,
-				*symbol_node;
+	char		local_gotbyte;
+	struct symbol	*symbol;
+	struct section	new_section,
+			*outer_section;
+	struct input	new_input,
+			*outer_input;
+	struct macro	*actual_macro;
+	struct rwnode	*macro_node,
+			*symbol_node;
 	zone_t		macro_zone,
 			symbol_zone;
 	int		arg_count	= 0;

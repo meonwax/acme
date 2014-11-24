@@ -36,8 +36,8 @@ struct loop_condition {
 // variables
 
 // predefined stuff
-static struct node_t	*condkey_tree	= NULL;	// tree to hold UNTIL and WHILE
-static struct node_t	condkeys[]	= {
+static struct ronode	*condkey_tree	= NULL;	// tree to hold UNTIL and WHILE
+static struct ronode	condkeys[]	= {
 	PREDEFNODE("until",	TRUE),	// UNTIL inverts the condition
 	PREDEFLAST("while",	FALSE),	// WHILE does not change the condition
 	//    ^^^^ this marks the last element
@@ -336,10 +336,10 @@ static enum eos PO_if(void)	// Now GotByte = illegal char
 // conditional assembly ("!ifdef" and "!ifndef"). Has to be re-entrant.
 static enum eos ifdef_ifndef(int invert)	// Now GotByte = illegal char
 {
-	struct node_ra_t	*node;
-	struct symbol		*symbol;
-	zone_t			zone;
-	int			defined	= FALSE;
+	struct rwnode	*node;
+	struct symbol	*symbol;
+	zone_t		zone;
+	int		defined	= FALSE;
 
 	if (Input_read_zone_and_keyword(&zone) == 0)	// skips spaces before
 		return SKIP_REMAINDER;
@@ -453,7 +453,7 @@ static enum eos PO_source(void)	// Now GotByte = illegal char
 
 
 // pseudo opcode table
-static struct node_t	pseudo_opcodes[]	= {
+static struct ronode	pseudo_opcodes[]	= {
 	PREDEFNODE("do",	PO_do),
 	PREDEFNODE("for",	PO_for),
 	PREDEFNODE("if",	PO_if),
