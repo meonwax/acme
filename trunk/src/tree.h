@@ -21,40 +21,40 @@
 typedef unsigned int	hash_t;
 // Must be unsigned, otherwise the hash algorithm won't be very useful!
 
-// tree node structure type definition (for easy lookups)
-struct node_t {
-	struct node_t	*greater_than;	// pointer to sub-tree
-	struct node_t	*less_than_or_equal;	// pointer to sub-tree
+// tree node structure type definition for lookups in "read-only" (i.e. keyword) trees
+struct ronode {
+	struct ronode	*greater_than;	// pointer to sub-tree
+	struct ronode	*less_than_or_equal;	// pointer to sub-tree
 	hash_t		hash_value;
 	const char	*id_string;	// name, zero-terminated
 	void		*body;		// bytes, handles or handler function
 };
 
-// tree node structure type definition (for macros/labels)
-struct node_ra_t {
-	struct node_ra_t	*greater_than;	// pointer to sub-tree
-	struct node_ra_t	*less_than_or_equal;	// pointer to sub-tree
-	hash_t			hash_value;
-	char			*id_string;	// name, zero-terminated
-	void			*body;		// macro/label body
-	unsigned int		id_number;	// zone number
+// tree node structure type definition for "read/write" items, i.e. macros/labels
+struct rwnode {
+	struct rwnode	*greater_than;	// pointer to sub-tree
+	struct rwnode	*less_than_or_equal;	// pointer to sub-tree
+	hash_t		hash_value;
+	char		*id_string;	// name, zero-terminated
+	void		*body;		// macro/label body
+	unsigned int	id_number;	// zone number
 };
 
 
 // Prototypes
 
 // Add predefined tree items to given tree.
-extern void Tree_add_table(struct node_t **tree, struct node_t *table_to_add);
-// Search for a given ID string in a given tree. Store "Body" component in
-// NodeBody and return TRUE. Return FALSE if no matching item found.
-extern int Tree_easy_scan(struct node_t *tree, void **node_body, struct dynabuf *dyna_buf);
+extern void Tree_add_table(struct ronode **tree, struct ronode *table_to_add);
+// Search for a given ID string in a given tree. Store "body" component in
+// node_body and return TRUE. Return FALSE if no matching item found.
+extern int Tree_easy_scan(struct ronode *tree, void **node_body, struct dynabuf *dyna_buf);
 // Search for a "RAM tree" item. Save pointer to found tree item in given
-// location. If no matching item is found, check the "Create" flag: If set,
+// location. If no matching item is found, check the "create" flag: If set,
 // create new tree item, link to tree, fill with data and store its pointer.
-// If "Create" is clear, store NULL. Returns whether item was created.
-extern int Tree_hard_scan(struct node_ra_t **, struct node_ra_t **, int, int);
+// If "create" is zero, store NULL. Returns whether item was created.
+extern int Tree_hard_scan(struct rwnode **result, struct rwnode **forest, int id_number, int create);
 // Calls given function for each node of each tree of given forest.
-extern void Tree_dump_forest(struct node_ra_t **, int, void (*)(struct node_ra_t *, FILE *), FILE *);
+extern void Tree_dump_forest(struct rwnode **, int, void (*)(struct rwnode *, FILE *), FILE *);
 
 
 #endif

@@ -29,7 +29,7 @@ static const char	s_scr[]		= "scr";
 static char	outermost_table[256];	// space for encoding table...
 static char	*loaded_table	= outermost_table;	// ...loaded from file
 // predefined stuff
-static struct node_t	*encoder_tree	= NULL;	// tree to hold encoders
+static struct ronode	*encoder_tree	= NULL;	// tree to hold encoders
 
 
 // Functions
@@ -216,7 +216,7 @@ static enum eos PO_convtab(void)
 }
 
 // pseudo opcode table
-static struct node_t	pseudo_opcodes[]	= {
+static struct ronode	pseudo_opcodes[]	= {
 	PREDEFNODE(s_cbm,	PO_cbm),
 	PREDEFNODE("ct",	PO_convtab),
 	PREDEFNODE("convtab",	PO_convtab),
@@ -230,7 +230,7 @@ static struct node_t	pseudo_opcodes[]	= {
 };
 
 // keywords for "!convtab" pseudo opcode
-static struct node_t	encoders[]	= {
+static struct ronode	encoders[]	= {
 	PREDEFNODE(s_pet,	encoder_pet),
 	PREDEFNODE(s_raw,	encoder_raw),
 	PREDEFLAST(s_scr,	encoder_scr),

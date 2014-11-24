@@ -97,7 +97,7 @@ static enum eos PO_subzone(void)
 }
 
 // predefined stuff
-static struct node_t	pseudo_opcodes[]	= {
+static struct ronode	pseudo_opcodes[]	= {
 	PREDEFNODE(s_zone,	PO_zone),
 	PREDEFNODE("zn",	PO_zone),
 	PREDEFNODE(s_subzone,	PO_subzone),

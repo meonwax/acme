@@ -162,8 +162,8 @@ enum alu_state {
 };
 static enum alu_state	alu_state;	// deterministic finite automaton
 // predefined stuff
-static struct node_t	*operator_tree	= NULL;	// tree to hold operators
-static struct node_t	operator_list[]	= {
+static struct ronode	*operator_tree	= NULL;	// tree to hold operators
+static struct ronode	operator_list[]	= {
 	PREDEFNODE(s_asr,	&ops_asr),
 	PREDEFNODE(s_lsr,	&ops_lsr),
 	PREDEFNODE(s_asl,	&ops_sl),
@@ -176,8 +176,8 @@ static struct node_t	operator_list[]	= {
 	PREDEFLAST(s_xor,	&ops_xor),
 	//    ^^^^ this marks the last element
 };
-static struct node_t	*function_tree	= NULL;	// tree to hold functions
-static struct node_t	function_list[]	= {
+static struct ronode	*function_tree	= NULL;	// tree to hold functions
+static struct ronode	function_list[]	= {
 	PREDEFNODE("addr",	&ops_addr),
 	PREDEFNODE("int",	&ops_int),
 	PREDEFNODE("float",	&ops_float),

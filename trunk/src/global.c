@@ -98,7 +98,7 @@ const char	Byte_flags[256]	= {
 
 
 // variables
-struct node_t	*pseudo_opcode_tree	= NULL;	// tree to hold pseudo opcodes
+struct ronode	*pseudo_opcode_tree	= NULL;	// tree to hold pseudo opcodes (FIXME - move when grouping all POs)
 int		pass_count;			// number of current pass (starts 0)
 char		GotByte;			// Last byte read (processed)
 int		Process_verbosity	= 0;	// Level of additional output

@@ -19,7 +19,7 @@ struct symbol {
 
 
 // variables
-extern struct node_ra_t	*symbols_forest[];	// trees (because of 8-bit hash)
+extern struct rwnode	*symbols_forest[];	// trees (because of 8-bit hash)
 
 
 // clear symbol forest (is done early)
