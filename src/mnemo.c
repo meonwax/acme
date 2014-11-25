@@ -68,7 +68,7 @@
 #define MAYBE_1_2_3	(MVALUE_FORCE08 | MVALUE_FORCE16 | MVALUE_FORCE24)
 
 // The mnemonics are split up into groups, each group has its own function to be dealt with:
-enum mnemogroup_t {
+enum mnemogroup {
 	GROUP_ACCU,		// main accumulator stuff, plus PEI		Byte value = table index
 	GROUP_MISC,		// read-modify-write and others			Byte value = table index
 	GROUP_ALLJUMPS,		// the jump instructions			Byte value = table index

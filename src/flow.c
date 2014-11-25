@@ -28,19 +28,8 @@
 
 struct loop_condition {
 	int	line;	// original line number
-	int	invert;	// actually bool (0 for WHILE, 1 for UNTIL)
+	int	is_until;	// actually bool (0 for WHILE, 1 for UNTIL)
 	char	*body;	// pointer to actual expression
-};
-
-
-// variables
-
-// predefined stuff
-static struct ronode	*condkey_tree	= NULL;	// tree to hold UNTIL and WHILE
-static struct ronode	condkeys[]	= {
-	PREDEFNODE("until",	TRUE),	// UNTIL inverts the condition
-	PREDEFLAST("while",	FALSE),	// WHILE does not change the condition
-	//    ^^^^ this marks the last element
 };
 
 
@@ -64,28 +53,25 @@ static void parse_ram_block(int line_number, char *body)
 // call with GotByte = first interesting character
 static void store_condition(struct loop_condition *condition, char terminator)
 {
-	void	*node_body;
-
 	// write line number
 	condition->line = Input_now->line_number;
-	// Check for empty condition
-	if (GotByte == terminator) {
-		// Write NULL condition, then return
-		condition->invert = FALSE;
-		condition->body = NULL;
+	// set defaults
+	condition->is_until = FALSE;
+	condition->body = NULL;
+	// check for empty condition
+	if (GotByte == terminator)
 		return;
-	}
-	// Seems as if there really *is* a condition.
-	// Read UNTIL/WHILE keyword
+
+	// seems as if there really *is* a condition, so check for until/while
 	if (Input_read_and_lower_keyword()) {
-		// Search for new tree item
-		if (!Tree_easy_scan(condkey_tree, &node_body, GlobalDynaBuf)) {
+		if (strcmp(GlobalDynaBuf->buffer, "while") == 0) {
+			//condition.is_until = FALSE;
+		} else if (strcmp(GlobalDynaBuf->buffer, "until") == 0) {
+			condition->is_until = TRUE;
+		} else {
 			Throw_error(exception_syntax);
-			condition->invert = FALSE;
-			condition->body = NULL;
 			return;
 		}
-		condition->invert = (int) node_body;
 		// Write given condition into buffer
 		SKIPSPACE();
 		DYNABUF_CLEAR(GlobalDynaBuf);
@@ -112,7 +98,7 @@ static int check_condition(struct loop_condition *condition)
 	expression = ALU_defined_int();
 	if (GotByte)
 		Throw_serious_error(exception_syntax);
-	return condition->invert ? !expression : !!expression;
+	return condition->is_until ? !expression : !!expression;
 }
 
 
@@ -127,9 +113,9 @@ static enum eos PO_do(void)	// Now GotByte = illegal char
 	int		go_on,
 			loop_start;	// line number of loop pseudo opcode
 	// Init
-	condition1.invert = FALSE;
+	condition1.is_until = FALSE;
 	condition1.body = NULL;
-	condition2.invert = FALSE;
+	condition2.is_until = FALSE;
 	condition2.body = NULL;
 	
 	// Read head condition to buffer
@@ -298,11 +284,13 @@ static void parse_block_else_block(int parse_first)
 	// in that case, there's no use in checking for an "else" part).
 	if (skip_or_parse_block(parse_first))
 		return;
+
 	// now GotByte = '}'. Check for "else" part.
 	// If end of statement, return immediately.
 	NEXTANDSKIPSPACE();
 	if (GotByte == CHAR_EOS)
 		return;
+
 	// read keyword and check whether really "else"
 	if (Input_read_and_lower_keyword()) {
 		if (strcmp(GlobalDynaBuf->buffer, "else")) {
@@ -334,7 +322,7 @@ static enum eos PO_if(void)	// Now GotByte = illegal char
 
 
 // conditional assembly ("!ifdef" and "!ifndef"). Has to be re-entrant.
-static enum eos ifdef_ifndef(int invert)	// Now GotByte = illegal char
+static enum eos ifdef_ifndef(int is_ifndef)	// Now GotByte = illegal char
 {
 	struct rwnode	*node;
 	struct symbol	*symbol;
@@ -355,7 +343,7 @@ static enum eos ifdef_ifndef(int invert)	// Now GotByte = illegal char
 	}
 	SKIPSPACE();
 	// if "ifndef", invert condition
-	if (invert)
+	if (is_ifndef)
 		defined = !defined;
 	if (GotByte != CHAR_SOB)
 		return defined ? PARSE_REMAINDER : SKIP_REMAINDER;
@@ -469,6 +457,5 @@ static struct ronode	pseudo_opcodes[]	= {
 // register pseudo opcodes and build keyword tree for until/while
 void Flow_init(void)
 {
-	Tree_add_table(&condkey_tree, condkeys);
 	Tree_add_table(&pseudo_opcode_tree, pseudo_opcodes);
 }
