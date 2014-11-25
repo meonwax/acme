@@ -23,13 +23,13 @@ static struct cpu_type	cpu_type_6502	= {
 static struct cpu_type	cpu_type_6510	= {
 	keyword_is_6510mnemo,
 	CPUFLAG_INDIRECTJMPBUGGY |	// JMP ($xxFF) is buggy
-		CPUFLAG_AB_NEEDS_0_ARG,	// LXA #$xx is unstable unless arg is $00
+		CPUFLAG_8B_AND_AB_NEED_0_ARG,	// ANE/LXA #$xx are unstable unless arg is $00
 	234			// !align fills with "NOP"
 };
 static struct cpu_type	cpu_type_c64dtv2	= {
 	keyword_is_c64dtv2mnemo,
 	CPUFLAG_INDIRECTJMPBUGGY |	// JMP ($xxFF) is buggy
-		CPUFLAG_AB_NEEDS_0_ARG,	// LXA #$xx is unstable unless arg is $00 (FIXME - correct?)
+		CPUFLAG_8B_AND_AB_NEED_0_ARG,	// ANE/LXA #$xx are unstable unless arg is $00 (FIXME - correct?)
 	234			// !align fills with "NOP"
 };
 static struct cpu_type	cpu_type_65c02	= {

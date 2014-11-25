@@ -13,32 +13,42 @@ In release 0.89, some more were added.
 In release 0.94.8, another one was added (lxa).
 In release 0.95.3, C64DTV2 support was added, which includes these
 opcodes as well.
+In release 0.95.4, the remaining seven were added.
 
-Here are the mnemonics, addressing modes and generated opcodes:
+Here are the new mnemonics, possible addressing modes and generated
+opcodes (mnemonics in parentheses are used by other sources):
 
-      |                 addressing  mode                 |
-Mnemo |   8    8,x   8,y    16   16,x  16,y  (8,x) (8),y |  performs:
-------+--------------------------------------------------+-----------
- slo  |   07    17    --    0f    1f    1b    03    13   |  asl + ora
- rla  |   27    37    --    2f    3f    3b    23    33   |  rol + and
- sre  |   47    57    --    4f    5f    5b    43    53   |  lsr + eor
- rra  |   67    77    --    6f    7f    7b    63    73   |  ror + adc
- sax  |   87    --    97    8f    --    --    83    --   |  stx + sta
- lax  |   a7    --    b7    af    --    bf    a3    b3   |  ldx + lda
- dcp  |   c7    d7    --    cf    df    db    c3    d3   |  dec + cmp
- isc  |   e7    f7    --    ef    ff    fb    e3    f3   |  inc + sbc
+                |           addressing  mode           |
+ mnemonic       |  8  8,x 8,y 16 16,x 16,y (8,x) (8),y | performs:
+----------------+--------------------------------------+-----------
+ slo (aso)      | 07  17      0f  1f   1b   03    13   | asl + ora
+ rla            | 27  37      2f  3f   3b   23    33   | rol + and
+ sre (lse)      | 47  57      4f  5f   5b   43    53   | lsr + eor
+ rra            | 67  77      6f  7f   7b   63    73   | ror + adc
+ sax (axs, aax) | 87      97  8f            83         | stx + sta
+ lax            | a7      b7  af       bf   a3    b3   | ldx + lda
+ dcp (dcm)      | c7  d7      cf  df   db   c3    d3   | dec + cmp
+ isc (isb, ins) | e7  f7      ef  ff   fb   e3    f3   | inc + sbc
+ las (lar, lae) |                      bb              | A,X,S = {addr} & S
+These five are said to be unstable:
+ tas (shs, xas) |                      9b              | S = A & X    {addr} = A&X& {H+1}
+ sha (axa, ahx) |                      9f         93   | {addr} = A & X & {H+1}
+ shx (xas, sxa) |                      9e              | {addr} = X & {H+1}
+ shy (say, sya) |                 9c                   | {addr} = Y & {H+1}
 
-      |           addressing mode           |
-Mnemo | implied #8    8    8,x    16   16,x |  performs:
-------+-------------------------------------+------------------------
- anc  |   --    0b*   --    --    --    --  |  A = A & arg, then C=N
- asr  |   --    4b    --    --    --    --  |  A = A & arg, then lsr
- arr  |   --    6b    --    --    --    --  |  A = A & arg, then ror
- sbx  |   --    cb    --    --    --    --  |  X = (A & X) - arg
- dop  |   80**  80    04    14    --    --  |  skips next byte
- top  |   0c**  --    --    --    0c    1c  |  skips next two bytes
- jam  |   02    --    --    --    --    --  |  crash (wait for reset)
- lxa  |   --    ab*** --    --    --    --  |  A/X = (A | ??) & arg
+                |         addressing mode         |
+ mnemonic       | implied #8    8   8,x  16  16,x | performs:
+----------------+---------------------------------+-----------------------
+ anc            |         0b*                     | A = A & arg, then C=N
+ asr (alr)      |         4b                      | A = A & arg, then lsr
+ arr            |         6b                      | A = A & arg, then ror
+ sbx (axs, sax) |         cb                      | X = (A & X) - arg
+ dop (nop, skb) |   80**  80   04   14            | skips next byte
+ top (nop, skw) |   0c**                 0c   1c  | skips next two bytes
+ jam (kil, hlt) |   02                            | crash (wait for reset)
+These two are somewhat unstable, because they involve an arbitrary value:
+ ane (xaa)      |         8b***                   | A = (A | ??) & X & arg
+ lxa (lax, atx) |         ab***                   | A,X = (A | ??) & arg
 
 Example:
 		!cpu 6510	; activate additional mnemonics...
@@ -49,16 +59,19 @@ Example:
 ACME version 0.95.2, anc#8 generates opcode 0x0b. Both opcodes work
 the same way on a 6510. I am told 0x2b does not work on the C64DTV2.
 
-**) Note that "dop" and "top" can be used with implied addressing, but
-the generated opcodes are those for immediate and 16-bit absolute
-addressing, respectively. Using dop/top with x-indexed addressing
-might have its uses when timing is critical (crossing a page border
-adds a penalty cycle).
+**) Note that DOP ("double nop") and TOP ("triple nop") can be used
+with implied addressing, but the generated opcodes are those for
+immediate and 16-bit absolute addressing, respectively. Using dop/top
+with x-indexed addressing might have its uses when timing is critical
+(crossing a page border adds a penalty cycle).
 
-***) This opcode is said to first perform an ORA with an arbitrary(!)
-value, then do an AND with the given argument, then do a TAX.
-This means it is unstable and therefore useless - unless the given
-argument is zero, in which case it reliably clears both A and X.
+***) ANE and LXA first perform an ORA with an arbitrary(!) value and
+then perform an AND with the given argument. So they are unstable and
+therefore useless - unless the given argument is zero:
+ANE #0 reliably clears A - which is still useless; just use LDA #0.
+LXA #0 reliably clears both A and X.
+ACME will output a warning if these opcodes get assembled with a
+nonzero argument.
 
 There is no guarantee that these opcodes actually work on a given 6502
 (or 6510, or 8500, or 8502) CPU. But as far as I know, nobody ever
@@ -100,15 +113,8 @@ Opcode|  Description                                          C64DTV2
   7c  |  same as 1c and others    top 16,x
   82  |  same as c2/e2            dop #8, but said to CRASH sometimes
   89  |  same as 80               dop #8
-  8b  |    see notes below
   92  |  same as 02 and others    jam                 CRASH
-  93  |    see notes below
-  9b  |    see notes below
-  9c  |    see notes below
-  9e  |    see notes below
-  9f  |    see notes below
   b2  |  same as 02 and others    jam                 CRASH
-  bb  |    see notes below
   c2  |  same as 82/e2            dop #8, but said to CRASH sometimes
   d2  |  same as 02 and others    jam                 CRASH
   d4  |  same as 14 and others    dop 8,x
@@ -121,22 +127,9 @@ Opcode|  Description                                          C64DTV2
   fa  |  same as (*legal*) ea     nop
   fc  |  same as 1c and others    top 16,x
 
-
-Concerning opcodes 8b, 93, 9b, 9c, 9e, 9f, bb:
-
-These opcodes are said to be unstable. For more information about what
-they do, see these documents:
+For more information about what these opcodes do, see these documents:
   John West, Marko Mäkelä. '64doc' file, 1994/06/03.
   Extra Instructions Of The 65XX Series CPU, Adam Vardy, 27 Sept. 1996
   6502 Undocumented Opcodes, by Freddy Offenga, 5/17/1997
   AAY64 (All About Your 64)
-
-I did not see much point in assigning mnemonics for these opcodes. The
-reference documents above call them:
-  8b: ane, xaa
-  93: sha, axa, ahx
-  9b: shs, tas, xas
-  9c: shy, say, sya
-  9e: shx, xas, sxa
-  9f: sha, axa, ahx
-  bb: las, lar, lae
+  NMOS 6510 Unintended Opcodes

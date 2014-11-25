@@ -89,19 +89,19 @@ enum mnemogroup {
 // column to use here. The row depends on the used addressing mode. A zero
 // entry in these tables means that the combination of mnemonic and addressing
 // mode is illegal.
-//                  |                             6502                              |                             65c02                             |                                         65816                                           |                          6510 illegals                        |
-enum {               IDX_ORA,IDX_AND,IDX_EOR,IDX_ADC,IDX_STA,IDX_LDA,IDX_CMP,IDX_SBC,IDXcORA,IDXcAND,IDXcEOR,IDXcADC,IDXcSTA,IDXcLDA,IDXcCMP,IDXcSBC,IDX816ORA,IDX816AND,IDX816EOR,IDX816ADC,IDX816STA,IDX816LDA,IDX816CMP,IDX816SBC,IDX816PEI,IDX_SLO,IDX_RLA,IDX_SRE,IDX_RRA,IDX_SAX,IDX_LAX,IDX_DCP,IDX_ISC};
-SCL accu_abs[]    = { 0x0d05, 0x2d25, 0x4d45, 0x6d65, 0x8d85, 0xada5, 0xcdc5, 0xede5, 0x0d05, 0x2d25, 0x4d45, 0x6d65, 0x8d85, 0xada5, 0xcdc5, 0xede5, 0x0f0d05, 0x2f2d25, 0x4f4d45, 0x6f6d65, 0x8f8d85, 0xafada5, 0xcfcdc5, 0xefede5,        0, 0x0f07, 0x2f27, 0x4f47, 0x6f67, 0x8f87, 0xafa7, 0xcfc7, 0xefe7};	// $ff      $ffff    $ffffff
-SCL accu_xabs[]   = { 0x1d15, 0x3d35, 0x5d55, 0x7d75, 0x9d95, 0xbdb5, 0xddd5, 0xfdf5, 0x1d15, 0x3d35, 0x5d55, 0x7d75, 0x9d95, 0xbdb5, 0xddd5, 0xfdf5, 0x1f1d15, 0x3f3d35, 0x5f5d55, 0x7f7d75, 0x9f9d95, 0xbfbdb5, 0xdfddd5, 0xfffdf5,        0, 0x1f17, 0x3f37, 0x5f57, 0x7f77,      0,      0, 0xdfd7, 0xfff7};	// $ff,x    $ffff,x  $ffffff,x
-SCS accu_yabs[]   = { 0x1900, 0x3900, 0x5900, 0x7900, 0x9900, 0xb900, 0xd900, 0xf900, 0x1900, 0x3900, 0x5900, 0x7900, 0x9900, 0xb900, 0xd900, 0xf900,   0x1900,   0x3900,   0x5900,   0x7900,   0x9900,   0xb900,   0xd900,   0xf900,        0, 0x1b00, 0x3b00, 0x5b00, 0x7b00,   0x97, 0xbfb7, 0xdb00, 0xfb00};	// $ff,y    $ffff,y
-SCB accu_xind8[]  = {   0x01,   0x21,   0x41,   0x61,   0x81,   0xa1,   0xc1,   0xe1,   0x01,   0x21,   0x41,   0x61,   0x81,   0xa1,   0xc1,   0xe1,     0x01,     0x21,     0x41,     0x61,     0x81,     0xa1,     0xc1,     0xe1,        0,   0x03,   0x23,   0x43,   0x63,   0x83,   0xa3,   0xc3,   0xe3};	// ($ff,x)
-SCB accu_indy8[]  = {   0x11,   0x31,   0x51,   0x71,   0x91,   0xb1,   0xd1,   0xf1,   0x11,   0x31,   0x51,   0x71,   0x91,   0xb1,   0xd1,   0xf1,     0x11,     0x31,     0x51,     0x71,     0x91,     0xb1,     0xd1,     0xf1,        0,   0x13,   0x33,   0x53,   0x73,      0,   0xb3,   0xd3,   0xf3};	// ($ff),y
-SCB accu_imm[]    = {   0x09,   0x29,   0x49,   0x69,      0,   0xa9,   0xc9,   0xe9,   0x09,   0x29,   0x49,   0x69,      0,   0xa9,   0xc9,   0xe9,     0x09,     0x29,     0x49,     0x69,        0,     0xa9,     0xc9,     0xe9,        0,      0,      0,      0,      0,      0,      0,      0,      0};	// #$ff     #$ffff
-SCB accu_ind8[]   = {      0,      0,      0,      0,      0,      0,      0,      0,   0x12,   0x32,   0x52,   0x72,   0x92,   0xb2,   0xd2,   0xf2,     0x12,     0x32,     0x52,     0x72,     0x92,     0xb2,     0xd2,     0xf2,     0xd4,      0,      0,      0,      0,      0,      0,      0,      0};	// ($ff)
-SCB accu_sabs8[]  = {      0,      0,      0,      0,      0,      0,      0,      0,      0,      0,      0,      0,      0,      0,      0,      0,     0x03,     0x23,     0x43,     0x63,     0x83,     0xa3,     0xc3,     0xe3,        0,      0,      0,      0,      0,      0,      0,      0,      0};	// $ff,s
-SCB accu_sindy8[] = {      0,      0,      0,      0,      0,      0,      0,      0,      0,      0,      0,      0,      0,      0,      0,      0,     0x13,     0x33,     0x53,     0x73,     0x93,     0xb3,     0xd3,     0xf3,        0,      0,      0,      0,      0,      0,      0,      0,      0};	// ($ff,s),y
-SCB accu_lind8[]  = {      0,      0,      0,      0,      0,      0,      0,      0,      0,      0,      0,      0,      0,      0,      0,      0,     0x07,     0x27,     0x47,     0x67,     0x87,     0xa7,     0xc7,     0xe7,        0,      0,      0,      0,      0,      0,      0,      0,      0};	// [$ff]
-SCB accu_lindy8[] = {      0,      0,      0,      0,      0,      0,      0,      0,      0,      0,      0,      0,      0,      0,      0,      0,     0x17,     0x37,     0x57,     0x77,     0x97,     0xb7,     0xd7,     0xf7,        0,      0,      0,      0,      0,      0,      0,      0,      0};	// [$ff],y
+//                  |                             6502                              |                             65c02                             |                                         65816                                           |                             6510 illegals                             |
+enum {               IDX_ORA,IDX_AND,IDX_EOR,IDX_ADC,IDX_STA,IDX_LDA,IDX_CMP,IDX_SBC,IDXcORA,IDXcAND,IDXcEOR,IDXcADC,IDXcSTA,IDXcLDA,IDXcCMP,IDXcSBC,IDX816ORA,IDX816AND,IDX816EOR,IDX816ADC,IDX816STA,IDX816LDA,IDX816CMP,IDX816SBC,IDX816PEI,IDX_SLO,IDX_RLA,IDX_SRE,IDX_RRA,IDX_SAX,IDX_LAX,IDX_DCP,IDX_ISC,IDX_SHA};
+SCL accu_abs[]    = { 0x0d05, 0x2d25, 0x4d45, 0x6d65, 0x8d85, 0xada5, 0xcdc5, 0xede5, 0x0d05, 0x2d25, 0x4d45, 0x6d65, 0x8d85, 0xada5, 0xcdc5, 0xede5, 0x0f0d05, 0x2f2d25, 0x4f4d45, 0x6f6d65, 0x8f8d85, 0xafada5, 0xcfcdc5, 0xefede5,        0, 0x0f07, 0x2f27, 0x4f47, 0x6f67, 0x8f87, 0xafa7, 0xcfc7, 0xefe7,      0};	// $ff      $ffff    $ffffff
+SCL accu_xabs[]   = { 0x1d15, 0x3d35, 0x5d55, 0x7d75, 0x9d95, 0xbdb5, 0xddd5, 0xfdf5, 0x1d15, 0x3d35, 0x5d55, 0x7d75, 0x9d95, 0xbdb5, 0xddd5, 0xfdf5, 0x1f1d15, 0x3f3d35, 0x5f5d55, 0x7f7d75, 0x9f9d95, 0xbfbdb5, 0xdfddd5, 0xfffdf5,        0, 0x1f17, 0x3f37, 0x5f57, 0x7f77,      0,      0, 0xdfd7, 0xfff7,      0};	// $ff,x    $ffff,x  $ffffff,x
+SCS accu_yabs[]   = { 0x1900, 0x3900, 0x5900, 0x7900, 0x9900, 0xb900, 0xd900, 0xf900, 0x1900, 0x3900, 0x5900, 0x7900, 0x9900, 0xb900, 0xd900, 0xf900,   0x1900,   0x3900,   0x5900,   0x7900,   0x9900,   0xb900,   0xd900,   0xf900,        0, 0x1b00, 0x3b00, 0x5b00, 0x7b00,   0x97, 0xbfb7, 0xdb00, 0xfb00, 0x9f00};	// $ff,y    $ffff,y
+SCB accu_xind8[]  = {   0x01,   0x21,   0x41,   0x61,   0x81,   0xa1,   0xc1,   0xe1,   0x01,   0x21,   0x41,   0x61,   0x81,   0xa1,   0xc1,   0xe1,     0x01,     0x21,     0x41,     0x61,     0x81,     0xa1,     0xc1,     0xe1,        0,   0x03,   0x23,   0x43,   0x63,   0x83,   0xa3,   0xc3,   0xe3,      0};	// ($ff,x)
+SCB accu_indy8[]  = {   0x11,   0x31,   0x51,   0x71,   0x91,   0xb1,   0xd1,   0xf1,   0x11,   0x31,   0x51,   0x71,   0x91,   0xb1,   0xd1,   0xf1,     0x11,     0x31,     0x51,     0x71,     0x91,     0xb1,     0xd1,     0xf1,        0,   0x13,   0x33,   0x53,   0x73,      0,   0xb3,   0xd3,   0xf3,   0x93};	// ($ff),y
+SCB accu_imm[]    = {   0x09,   0x29,   0x49,   0x69,      0,   0xa9,   0xc9,   0xe9,   0x09,   0x29,   0x49,   0x69,      0,   0xa9,   0xc9,   0xe9,     0x09,     0x29,     0x49,     0x69,        0,     0xa9,     0xc9,     0xe9,        0,      0,      0,      0,      0,      0,      0,      0,      0,      0};	// #$ff     #$ffff
+SCB accu_ind8[]   = {      0,      0,      0,      0,      0,      0,      0,      0,   0x12,   0x32,   0x52,   0x72,   0x92,   0xb2,   0xd2,   0xf2,     0x12,     0x32,     0x52,     0x72,     0x92,     0xb2,     0xd2,     0xf2,     0xd4,      0,      0,      0,      0,      0,      0,      0,      0,      0};	// ($ff)
+SCB accu_sabs8[]  = {      0,      0,      0,      0,      0,      0,      0,      0,      0,      0,      0,      0,      0,      0,      0,      0,     0x03,     0x23,     0x43,     0x63,     0x83,     0xa3,     0xc3,     0xe3,        0,      0,      0,      0,      0,      0,      0,      0,      0,      0};	// $ff,s
+SCB accu_sindy8[] = {      0,      0,      0,      0,      0,      0,      0,      0,      0,      0,      0,      0,      0,      0,      0,      0,     0x13,     0x33,     0x53,     0x73,     0x93,     0xb3,     0xd3,     0xf3,        0,      0,      0,      0,      0,      0,      0,      0,      0,      0};	// ($ff,s),y
+SCB accu_lind8[]  = {      0,      0,      0,      0,      0,      0,      0,      0,      0,      0,      0,      0,      0,      0,      0,      0,     0x07,     0x27,     0x47,     0x67,     0x87,     0xa7,     0xc7,     0xe7,        0,      0,      0,      0,      0,      0,      0,      0,      0,      0};	// [$ff]
+SCB accu_lindy8[] = {      0,      0,      0,      0,      0,      0,      0,      0,      0,      0,      0,      0,      0,      0,      0,      0,     0x17,     0x37,     0x57,     0x77,     0x97,     0xb7,     0xd7,     0xf7,        0,      0,      0,      0,      0,      0,      0,      0,      0,      0};	// [$ff],y
 
 // Code tables for group GROUP_MISC:
 // These tables are needed for finding out the correct code in cases when
@@ -109,13 +109,13 @@ SCB accu_lindy8[] = {      0,      0,      0,      0,      0,      0,      0,   
 // mnemotable), the assembler finds out the column to use here. The row
 // depends on the used addressing mode. A zero entry in these tables means
 // that the combination of mnemonic and addressing mode is illegal.
-//                |                                                 6502                                                  |                     65c02                     |                 65816                 |                         6510 illegals                         |    C64DTV2    |
-enum {             IDX_BIT,IDX_ASL,IDX_ROL,IDX_LSR,IDX_ROR,IDX_STY,IDX_STX,IDX_LDY,IDX_LDX,IDX_CPY,IDX_CPX,IDX_DEC,IDX_INC,IDXcTSB,IDXcTRB,IDXcBIT,IDXcDEC,IDXcINC,IDXcSTZ,IDX816COP,IDX816REP,IDX816SEP,IDX816PEA,IDX_ANC,IDX_ASR,IDX_ARR,IDX_SBX,IDX_DOP,IDX_TOP,IDX_JAM,IDX_LXA,IDX_SAC,IDX_SIR};
-SCS misc_abs[]  = { 0x2c24, 0x0e06, 0x2e26, 0x4e46, 0x6e66, 0x8c84, 0x8e86, 0xaca4, 0xaea6, 0xccc4, 0xece4, 0xcec6, 0xeee6, 0x0c04, 0x1c14, 0x2c24, 0xcec6, 0xeee6, 0x9c64,     0x02,        0,        0,   0xf400,      0,      0,      0,      0,   0x04, 0x0c00,      0,      0,      0,      0};	// $ff      $ffff
-SCS misc_xabs[] = {      0, 0x1e16, 0x3e36, 0x5e56, 0x7e76,   0x94,      0, 0xbcb4,      0,      0,      0, 0xded6, 0xfef6,      0,      0, 0x3c34, 0xded6, 0xfef6, 0x9e74,        0,        0,        0,        0,      0,      0,      0,      0,   0x14, 0x1c00,      0,      0,      0,      0};	// $ff,x    $ffff,x
-SCS misc_yabs[] = {      0,      0,      0,      0,      0,      0,   0x96,      0, 0xbeb6,      0,      0,      0,      0,      0,      0,      0,      0,      0,      0,        0,        0,        0,        0,      0,      0,      0,      0,      0,      0,      0,      0,      0,      0};	// $ff,y    $ffff,y
-SCB misc_imm[]  = {      0,      0,      0,      0,      0,      0,      0,   0xa0,   0xa2,   0xc0,   0xe0,      0,      0,      0,      0,   0x89,      0,      0,      0,        0,     0xc2,     0xe2,        0,   0x0b,   0x4b,   0x6b,   0xcb,   0x80,      0,      0,   0xab,   0x32,   0x42};	// #$ff
-SCB misc_impl[] = {      0,   0x0a,   0x2a,   0x4a,   0x6a,      0,      0,      0,      0,      0,      0,      0,      0,      0,      0,      0,   0x3a,   0x1a,      0,        0,        0,        0,        0,      0,      0,      0,      0,   0x80,   0x0c,   0x02,      0,      0,      0};	// implied/accu
+//                |                                                 6502                                                  |                     65c02                     |                 65816                 |                                             6510 illegals                                             |    C64DTV2    |
+enum {             IDX_BIT,IDX_ASL,IDX_ROL,IDX_LSR,IDX_ROR,IDX_STY,IDX_STX,IDX_LDY,IDX_LDX,IDX_CPY,IDX_CPX,IDX_DEC,IDX_INC,IDXcTSB,IDXcTRB,IDXcBIT,IDXcDEC,IDXcINC,IDXcSTZ,IDX816COP,IDX816REP,IDX816SEP,IDX816PEA,IDX_ANC,IDX_ASR,IDX_ARR,IDX_SBX,IDX_DOP,IDX_TOP,IDX_JAM,IDX_LXA,IDX_ANE,IDX_LAS,IDX_TAS,IDX_SHX,IDX_SHY,IDX_SAC,IDX_SIR};
+SCS misc_abs[]  = { 0x2c24, 0x0e06, 0x2e26, 0x4e46, 0x6e66, 0x8c84, 0x8e86, 0xaca4, 0xaea6, 0xccc4, 0xece4, 0xcec6, 0xeee6, 0x0c04, 0x1c14, 0x2c24, 0xcec6, 0xeee6, 0x9c64,     0x02,        0,        0,   0xf400,      0,      0,      0,      0,   0x04, 0x0c00,      0,      0,      0,      0,      0,      0,      0,      0,      0};	// $ff      $ffff
+SCS misc_xabs[] = {      0, 0x1e16, 0x3e36, 0x5e56, 0x7e76,   0x94,      0, 0xbcb4,      0,      0,      0, 0xded6, 0xfef6,      0,      0, 0x3c34, 0xded6, 0xfef6, 0x9e74,        0,        0,        0,        0,      0,      0,      0,      0,   0x14, 0x1c00,      0,      0,      0,      0,      0,      0, 0x9c00,      0,      0};	// $ff,x    $ffff,x
+SCS misc_yabs[] = {      0,      0,      0,      0,      0,      0,   0x96,      0, 0xbeb6,      0,      0,      0,      0,      0,      0,      0,      0,      0,      0,        0,        0,        0,        0,      0,      0,      0,      0,      0,      0,      0,      0,      0, 0xbb00, 0x9b00, 0x9e00,      0,      0,      0};	// $ff,y    $ffff,y
+SCB misc_imm[]  = {      0,      0,      0,      0,      0,      0,      0,   0xa0,   0xa2,   0xc0,   0xe0,      0,      0,      0,      0,   0x89,      0,      0,      0,        0,     0xc2,     0xe2,        0,   0x0b,   0x4b,   0x6b,   0xcb,   0x80,      0,      0,   0xab,   0x8b,      0,      0,      0,      0,   0x32,   0x42};	// #$ff
+SCB misc_impl[] = {      0,   0x0a,   0x2a,   0x4a,   0x6a,      0,      0,      0,      0,      0,      0,      0,      0,      0,      0,      0,   0x3a,   0x1a,      0,        0,        0,        0,        0,      0,      0,      0,      0,   0x80,   0x0c,   0x02,      0,      0,      0,      0,      0,      0,      0,      0};	// implied/accu
 
 // Code tables for group GROUP_ALLJUMPS:
 // These tables are needed for finding out the correct code when the mnemonic
@@ -227,18 +227,24 @@ static struct ronode	mnemos_6510[]	= {
 	PREDEFNODE("rla", MERGE(GROUP_ACCU, IDX_RLA)),	// ROL + AND
 	PREDEFNODE("sre", MERGE(GROUP_ACCU, IDX_SRE)),	// LSR + EOR (aka LSE)
 	PREDEFNODE("rra", MERGE(GROUP_ACCU, IDX_RRA)),	// ROR + ADC
-	PREDEFNODE("sax", MERGE(GROUP_ACCU, IDX_SAX)),	// STX + STA (aka AAX aka AXS)
+	PREDEFNODE("sax", MERGE(GROUP_ACCU, IDX_SAX)),	// STX + STA (aka AXS aka AAX)
 	PREDEFNODE("lax", MERGE(GROUP_ACCU, IDX_LAX)),	// LDX + LDA
 	PREDEFNODE("dcp", MERGE(GROUP_ACCU, IDX_DCP)),	// DEC + CMP (aka DCM)
 	PREDEFNODE("isc", MERGE(GROUP_ACCU, IDX_ISC)),	// INC + SBC (aka ISB aka INS)
+	PREDEFNODE("las", MERGE(GROUP_MISC, IDX_LAS)),	// A,X,S = {addr} & S (aka LAR aka LAE)
+	PREDEFNODE("tas", MERGE(GROUP_MISC, IDX_TAS)),	// S = A & X	{addr} = A&X& {H+1} (aka SHS aka XAS)
+	PREDEFNODE("sha", MERGE(GROUP_ACCU, IDX_SHA)),	// {addr} = A & X & {H+1} (aka AXA aka AHX)
+	PREDEFNODE("shx", MERGE(GROUP_MISC, IDX_SHX)),	// {addr} = X & {H+1} (aka XAS aka SXA)
+	PREDEFNODE("shy", MERGE(GROUP_MISC, IDX_SHY)),	// {addr} = Y & {H+1} (aka SAY aka SYA)
 	PREDEFNODE("anc", MERGE(GROUP_MISC, IDX_ANC)),	// ROL + AND, ASL + ORA (aka AAC)
 	PREDEFNODE(s_asr, MERGE(GROUP_MISC, IDX_ASR)),	// LSR + EOR (aka ALR)
 	PREDEFNODE("arr", MERGE(GROUP_MISC, IDX_ARR)),	// ROR + ADC
 	PREDEFNODE("sbx", MERGE(GROUP_MISC, IDX_SBX)),	// DEX + CMP (aka AXS aka SAX)
 	PREDEFNODE("dop", MERGE(GROUP_MISC, IDX_DOP)),	// skip next byte
-	PREDEFNODE("top", MERGE(GROUP_MISC, IDX_TOP)),	// skip next two bytes
+	PREDEFNODE("top", MERGE(GROUP_MISC, IDX_TOP)),	// skip next word
 	PREDEFNODE("jam", MERGE(GROUP_MISC, IDX_JAM)),	// jam/crash/kill/halt-and-catch-fire
-	PREDEFLAST("lxa", MERGE(GROUP_MISC, IDX_LXA)),	// ORA #?? + AND #arg + TAX (aka OAL aka ATX)
+	PREDEFNODE("ane", MERGE(GROUP_MISC, IDX_ANE)),	// A = (A | ??) & X & arg (aka XAA)
+	PREDEFLAST("lxa", MERGE(GROUP_MISC, IDX_LXA)),	// A,X = (A | ??) & arg (aka OAL aka ATX)
 	//    ^^^^ this marks the last element
 };
 
@@ -768,12 +774,15 @@ static void group_misc(int index, int imm_flag)
 		// CAUTION - do not incorporate the line above into the line
 		// below - "force_bit" might be undefined (depends on compiler).
 		make_command(force_bit, &result, imm_opcodes);
-		// check whether to warn about 6510's unstable LXA
-		if ((imm_opcodes == 0xab)
+		// check whether to warn about 6510's unstable ANE/LXA
+		if ((CPU_state.type->flags & CPUFLAG_8B_AND_AB_NEED_0_ARG)
 		&& ((result.val.intval & 0xff) != 0x00)
-		&& (result.flags & MVALUE_DEFINED)
-		&& (CPU_state.type->flags & CPUFLAG_AB_NEEDS_0_ARG))
-			Throw_warning("Assembling unstable LXA #NONZERO instruction");
+		&& (result.flags & MVALUE_DEFINED)) {
+			if (imm_opcodes == 0x8b)
+				Throw_warning("Assembling unstable ANE #NONZERO instruction");
+			else if (imm_opcodes == 0xab)
+				Throw_warning("Assembling unstable LXA #NONZERO instruction");
+		}
 		break;
 	case HAM_ABS:	// $ff or  $ffff
 		make_command(force_bit, &result, misc_abs[index]);
