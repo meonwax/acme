@@ -39,7 +39,7 @@ static enum eos output_objects(void (*fn)(intval_t))
 
 
 // Insert 8-bit values ("!08" / "!8" / "!by" / "!byte" pseudo opcode)
-static enum eos PO_08(void)
+static enum eos PO_8(void)
 {
 	return output_objects(Output_8b);
 }
@@ -211,7 +211,6 @@ static enum eos throw_string(const char prefix[], void (*fn)(const char *))
 ////
 //static enum eos PO_debug(void)
 //static enum eos PO_info(void)
-//static enum eos PO_print(void)
 //{
 //	return throw_string();
 //}
@@ -241,10 +240,10 @@ static enum eos PO_serious(void)
 
 // pseudo ocpode table
 static struct ronode	pseudo_opcodes[]	= {
-	PREDEFNODE(s_08,	PO_08),
-	PREDEFNODE(s_8,		PO_08),
-	PREDEFNODE("by",	PO_08),
-	PREDEFNODE("byte",	PO_08),
+	PREDEFNODE(s_08,	PO_8),
+	PREDEFNODE(s_8,		PO_8),
+	PREDEFNODE("by",	PO_8),
+	PREDEFNODE("byte",	PO_8),
 	PREDEFNODE(s_16,	PO_16),
 	PREDEFNODE("wo",	PO_16),
 	PREDEFNODE("word",	PO_16),
@@ -258,7 +257,6 @@ static struct ronode	pseudo_opcodes[]	= {
 	PREDEFNODE("address",	PO_addr),
 //	PREDEFNODE("debug",	PO_debug),
 //	PREDEFNODE("info",	PO_info),
-//	PREDEFNODE("print",	PO_print),
 	PREDEFNODE("warn",	PO_warn),
 	PREDEFNODE(s_error,	PO_error),
 	PREDEFLAST("serious",	PO_serious),
