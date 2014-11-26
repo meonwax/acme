@@ -18,8 +18,7 @@
 
 // type definitions
 
-typedef unsigned int	hash_t;
-// Must be unsigned, otherwise the hash algorithm won't be very useful!
+typedef unsigned int	hash_t;	// must be unsigned, otherwise the hash algorithm won't be very useful!
 
 // tree node structure type definition for lookups in "read-only" (i.e. keyword) trees
 struct ronode {
