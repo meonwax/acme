@@ -220,7 +220,7 @@ do {								\
 // the user.
 static void just_count(void)
 {
-	pass_undefined_count++;
+	++pass_undefined_count;
 }
 
 
@@ -228,7 +228,7 @@ static void just_count(void)
 // further passes. This function counts these errors and shows them to the user.
 static void count_and_throw(void)
 {
-	pass_undefined_count++;
+	++pass_undefined_count;
 	Throw_error(exception_undefined);
 }
 
@@ -376,7 +376,7 @@ static void parse_binary_value(void)	// Now GotByte = "%" or "b"
 			digits	= -1;	// digit counter
 
 	do {
-		digits++;
+		++digits;
 		switch (GetByte()) {
 		case '0':
 		case '.':
@@ -418,7 +418,7 @@ static void parse_hexadecimal_value(void)	// Now GotByte = "$" or "x"
 	intval_t	value	= 0;
 
 	do {
-		digits++;
+		++digits;
 		go_on = 0;
 		byte = GetByte();
 		//	first, convert "A-F" to "a-f"
@@ -521,7 +521,7 @@ static void parse_octal_value(void)	// Now GotByte = "&"
 	GetByte();
 	while ((GotByte >= '0') && (GotByte <= '7')) {
 		value = (value << 3) + (GotByte & 7);	// this works. it's ASCII.
-		digits++;
+		++digits;
 		GetByte();
 	}
 	// set force bits
@@ -979,7 +979,7 @@ static void try_to_reduce_stacks(int *open_parentheses)
 // special (pseudo) operators
 	case OPHANDLE_RETURN:
 		// don't touch indirect_flag; needed for INDIRECT flag
-		operator_sp--;	// decrement operator stack pointer
+		--operator_sp;	// decrement operator stack pointer
 		alu_state = STATE_END;
 		break;
 	case OPHANDLE_OPENING:
@@ -990,7 +990,7 @@ static void try_to_reduce_stacks(int *open_parentheses)
 			alu_state = STATE_EXPECT_DYADIC_OPERATOR;
 			break;
 		case OPHANDLE_END:	// unmatched parenthesis
-			(*open_parentheses)++;	// count
+			++(*open_parentheses);	// count
 			goto RNTLObutDontTouchIndirectFlag;
 
 		default:
@@ -1332,7 +1332,7 @@ handle_flags_and_dec_stacks:
 	// "AND" DEFINED flag
 	LEFT_FLAGS &= (RIGHT_FLAGS | ~MVALUE_DEFINED);
 	LEFT_FLAGS &= ~MVALUE_ISBYTE;	// clear ISBYTE flag
-	operand_sp--;
+	--operand_sp;
 // entry point for monadic operators
 remove_next_to_last_operator:
 	// toplevel operation was something other than parentheses
@@ -1341,7 +1341,7 @@ remove_next_to_last_operator:
 RNTLObutDontTouchIndirectFlag:
 	// Remove operator and shift down next one
 	operator_stack[operator_sp-2] = operator_stack[operator_sp-1];
-	operator_sp--;	// decrement operator stack pointer
+	--operator_sp;	// decrement operator stack pointer
 }
 
 

@@ -24,7 +24,7 @@ const char *cliargs_get_next(void)
 	if (arguments_left == 0)
 		return NULL;
 
-	arguments_left--;
+	--arguments_left;
 	return *next_argument++;
 }
 

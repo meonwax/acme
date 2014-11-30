@@ -194,9 +194,9 @@ void Tree_dump_forest(struct rwnode **forest, int id_number, void (*fn)(struct r
 {
 	int	ii;
 
-	for (ii = 255; ii >= 0; ii--) {
+	for (ii = 255; ii >= 0; --ii) {
 		if (*forest)
 			dump_tree(*forest, id_number, fn, env);
-		forest++;
+		++forest;
 	}
 }

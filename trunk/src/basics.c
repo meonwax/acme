@@ -104,7 +104,7 @@ static enum eos PO_binary(void)
 			if (byte == EOF)
 				break;
 			Output_byte(byte);
-			size--;
+			--size;
 		}
 		// if more should have been read, warn and add padding
 		if (size > 0) {

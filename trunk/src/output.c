@@ -46,10 +46,14 @@ struct output {
 	struct {
 		intval_t	start;	// start of current segment (or NO_SEGMENT_START)
 		intval_t	max;	// highest address segment may use
-		int		flags;	// "overlay" and "invisible" flags
+		int		flags;	// segment flags ("overlay" and "invisible", see below)
 		struct segment	list_head;	// head element of doubly-linked ring list
 	} segment;
 };
+// segment flags (FIXME - move to header file when setpc() is moved to pseudo_opcodes.c):
+#define	SEGMENT_FLAG_OVERLAY	(1u << 0)	// do not warn about this segment overwriting another one
+#define	SEGMENT_FLAG_INVISIBLE	(1u << 1)	// do not warn about other segments overwriting this one
+
 
 // variables
 static struct output	default_output;
@@ -76,18 +80,6 @@ static struct ronode	file_formats[]	= {
 };
 // chosen file format
 static enum output_format	output_format	= OUTPUT_FORMAT_UNSPECIFIED;
-
-
-// predefined stuff
-static struct ronode	*segment_modifier_tree	= NULL;	// tree to hold segment modifiers
-// segment modifiers
-#define	SEGMENT_FLAG_OVERLAY	(1u << 0)
-#define	SEGMENT_FLAG_INVISIBLE	(1u << 1)
-static struct ronode	segment_modifiers[]	= {
-	PREDEFNODE("overlay",	SEGMENT_FLAG_OVERLAY),
-	PREDEFLAST("invisible",	SEGMENT_FLAG_INVISIBLE),
-	//    ^^^^ this marks the last element
-};
 
 
 // report binary output
@@ -152,7 +144,7 @@ static void real_output(intval_t byte)
 	if (report->fd)
 		report_binary(byte & 0xff);	// file for reporting, taking also CPU_2add
 	out->buffer[out->write_idx++] = byte & 0xff;
-	CPU_state.add_to_pc++;
+	++CPU_state.add_to_pc;
 }
 
 
@@ -177,7 +169,7 @@ void Output_fake(int size)
 	// check whether ptr undefined
 	if (Output_byte == no_output) {
 		Output_byte(0);	// trigger error with a dummy byte
-		size--;	// fix amount to cater for dummy byte
+		--size;	// fix amount to cater for dummy byte
 	}
 	// did we reach segment limit?
 	if (out->write_idx + size - 1 > out->segment.max)
@@ -378,7 +370,6 @@ void Output_init(signed long fill_value)
 	// init output buffer (fill memory with initial value)
 	fill_completely(fill_value & 0xff);
 	Tree_add_table(&pseudo_opcode_tree, pseudo_opcodes);
-	Tree_add_table(&segment_modifier_tree, segment_modifiers);
 	// init ring list of segments
 	out->segment.list_head.next = &out->segment.list_head;
 	out->segment.list_head.prev = &out->segment.list_head;
@@ -561,6 +552,7 @@ void Output_start_segment(intval_t address_change, int segment_flags)
 
 
 // TODO - add "!skip AMOUNT" pseudo opcode as alternative to "* = * + AMOUNT" (needed for assemble-to-end-address)
+// the new pseudo opcode would skip the given amount of bytes without starting a new segment
 
 // set program counter to defined value (FIXME - allow for undefined!)
 // if start address was given on command line, main loop will call this before each pass.
@@ -611,7 +603,6 @@ Maybe like this:
 // FIXME - move to basics.c
 void PO_setpc(void)
 {
-	void		*node_body;
 	int		segment_flags	= 0;
 	intval_t	new_addr	= ALU_defined_int();
 
@@ -622,12 +613,14 @@ void PO_setpc(void)
 		if (Input_read_and_lower_keyword() == 0)
 			return;
 
-		if (!Tree_easy_scan(segment_modifier_tree, &node_body, GlobalDynaBuf)) {
+		if (strcmp(GlobalDynaBuf->buffer, "overlay") == 0) {
+			segment_flags |= SEGMENT_FLAG_OVERLAY;
+		} else if (strcmp(GlobalDynaBuf->buffer, "invisible") == 0) {
+			segment_flags |= SEGMENT_FLAG_INVISIBLE;
+		} else {
 			Throw_error("Unknown \"* =\" segment modifier.");
 			return;
 		}
-
-		segment_flags |= (int) node_body;
 	}
 	vcpu_set_pc(new_addr, segment_flags);
 }
