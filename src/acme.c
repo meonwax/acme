@@ -17,7 +17,7 @@
 
 #define RELEASE		"0.95.4"	// update before release (FIXME)
 #define CODENAME	"Fenchurch"	// update before release
-#define CHANGE_DATE	"26 Nov"	// update before release
+#define CHANGE_DATE	"30 Nov"	// update before release
 #define CHANGE_YEAR	"2014"		// update before release
 //#define HOME_PAGE	"http://home.pages.de/~mac_bacon/smorbrod/acme/"	// FIXME
 #define HOME_PAGE	"http://sourceforge.net/p/acme-crossass/"	// FIXME
@@ -252,13 +252,13 @@ static int perform_pass(void)
 	pass_undefined_count = 0;	// no "NeedValue" errors yet
 	pass_real_errors = 0;	// no real errors yet
 	// Process toplevel files
-	for (ii = 0; ii < toplevel_src_count; ii++) {
+	for (ii = 0; ii < toplevel_src_count; ++ii) {
 		if ((fd = fopen(toplevel_sources[ii], FILE_READBINARY))) {
 			Parse_and_close_file(fd, toplevel_sources[ii]);
 		} else {
 			fprintf(stderr, "Error: Cannot open toplevel file \"%s\".\n", toplevel_sources[ii]);
 			// FIXME - if "filename" starts with "-", tell user to give options FIRST, files SECOND!
-			pass_real_errors++;
+ 			++pass_real_errors;
 		}
 	}
 	if (pass_real_errors)
@@ -375,13 +375,13 @@ static signed long string_to_number(const char *string)
 
 	if (*string == '%') {
 		base = 2;
-		string++;
+		++string;
 	} else if (*string == '&') {
 		base = 8;
-		string++;
+		++string;
 	} else if (*string == '$') {
 		base = 16;
-		string++;
+		++string;
 	} else if ((*string == '0') && ((string[1] == 'x') || (string[1] == 'X'))) {
 		base = 16;
 		string += 2;
@@ -498,7 +498,7 @@ static char short_option(const char *argument)
 			report_filename = cliargs_safe_get_next(arg_reportfile);
 			break;
 		case 'v':	// "-v" changes verbosity
-			Process_verbosity++;
+			++Process_verbosity;
 			if ((argument[1] >= '0') && (argument[1] <= '9'))
 				Process_verbosity = *(++argument) - '0';
 			break;
@@ -525,7 +525,7 @@ static char short_option(const char *argument)
 		default:	// unknown ones: program termination
 			return *argument;
 		}
-		argument++;
+		++argument;
 	}
 done:
 	return '\0';

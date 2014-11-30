@@ -376,10 +376,10 @@ char *Input_skip_or_store_block(int store)
 			} while ((GotByte != CHAR_EOS) && (GotByte != byte));
 			break;
 		case CHAR_SOB:
-			depth++;
+			++depth;
 			break;
 		case CHAR_EOB:
-			depth--;
+			--depth;
 			break;
 		}
 	} while (depth);
@@ -431,7 +431,7 @@ int Input_append_keyword_to_global_dynabuf(void)
 	// add characters to buffer until an illegal one comes along
 	while (BYTEFLAGS(GotByte) & CONTS_KEYWORD) {
 		DYNABUF_APPEND(GlobalDynaBuf, GotByte);
-		length++;
+		++length;
 		GetByte();
 	}
 	if (length == 0)

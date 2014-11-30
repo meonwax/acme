@@ -269,7 +269,7 @@ void Macro_parse_call(void)	// Now GotByte = dot or first char of macro name
 				DynaBuf_append(internal_name, ARGTYPE_NUM_VAL);
 				ALU_any_result(&(arg_table[arg_count].result));
 			}
-			arg_count++;
+			++arg_count;
 		} while (Input_accept_comma());
 	}
 	// now arg_table contains the arguments
@@ -324,7 +324,7 @@ void Macro_parse_call(void)	// Now GotByte = dot or first char of macro name
 // as above ("Macro parameter twice.").
 					symbol->result = arg_table[arg_count].result;
 				}
-				arg_count++;
+				++arg_count;
 			} while (Input_accept_comma());
 		}
 		// and now, finally, parse the actual macro body
@@ -344,5 +344,5 @@ void Macro_parse_call(void)	// Now GotByte = dot or first char of macro name
 		GotByte = local_gotbyte;	// CAUTION - ugly kluge
 		Input_ensure_EOS();
 	}
-	macro_recursions_left++;	// leave this nesting level
+	++macro_recursions_left;	// leave this nesting level
 }

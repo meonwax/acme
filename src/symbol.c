@@ -330,7 +330,7 @@ void symbols_clear_init(void)
 
 	// cut down all the trees (clear pointer table)
 	ptr = symbols_forest;
-	for (ii = 255; ii >= 0; ii--)
+	for (ii = 255; ii >= 0; --ii)
 		*ptr++ = NULL;
 }
 

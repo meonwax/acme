@@ -435,7 +435,7 @@ static enum eos PO_source(void)	// Now GotByte = illegal char
 		Throw_error(exception_cannot_open_input_file);
 	}
 	// Leave nesting level
-	source_recursions_left++;
+	++source_recursions_left;
 	return ENSURE_EOS;
 }
 

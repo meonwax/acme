@@ -374,7 +374,7 @@ void Throw_error(const char *message)
 {
 	PLATFORM_ERROR(message);
 	throw_message(message, "Error");
-	pass_real_errors++;
+	++pass_real_errors;
 	if (pass_real_errors >= max_errors)
 		exit(ACME_finalize(EXIT_FAILURE));
 }
