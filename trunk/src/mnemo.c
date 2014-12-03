@@ -629,8 +629,8 @@ static void group_only_relative8_addressing(int opcode)
 	Output_byte(opcode);
 	// this fn has its own range check (see above).
 	// No reason to irritate the user with another error message,
-	// so use Output_byte() instead of Output_8b()
-	//Output_8b(offset);
+	// so use Output_byte() instead of output_8()
+	//output_8(offset);
 	Output_byte(offset);
 	Input_ensure_EOS();
 }
@@ -653,7 +653,7 @@ static void group_only_relative16_addressing(int opcode)
 		}
 	}
 	Output_byte(opcode);
-	Output_16b(offset);
+	output_le16(offset);
 	Input_ensure_EOS();
 }
 
@@ -672,15 +672,15 @@ static void make_command(int force_bit, struct result *result, unsigned long opc
 	switch (calc_arg_size(force_bit, result, addressing_modes)) {
 	case MVALUE_FORCE08:
 		Output_byte(opcodes & 255);
-		Output_8b(result->val.intval);
+		output_8(result->val.intval);
 		break;
 	case MVALUE_FORCE16:
 		Output_byte((opcodes >> 8) & 255);
-		Output_16b(result->val.intval);
+		output_le16(result->val.intval);
 		break;
 	case MVALUE_FORCE24:
 		Output_byte((opcodes >> 16) & 255);
-		Output_24b(result->val.intval);
+		output_le24(result->val.intval);
 	}
 }
 
@@ -809,8 +809,8 @@ static void group_move(int opcode)
 	if (Input_accept_comma()) {
 		target = ALU_any_int();	// machine language:
 		Output_byte(opcode);	//	opcode
-		Output_8b(target);	//	target
-		Output_8b(source);	//	source
+		output_8(target);	//	target
+		output_8(source);	//	source
 		Input_ensure_EOS();
 	} else {
 		Throw_error(exception_syntax);

@@ -54,9 +54,6 @@ extern const char	Byte_flags[];
 // bits 2, 1 and 0 are currently unused
 
 
-// Variables
-
-extern struct ronode	*pseudo_opcode_tree;	// tree to hold pseudo opcodes (FIXME - move when grouping all POs)
 // structures
 // different ways to handle end-of-statement:
 enum eos {

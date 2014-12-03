@@ -16,10 +16,11 @@
 #include "alu.h"
 #include "config.h"
 #include "dynabuf.h"
-#include "global.h"
+#include "global.h"	// FIXME - remove when no longer needed
 #include "input.h"
 #include "macro.h"
 #include "mnemo.h"
+#include "pseudoopcodes.h"	// FIXME - remove when no longer needed
 #include "symbol.h"
 #include "tree.h"
 

@@ -7,9 +7,10 @@
 #include "config.h"
 #include "alu.h"
 #include "dynabuf.h"
-#include "global.h"
+#include "global.h"	// FIXME - remove when no longer needed
 #include "input.h"
 #include "platform.h"
+#include "pseudoopcodes.h"	// FIXME - remove when no longer needed
 #include "section.h"
 #include "tree.h"
 

@@ -761,12 +761,13 @@ Purpose:	Select the processor to produce code for. If this PO
 		the previously chosen CPU value is restored
 		afterwards.
 Parameters:	KEYWORD: Currently valid keywords are:
-		6502	allows official mnemonics and addressing modes
-		6510	adds mnemonics for some undocumented opcodes
-			(but includes all the official 6502 stuff)
-		c64dtv2	allows DTV2 extensions (includes 6510)
-		65c02	allows official 65c02 stuff (includes 6502)
-		65816	allows official 65816 stuff (includes 65c02)
+		6502	mnemonics and addressing modes of 6502 cpu
+		65c02	superset of 6502, adds 65c02 extensions
+		65816	superset of 65c02, adds 65816 extensions
+		6510	superset of 6502, adds mnemonics for
+			undocumented opcodes
+		c64dtv2	superset of 6510, adds mnemonics for DTV2
+			extensions (BRA/SAC/SIR)
 		BLOCK: A block of assembler statements.
 Examples:	!if cputype = $65c02 {
 			!cpu 65c02 {	; temporarily allow 65c02 stuff

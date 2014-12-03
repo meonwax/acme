@@ -9,8 +9,9 @@
 #include "acme.h"
 #include "dynabuf.h"
 #include "encoding.h"
-#include "global.h"
+#include "global.h"	// FIXME - remove when no longer needed
 #include "output.h"
+#include "pseudoopcodes.h"	// FIXME - remove when no longer needed
 #include "input.h"
 #include "tree.h"
 
@@ -51,7 +52,7 @@ static enum eos encode_string(encoder_t inner_encoder, char xor)
 			GetQuotedByte();
 			// send characters until closing quote is reached
 			while (GotByte && (GotByte != '"')) {
-				Output_8b(xor ^ Encoding_encode_char(GotByte));
+				output_8(xor ^ Encoding_encode_char(GotByte));
 				GetQuotedByte();
 			}
 			if (GotByte == CHAR_EOS)
@@ -63,7 +64,7 @@ static enum eos encode_string(encoder_t inner_encoder, char xor)
 			// Parse value. No problems with single characters
 			// because the current encoding is
 			// temporarily set to the given one.
-			Output_8b(ALU_any_int());
+			output_8(ALU_any_int());
 		}
 	} while (Input_accept_comma());
 	Encoding_encode_char = outer_encoder;	// reactivate buffered encoder

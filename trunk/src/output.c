@@ -46,13 +46,10 @@ struct output {
 	struct {
 		intval_t	start;	// start of current segment (or NO_SEGMENT_START)
 		intval_t	max;	// highest address segment may use
-		int		flags;	// segment flags ("overlay" and "invisible", see below)
+		int		flags;	// segment flags ("overlay" and "invisible", see header file)
 		struct segment	list_head;	// head element of doubly-linked ring list
 	} segment;
 };
-// segment flags (FIXME - move to header file when setpc() is moved to pseudo_opcodes.c):
-#define	SEGMENT_FLAG_OVERLAY	(1u << 0)	// do not warn about this segment overwriting another one
-#define	SEGMENT_FLAG_INVISIBLE	(1u << 1)	// do not warn about other segments overwriting this one
 
 
 // variables
@@ -187,7 +184,7 @@ void Output_fake(int size)
 
 
 // output 8-bit value with range check
-void Output_8b(intval_t value)
+void output_8(intval_t value)
 {
 	if ((value <= 0xff) && (value >= -0x80))
 		Output_byte(value);
@@ -197,7 +194,7 @@ void Output_8b(intval_t value)
 
 
 // output 16-bit value with range check
-void Output_16b(intval_t value)
+void output_le16(intval_t value)
 {
 	if ((value <= 0xffff) && (value >= -0x8000)) {
 		Output_byte(value);
@@ -209,7 +206,7 @@ void Output_16b(intval_t value)
 
 
 // output 24-bit value with range check
-void Output_24b(intval_t value)
+void output_le24(intval_t value)
 {
 	if ((value <= 0xffffff) && (value >= -0x800000)) {
 		Output_byte(value);
@@ -222,7 +219,7 @@ void Output_24b(intval_t value)
 
 
 // output 32-bit value (without range check)
-void Output_32b(intval_t value)
+void output_le32(intval_t value)
 {
 //  if ((Value <= 0x7fffffff) && (Value >= -0x80000000)) {
 	Output_byte(value);
@@ -243,26 +240,16 @@ static void fill_completely(char value)
 
 
 // define default value for empty memory ("!initmem" pseudo opcode)
-// FIXME - move to basics.c
-static enum eos PO_initmem(void)
+// returns zero if ok, nonzero if already set
+int output_initmem(char content)
 {
-	intval_t	content;
-
-	// ignore in all passes but in first
-	if (pass_count)
-		return SKIP_REMAINDER;
-
 	// if MemInit flag is already set, complain
 	if (out->initvalue_set) {
 		Throw_warning("Memory already initialised.");
-		return SKIP_REMAINDER;
+		return 1;	// failed
 	}
 	// set MemInit flag
 	out->initvalue_set = TRUE;
-	// get value and init memory
-	content = ALU_defined_int();
-	if ((content > 0xff) || (content < -0x80))
-		Throw_error(exception_number_out_of_range);
 	// init memory
 	fill_completely(content);
 	// enforce another pass
@@ -271,93 +258,53 @@ static enum eos PO_initmem(void)
 // FIXME - enforcing another pass is not needed if there hasn't been any
 // output yet. But that's tricky to detect without too much overhead.
 // The old solution was to add &&(out->lowest_written < out->highest_written+1) to "if" above
-	return ENSURE_EOS;
+	return 0;	// ok
 }
 
 
-// try to set output format held in DynaBuf. Returns whether succeeded.
-// FIXME - move to basics.c?
-int Output_set_output_format(void)
+// try to set output format held in DynaBuf. Returns zero on success.
+int output_set_output_format(void)
 {
 	void	*node_body;
 
+	// make sure tree is initialised
+	if (file_format_tree == NULL)
+		Tree_add_table(&file_format_tree, file_formats);
+	// perform lookup
 	if (!Tree_easy_scan(file_format_tree, &node_body, GlobalDynaBuf))
-		return FALSE;
+		return 1;
 
 	output_format = (enum output_format) node_body;
-	return TRUE;
+	return 0;
 }
 
-
-// select output file and format ("!to" pseudo opcode)
-// FIXME - move to basics.c
-static enum eos PO_to(void)
+// if file format was already chosen, returns zero.
+// if file format isn't set, chooses CBM and returns 1.
+int output_prefer_cbm_file_format(void)
 {
-	// bugfix: first read filename, *then* check for first pass.
-	// if skipping right away, quoted colons might be misinterpreted as EOS
-	// FIXME - why not just fix the skipping code to handle quotes? :)
-	// "!sl" has been fixed as well
+	if (output_format != OUTPUT_FORMAT_UNSPECIFIED)
+		return 0;
+	output_format = OUTPUT_FORMAT_CBM;
+	return 1;
+}
 
-	// read filename to global dynamic buffer
-	// if no file name given, exit (complaining will have been done)
-	if (Input_read_filename(FALSE))
-		return SKIP_REMAINDER;
-
-	// only act upon this pseudo opcode in first pass
-	if (pass_count)
-		return SKIP_REMAINDER;
-
+// select output file ("!to" pseudo opcode)
+// returns zero on success, nonzero if already set
+int output_set_output_filename(void)
+{
 	// if output file already chosen, complain and exit
 	if (output_filename) {
 		Throw_warning("Output file already chosen.");
-		return SKIP_REMAINDER;
+		return 1;	// failed
 	}
 
 	// get malloc'd copy of filename
 	output_filename = DynaBuf_get_copy(GlobalDynaBuf);
-	// select output format
-	// if no comma found, use default file format
-	if (Input_accept_comma() == FALSE) {
-		if (output_format == OUTPUT_FORMAT_UNSPECIFIED) {
-			output_format = OUTPUT_FORMAT_CBM;
-			// output deprecation warning
-			Throw_warning("Used \"!to\" without file format indicator. Defaulting to \"cbm\".");
-		}
-		return ENSURE_EOS;
-	}
-
-	// parse output format name
-	// if no keyword given, give up
-	if (Input_read_and_lower_keyword() == 0)
-		return SKIP_REMAINDER;
-
-	if (Output_set_output_format())
-		return ENSURE_EOS;	// success
-
-	// error occurred
-	Throw_error("Unknown output format.");
-	return SKIP_REMAINDER;
+	return 0;	// ok
 }
 
 
-// pseudo ocpode table
-// FIXME - move to basics.c
-static struct ronode	pseudo_opcodes[]	= {
-	PREDEFNODE("initmem",	PO_initmem),
-	PREDEFLAST("to",	PO_to),
-	//    ^^^^ this marks the last element
-};
-
-
-// init file format tree (is done early, because it is needed for CLI argument parsing)
-// FIXME - move to some other file
-void Outputfile_init(void)
-{
-	Tree_add_table(&file_format_tree, file_formats);
-}
-
-
-// init output struct, register pseudo opcodes (done later)
+// init output struct (done later)
 void Output_init(signed long fill_value)
 {
 	out->buffer = safe_malloc(OUTBUFFERSIZE);
@@ -369,7 +316,6 @@ void Output_init(signed long fill_value)
 	}
 	// init output buffer (fill memory with initial value)
 	fill_completely(fill_value & 0xff);
-	Tree_add_table(&pseudo_opcode_tree, pseudo_opcodes);
 	// init ring list of segments
 	out->segment.list_head.next = &out->segment.list_head;
 	out->segment.list_head.prev = &out->segment.list_head;
@@ -551,9 +497,6 @@ void Output_start_segment(intval_t address_change, int segment_flags)
 }
 
 
-// TODO - add "!skip AMOUNT" pseudo opcode as alternative to "* = * + AMOUNT" (needed for assemble-to-end-address)
-// the new pseudo opcode would skip the given amount of bytes without starting a new segment
-
 // set program counter to defined value (FIXME - allow for undefined!)
 // if start address was given on command line, main loop will call this before each pass.
 // in addition to that, it will be called on each "* = VALUE".
@@ -596,34 +539,6 @@ Maybe like this:
 		...code...
 	[} ; at end of block, size is written to size symbol given above!]
 */
-
-
-// called when "* = EXPRESSION" is parsed
-// setting program counter via "* = VALUE"
-// FIXME - move to basics.c
-void PO_setpc(void)
-{
-	int		segment_flags	= 0;
-	intval_t	new_addr	= ALU_defined_int();
-
-	// check for modifiers
-	while (Input_accept_comma()) {
-		// parse modifier
-		// if no keyword given, give up
-		if (Input_read_and_lower_keyword() == 0)
-			return;
-
-		if (strcmp(GlobalDynaBuf->buffer, "overlay") == 0) {
-			segment_flags |= SEGMENT_FLAG_OVERLAY;
-		} else if (strcmp(GlobalDynaBuf->buffer, "invisible") == 0) {
-			segment_flags |= SEGMENT_FLAG_INVISIBLE;
-		} else {
-			Throw_error("Unknown \"* =\" segment modifier.");
-			return;
-		}
-	}
-	vcpu_set_pc(new_addr, segment_flags);
-}
 
 
 // get program counter

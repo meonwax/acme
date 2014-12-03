@@ -22,8 +22,6 @@ struct cpu_type {
 #define CPUFLAG_SUPPORTSLONGREGS	(1u << 1)	// allow "!al" and "!rl" pseudo opcodes
 #define CPUFLAG_8B_AND_AB_NEED_0_ARG	(1u << 2)	// warn if "ane/lxa #$xx" uses non-zero arg
 
-// create cpu type tree (is done early)
-extern void CPUtype_init(void);
 
 // register pseudo opcodes (done later)
 extern void CPU_init(void);
