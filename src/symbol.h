@@ -22,8 +22,6 @@ struct symbol {
 extern struct rwnode	*symbols_forest[];	// trees (because of 8-bit hash)
 
 
-// clear symbol forest (is done early)
-extern void symbols_clear_init(void);
 // register pseudo opcodes (done later)
 extern void symbols_register_init(void);
 // function acts upon the symbol's flag bits and produces an error if needed.

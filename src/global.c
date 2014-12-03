@@ -17,6 +17,7 @@
 #include "input.h"
 #include "macro.h"
 #include "output.h"
+#include "pseudoopcodes.h"
 #include "section.h"
 #include "symbol.h"
 #include "tree.h"
@@ -98,7 +99,6 @@ const char	Byte_flags[256]	= {
 
 
 // variables
-struct ronode	*pseudo_opcode_tree	= NULL;	// tree to hold pseudo opcodes (FIXME - move when grouping all POs)
 int		pass_count;			// number of current pass (starts 0)
 char		GotByte;			// Last byte read (processed)
 int		Process_verbosity	= 0;	// Level of additional output
@@ -136,7 +136,7 @@ static void parse_pc_def(void)	// Now GotByte = "*"
 	// re-definitions of program counter change segment
 	if (GotByte == '=') {
 		GetByte();	// proceed with next char
-		PO_setpc();
+		notreallypo_setpc();
 		Input_ensure_EOS();
 	} else {
 		Throw_error(exception_syntax);
@@ -155,6 +155,8 @@ static void parse_pseudo_opcode(void)	// Now GotByte = "!"
 	GetByte();	// read next byte
 	// on missing keyword, return (complaining will have been done)
 	if (Input_read_and_lower_keyword()) {
+
+// move this to pseudoopcodes.c:
 		// search for tree item
 		if ((Tree_easy_scan(pseudo_opcode_tree, &node_body, GlobalDynaBuf))
 		&& node_body) {

@@ -5,8 +5,9 @@
 // Section stuff
 #include "config.h"
 #include "dynabuf.h"
-#include "global.h"
+#include "global.h"	// FIXME - remove when no longer needed
 #include "input.h"
+#include "pseudoopcodes.h"	// FIXME - remove when no longer needed
 #include "tree.h"
 #include "section.h"
 

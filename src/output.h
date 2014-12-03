@@ -13,6 +13,9 @@
 
 // constants
 #define MEMINIT_USE_DEFAULT	256
+// segment flags
+#define	SEGMENT_FLAG_OVERLAY	(1u << 0)	// do not warn about this segment overwriting another one
+#define	SEGMENT_FLAG_INVISIBLE	(1u << 1)	// do not warn about other segments overwriting this one
 
 
 // current CPU state
@@ -33,9 +36,7 @@ extern struct vcpu	CPU_state;	// current CPU state
 
 // Prototypes
 
-// Init file format tree (is done early)
-extern void Outputfile_init(void);
-// alloc and init mem buffer, register pseudo opcodes (done later)
+// alloc and init mem buffer (done later)
 extern void Output_init(signed long fill_value);
 // clear segment list and disable output
 extern void Output_passinit(void);
@@ -44,19 +45,25 @@ extern void Output_fake(int size);
 // Send low byte of arg to output buffer and advance pointer
 extern void (*Output_byte)(intval_t);
 // Output 8-bit value with range check
-extern void Output_8b(intval_t);
+extern void output_8(intval_t);
 // Output 16-bit value with range check
-extern void Output_16b(intval_t);
+extern void output_le16(intval_t);
 // Output 24-bit value with range check
-extern void Output_24b(intval_t);
+extern void output_le24(intval_t);
 // Output 32-bit value (without range check)
-extern void Output_32b(intval_t);
-// Try to set output format held in DynaBuf. Returns whether succeeded.
-extern int Output_set_output_format(void);
+extern void output_le32(intval_t);
+// define default value for empty memory ("!initmem" pseudo opcode)
+// returns zero if ok, nonzero if already set
+extern int output_initmem(char content);
+// try to set output format held in DynaBuf. Returns zero on success.
+extern int output_set_output_format(void);
+// if file format was already chosen, returns zero.
+// if file format isn't set, chooses CBM and returns 1.
+extern int output_prefer_cbm_file_format(void);
+// try to set output file name held in DynaBuf. Returns zero on success.
+extern int output_set_output_filename(void);
 // write smallest-possible part of memory buffer to file
 extern void Output_save_file(FILE *fd);
-// Call when "* = EXPRESSION" is parsed
-extern void PO_setpc(void);
 // change output pointer and enable output
 extern void Output_start_segment(intval_t address_change, int segment_flags);
 // Show start and end of current segment

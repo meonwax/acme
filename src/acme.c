@@ -17,7 +17,7 @@
 
 #define RELEASE		"0.95.4"	// update before release (FIXME)
 #define CODENAME	"Fenchurch"	// update before release
-#define CHANGE_DATE	"30 Nov"	// update before release
+#define CHANGE_DATE	"3 Dec"	// update before release
 #define CHANGE_YEAR	"2014"		// update before release
 //#define HOME_PAGE	"http://home.pages.de/~mac_bacon/smorbrod/acme/"	// FIXME
 #define HOME_PAGE	"http://sourceforge.net/p/acme-crossass/"	// FIXME
@@ -27,7 +27,6 @@
 #include <string.h>
 #include "acme.h"
 #include "alu.h"
-#include "basics.h"
 #include "cliargs.h"
 #include "config.h"
 #include "cpu.h"
@@ -40,6 +39,7 @@
 #include "mnemo.h"
 #include "output.h"
 #include "platform.h"
+#include "pseudoopcodes.h"
 #include "section.h"
 #include "symbol.h"
 
@@ -333,7 +333,7 @@ static void keyword_to_dynabuf(const char keyword[])
 static void set_output_format(void)
 {
 	keyword_to_dynabuf(cliargs_safe_get_next("output format"));
-	if (!Output_set_output_format()) {
+	if (output_set_output_format()) {
 		// FIXME - list actual formats instead of outputting a fixed list!
 		// FIXME - or AT LEAST define error message near the actual format list, so they match!
 		fprintf(stderr, "%sUnknown output format (use 'cbm', 'plain' or 'apple').\n", cliargs_error);
@@ -545,10 +545,6 @@ int main(int argc, const char *argv[])
 	// For example, this could read the library path from an
 	// environment variable, which in turn may need DynaBuf already.
 	PLATFORM_INIT;
-	// init some keyword trees needed for argument handling
-	CPUtype_init();
-	symbols_clear_init();	// needed so 
-	Outputfile_init();
 	// prepare a buffer large enough to hold pointers to "-D" switch values
 //	cli_defines = safe_malloc(argc * sizeof(*cli_defines));
 	// handle command line arguments
@@ -557,7 +553,6 @@ int main(int argc, const char *argv[])
 	cliargs_get_rest(&toplevel_src_count, &toplevel_sources, "No top level sources given");
 	// Init modules (most of them will just build keyword trees)
 	ALU_init();
-	Basics_init();
 	CPU_init();
 	Encoding_init();
 	Flow_init();
@@ -566,6 +561,7 @@ int main(int argc, const char *argv[])
 	Macro_init();
 	Mnemo_init();
 	Output_init(fill_value);
+	pseudoopcodes_init();	// setup keyword tree for pseudo opcodes
 	Section_init();
 	if (do_actual_work())
 		save_output_file();

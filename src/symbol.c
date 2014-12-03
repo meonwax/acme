@@ -11,10 +11,11 @@
 #include "acme.h"
 #include "alu.h"
 #include "dynabuf.h"
-#include "global.h"
+#include "global.h"	// FIXME - remove when no longer needed
 #include "input.h"
 #include "output.h"
 #include "platform.h"
+#include "pseudoopcodes.h"	// FIXME - remove when no longer needed
 #include "section.h"
 #include "symbol.h"
 #include "tree.h"
@@ -26,7 +27,7 @@
 
 
 // variables
-struct rwnode	*symbols_forest[256];	// ... (because of 8-bit hash)
+struct rwnode	*symbols_forest[256]	= { NULL };	// because of 8-bit hash - must be (at least partially) pre-defined so array will be zeroed!
 
 
 // Dump symbol value and flags to dump file
@@ -320,18 +321,6 @@ void symbols_vicelabels(FILE *fd)
 	fputc('\n', fd);
 	// dump address symbols
 	Tree_dump_forest(symbols_forest, ZONE_GLOBAL, dump_vice_address, fd);
-}
-
-// clear symbols forest (is done early)
-void symbols_clear_init(void)
-{
-	struct rwnode	**ptr;
-	int		ii;
-
-	// cut down all the trees (clear pointer table)
-	ptr = symbols_forest;
-	for (ii = 255; ii >= 0; --ii)
-		*ptr++ = NULL;
 }
 
 

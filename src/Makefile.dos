@@ -8,7 +8,7 @@ RM		= rm
 PROGS		= acme
 #BINDIR		= /usr/local/bin
 #USERBIN	= $(HOME)/bin
-OBJS		= acme.o alu.o cliargs.o cpu.o dynabuf.o encoding.o flow.o global.o input.o macro.o mnemo.o output.o platform.o section.o symbol.o tree.o typesystem.o
+OBJS		= acme.o alu.o cliargs.o cpu.o dynabuf.o encoding.o flow.o global.o input.o macro.o mnemo.o output.o platform.o pseudoopcodes.o section.o symbol.o tree.o typesystem.o
 
 all: $(PROGS)
 
@@ -18,7 +18,7 @@ acme: $(OBJS)
 	djp acme.exe
 	djp acmepmod.exe
 
-acme.o: config.h platform.h acme.h alu.h cpu.h dynabuf.h encoding.h flow.h global.h input.h macro.h mnemo.h output.h section.h symbol.h acme.h acme.c
+acme.o: config.h platform.h acme.h alu.h cpu.h dynabuf.h encoding.h flow.h global.h input.h macro.h mnemo.h output.h pseudoopcodes.h section.h symbol.h acme.h acme.c
 
 alu.o: config.h platform.h cpu.h dynabuf.h encoding.h global.h input.h section.h symbol.h tree.h alu.h alu.c
 
@@ -32,9 +32,9 @@ encoding.o: config.h alu.h acme.h dynabuf.h global.h output.h input.h tree.h enc
 
 flow.o: config.h acme.h alu.h dynabuf.h global.h input.h macro.h mnemo.h symbol.h tree.h flow.h flow.c
 
-global.o: config.h platform.h acme.h cpu.h input.h macro.h section.h symbol.h global.h global.c
+global.o: config.h platform.h acme.h cpu.h input.h macro.h pseudoopcodes.h section.h symbol.h global.h global.c
 
-input.o: config.h dynabuf.h global.h section.h tree.h input.h input.c
+input.o: config.h alu.h dynabuf.h global.h section.h tree.h input.h input.c
 
 macro.o: config.h acme.h alu.h dynabuf.h global.h input.h section.h symbol.h tree.h macro.h macro.c
 
@@ -44,9 +44,11 @@ output.o: config.h acme.h alu.h cpu.h dynabuf.h global.h input.h tree.h output.h
 
 platform.o: config.h platform.h platform.c
 
+pseudoopcodes.o: acme.h alu.h input.h output.h pseudoopcodes.h pseudoopcodes.c
+
 section.o: config.h dynabuf.h global.h section.h tree.h section.h section.c
 
-symbol.o: config.h acme.h alu.h cpu.h dynabuf.h global.h input.h mnemo.h section.h tree.h symbol.h symbol.c
+symbol.o: config.h acme.h alu.h cpu.h dynabuf.h global.h input.h section.h tree.h symbol.h symbol.c
 
 tree.o: config.h dynabuf.h global.h symbol.h tree.h tree.c
 

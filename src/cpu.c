@@ -7,10 +7,11 @@
 #include "alu.h"
 #include "cpu.h"
 #include "dynabuf.h"
-#include "global.h"
+#include "global.h"	// FIXME - remove when no longer needed
 #include "input.h"
 #include "mnemo.h"
 #include "output.h"
+#include "pseudoopcodes.h"	// FIXME - remove when no longer needed
 #include "tree.h"
 
 
@@ -100,7 +101,7 @@ static enum eos PO_align(void)
 	else
 		fill = CPU_state.type->default_align_value;
 	while ((test++ & and) != equal)
-		Output_8b(fill);
+		output_8(fill);
 	return ENSURE_EOS;
 }
 
@@ -111,6 +112,10 @@ int CPU_find_cpu_struct(const struct cpu_type **target)
 {
 	void	*node_body;
 
+	// make sure tree is initialised
+	if (CPU_tree == NULL)
+		Tree_add_table(&CPU_tree, CPUs);
+	// perform lookup
 	if (!Tree_easy_scan(CPU_tree, &node_body, GlobalDynaBuf))
 		return 0;
 	*target = node_body;
@@ -119,7 +124,7 @@ int CPU_find_cpu_struct(const struct cpu_type **target)
 
 
 // select CPU ("!cpu" pseudo opcode)
-// FIXME - move to basics.c
+// FIXME - move to pseudoopcodes.c
 static enum eos PO_cpu(void)
 {
 	const struct cpu_type	*cpu_buffer	= CPU_state.type;	// remember current cpu
@@ -149,7 +154,7 @@ static enum eos PO_realpc(void)
 
 // start offset assembly
 // FIXME - split into PO (move to basics.c) and backend (move to output.c)
-// TODO - add a label argument to assign the block size afterwards (for assemble-to-end-address)
+// TODO - maybe add a label argument to assign the block size afterwards (for assemble-to-end-address) (or add another pseudo opcode)
 static enum eos PO_pseudopc(void)
 {
 	// FIXME - read pc using a function call!
@@ -248,13 +253,6 @@ void CPU_passinit(const struct cpu_type *cpu_type)
 {
 	// handle cpu type (default is 6502)
 	CPU_state.type = cpu_type ? cpu_type : &cpu_type_6502;
-}
-
-
-// create cpu type tree (is done early)
-void CPUtype_init(void)
-{
-	Tree_add_table(&CPU_tree, CPUs);
 }
 
 
