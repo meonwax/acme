@@ -13,10 +13,12 @@
 
 // Prototypes
 
-// register pseudo opcodes and build keyword tree for until/while
+// register pseudo opcodes
 extern void Flow_init(void);
-// Parse a whole source code file
+// parse a whole source code file
 extern void Parse_and_close_file(FILE *fd, const char *filename);
+// parse {block} [else {block}]
+extern void flow_parse_block_else_block(int parse_first);
 
 
 #endif

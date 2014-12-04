@@ -22,10 +22,6 @@
 #include "typesystem.h"
 
 
-// constants
-#define s_sl	(s_asl + 1)	// Yes, I know I'm sick
-
-
 // variables
 struct rwnode	*symbols_forest[256]	= { NULL };	// because of 8-bit hash - must be (at least partially) pre-defined so array will be zeroed!
 
@@ -171,78 +167,6 @@ void symbol_set_value(struct symbol *symbol, struct result *new_value, int chang
 }
 
 
-// (Re)set symbol
-static enum eos PO_set(void)	// Now GotByte = illegal char
-{
-	struct result	result;
-	int		force_bit;
-	struct symbol	*symbol;
-	zone_t		zone;
-
-	if (Input_read_zone_and_keyword(&zone) == 0)	// skips spaces before
-		// Now GotByte = illegal char
-		return SKIP_REMAINDER;
-
-	force_bit = Input_get_force_bit();	// skips spaces after
-	symbol = symbol_find(zone, force_bit);
-	if (GotByte != '=') {
-		Throw_error(exception_syntax);
-		return SKIP_REMAINDER;
-	}
-
-	// symbol = parsed value
-	GetByte();	// proceed with next char
-	ALU_any_result(&result);
-	// clear symbol's force bits and set new ones
-	symbol->result.flags &= ~(MVALUE_FORCEBITS | MVALUE_ISBYTE);
-	if (force_bit) {
-		symbol->result.flags |= force_bit;
-		result.flags &= ~(MVALUE_FORCEBITS | MVALUE_ISBYTE);
-	}
-	symbol_set_value(symbol, &result, TRUE);
-	return ENSURE_EOS;
-}
-
-
-// set file name for symbol list
-static enum eos PO_sl(void)
-{
-	// bugfix: first read filename, *then* check for first pass.
-	// if skipping right away, quoted colons might be misinterpreted as EOS
-	// FIXME - why not just fix the skipping code to handle quotes? :)
-	// "!to" has been fixed as well
-
-	// read filename to global dynamic buffer
-	// if no file name given, exit (complaining will have been done)
-	if (Input_read_filename(FALSE))
-		return SKIP_REMAINDER;
-
-	// only process this pseudo opcode in first pass
-	if (pass_count)
-		return SKIP_REMAINDER;
-
-	// if symbol list file name already set, complain and exit
-	if (symbollist_filename) {
-		Throw_warning("Symbol list file name already chosen.");
-		return SKIP_REMAINDER;
-	}
-
-	// get malloc'd copy of filename
-	symbollist_filename = DynaBuf_get_copy(GlobalDynaBuf);
-	// ensure there's no garbage at end of line
-	return ENSURE_EOS;
-}
-
-
-// predefined stuff
-static struct ronode	pseudo_opcodes[]	= {
-	PREDEFNODE("set",		PO_set),
-	PREDEFNODE("symbollist",	PO_sl),
-	PREDEFLAST(s_sl,		PO_sl),
-	//    ^^^^ this marks the last element
-};
-
-
 // parse label definition (can be either global or local).
 // name must be held in GlobalDynaBuf.
 void symbol_set_label(zone_t zone, int stat_flags, int force_bit, int change_allowed)
@@ -321,13 +245,6 @@ void symbols_vicelabels(FILE *fd)
 	fputc('\n', fd);
 	// dump address symbols
 	Tree_dump_forest(symbols_forest, ZONE_GLOBAL, dump_vice_address, fd);
-}
-
-
-// register pseudo opcodes (done later)
-void symbols_register_init(void)
-{
-	Tree_add_table(&pseudo_opcode_tree, pseudo_opcodes);
 }
 
 
