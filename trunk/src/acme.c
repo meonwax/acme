@@ -345,8 +345,13 @@ static void set_output_format(void)
 // check CPU type (the cpu type tree must be set up at this point!)
 static void set_starting_cpu(void)
 {
+	const struct cpu_type	*new_cpu_type;
+
 	keyword_to_dynabuf(cliargs_safe_get_next("CPU type"));
-	if (!CPU_find_cpu_struct(&default_cpu)) {
+	new_cpu_type = cputype_find();
+	if (new_cpu_type) {
+		default_cpu = new_cpu_type;
+	} else {
 		// FIXME - list actual types instead of outputting a fixed list!
 		// FIXME - or AT LEAST define error message near the actual type list, so they match!
 		fprintf(stderr, "%sUnknown CPU type (use 6502, 6510, c64dtv2, 65c02 or 65816).\n", cliargs_error);
@@ -556,8 +561,6 @@ int main(int argc, const char *argv[])
 	CPU_init();
 	Encoding_init();
 	Flow_init();
-	Input_init();
-	symbols_register_init();
 	Macro_init();
 	Mnemo_init();
 	Output_init(fill_value);

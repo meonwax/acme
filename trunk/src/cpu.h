@@ -27,9 +27,8 @@ struct cpu_type {
 extern void CPU_init(void);
 // set default value for pass
 extern void CPU_passinit(const struct cpu_type *cpu_type);
-// try to find CPU type held in DynaBuf. Returns whether succeeded.
-// FIXME - why not simply return struct ptr, or NULL in case of failure?
-extern int CPU_find_cpu_struct(const struct cpu_type **target);
+// lookup cpu type held in DynaBuf and return its struct pointer (or NULL on failure)
+extern const struct cpu_type *cputype_find(void);
 
 
 #endif

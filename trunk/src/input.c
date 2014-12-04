@@ -38,36 +38,13 @@ static struct input	outermost	= {
 };
 
 
-// Variables
+// variables
 struct input	*Input_now	= &outermost;	// current input structure
 
 
-// End of source file ("!endoffile" or "!eof")
-static enum eos PO_eof(void)
-{
-	// Well, it doesn't end right here and now, but at end-of-line! :-)
-	Input_ensure_EOS();
-	Input_now->state = INPUTSTATE_EOF;
-	return AT_EOS_ANYWAY;
-}
+// functions
 
-// predefined stuff
-static struct ronode	pseudo_opcodes[]	= {
-	PREDEFNODE("eof",	PO_eof),
-	PREDEFLAST("endoffile",	PO_eof),
-	//    ^^^^ this marks the last element
-};
-
-
-// Functions
-
-// register pseudo opcodes
-void Input_init(void)
-{
-	Tree_add_table(&pseudo_opcode_tree, pseudo_opcodes);
-}
-
-// Let current input point to start of file
+// let current input point to start of file
 void Input_new_file(const char *filename, FILE *fd)
 {
 	Input_now->original_filename	= filename;

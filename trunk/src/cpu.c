@@ -61,8 +61,8 @@ static struct cpu_type	cpu_type_65816	= {
 // variables
 
 // predefined stuff
-static struct ronode	*CPU_tree	= NULL;	// tree to hold CPU types
-static struct ronode	CPUs[]	= {
+static struct ronode	*cputype_tree	= NULL;
+static struct ronode	cputype_list[]	= {
 //	PREDEFNODE("z80",		&cpu_type_Z80),
 	PREDEFNODE("6502",		&cpu_type_6502),
 	PREDEFNODE("6510",		&cpu_type_6510),
@@ -75,108 +75,19 @@ static struct ronode	CPUs[]	= {
 };
 
 
-// insert byte until PC fits condition
-// FIXME - move to basics.c
-static enum eos PO_align(void)
-{
-	// FIXME - read cpu state via function call!
-	intval_t	and,
-			equal,
-			fill,
-			test	= CPU_state.pc.val.intval;
-
-	// make sure PC is defined.
-	if ((CPU_state.pc.flags & MVALUE_DEFINED) == 0) {
-		Throw_error(exception_pc_undefined);
-		CPU_state.pc.flags |= MVALUE_DEFINED;	// do not complain again
-		return SKIP_REMAINDER;
-	}
-
-	and = ALU_defined_int();
-	if (!Input_accept_comma())
-		Throw_error(exception_syntax);
-	equal = ALU_defined_int();
-	if (Input_accept_comma())
-		fill = ALU_any_int();
-	else
-		fill = CPU_state.type->default_align_value;
-	while ((test++ & and) != equal)
-		output_8(fill);
-	return ENSURE_EOS;
-}
-
-
-// try to find CPU type held in DynaBuf. Returns whether succeeded.
-// FIXME - why not return ptr (or NULL to indicate failure)?
-int CPU_find_cpu_struct(const struct cpu_type **target)
+// lookup cpu type held in DynaBuf and return its struct pointer (or NULL on failure)
+const struct cpu_type *cputype_find(void)
 {
 	void	*node_body;
 
 	// make sure tree is initialised
-	if (CPU_tree == NULL)
-		Tree_add_table(&CPU_tree, CPUs);
+	if (cputype_tree == NULL)
+		Tree_add_table(&cputype_tree, cputype_list);
 	// perform lookup
-	if (!Tree_easy_scan(CPU_tree, &node_body, GlobalDynaBuf))
-		return 0;
-	*target = node_body;
-	return 1;
-}
+	if (!Tree_easy_scan(cputype_tree, &node_body, GlobalDynaBuf))
+		return NULL;
 
-
-// select CPU ("!cpu" pseudo opcode)
-// FIXME - move to pseudoopcodes.c
-static enum eos PO_cpu(void)
-{
-	const struct cpu_type	*cpu_buffer	= CPU_state.type;	// remember current cpu
-
-	if (Input_read_and_lower_keyword())
-		if (!CPU_find_cpu_struct(&CPU_state.type))
-			Throw_error("Unknown processor.");
-	// if there's a block, parse that and then restore old value!
-	if (Parse_optional_block())
-		CPU_state.type = cpu_buffer;
-	return ENSURE_EOS;
-}
-
-
-static const char	Error_old_offset_assembly[]	=
-	"\"!pseudopc/!realpc\" is obsolete; use \"!pseudopc {}\" instead.";
-
-
-// "!realpc" pseudo opcode (now obsolete)
-// FIXME - move to basics.c
-static enum eos PO_realpc(void)
-{
-	Throw_error(Error_old_offset_assembly);
-	return ENSURE_EOS;
-}
-
-
-// start offset assembly
-// FIXME - split into PO (move to basics.c) and backend (move to output.c)
-// TODO - maybe add a label argument to assign the block size afterwards (for assemble-to-end-address) (or add another pseudo opcode)
-static enum eos PO_pseudopc(void)
-{
-	// FIXME - read pc using a function call!
-	intval_t	new_pc,
-			new_offset;
-	int		outer_flags	= CPU_state.pc.flags;
-
-	// set new
-	new_pc = ALU_defined_int();	// FIXME - allow for undefined!
-	new_offset = (new_pc - CPU_state.pc.val.intval) & 0xffff;
-	CPU_state.pc.val.intval = new_pc;
-	CPU_state.pc.flags |= MVALUE_DEFINED;	// FIXME - remove when allowing undefined!
-	// if there's a block, parse that and then restore old value!
-	if (Parse_optional_block()) {
-		// restore old
-		CPU_state.pc.val.intval = (CPU_state.pc.val.intval - new_offset) & 0xffff;
-		CPU_state.pc.flags = outer_flags;
-	} else {
-		// not using a block is no longer allowed
-		Throw_error(Error_old_offset_assembly);
-	}
-	return ENSURE_EOS;
+	return node_body;
 }
 
 
@@ -205,49 +116,6 @@ static enum eos set_register_length(int *var, int make_long)
 }
 
 
-// switch to long accumulator ("!al" pseudo opcode)
-static enum eos PO_al(void)
-{
-	return set_register_length(&CPU_state.a_is_long, TRUE);
-}
-
-
-// switch to short accumulator ("!as" pseudo opcode)
-static enum eos PO_as(void)
-{
-	return set_register_length(&CPU_state.a_is_long, FALSE);
-}
-
-
-// switch to long index registers ("!rl" pseudo opcode)
-static enum eos PO_rl(void)
-{
-	return set_register_length(&CPU_state.xy_are_long, TRUE);
-}
-
-
-// switch to short index registers ("!rs" pseudo opcode)
-static enum eos PO_rs(void)
-{
-	return set_register_length(&CPU_state.xy_are_long, FALSE);
-}
-
-
-// pseudo opcode table
-// FIXME - move to basics.c
-static struct ronode	pseudo_opcodes[]	= {
-	PREDEFNODE("align",	PO_align),
-	PREDEFNODE("cpu",	PO_cpu),
-	PREDEFNODE("pseudopc",	PO_pseudopc),
-	PREDEFNODE("realpc",	PO_realpc),
-	PREDEFNODE("al",	PO_al),
-	PREDEFNODE("as",	PO_as),
-	PREDEFNODE(s_rl,	PO_rl),
-	PREDEFLAST("rs",	PO_rs),
-	//    ^^^^ this marks the last element
-};
-
-
 // set default values for pass
 void CPU_passinit(const struct cpu_type *cpu_type)
 {
@@ -256,8 +124,142 @@ void CPU_passinit(const struct cpu_type *cpu_type)
 }
 
 
+// FIXME - move to pseudoopcodes.c:
+
+
+// insert byte until PC fits condition
+static enum eos po_align(void)
+{
+	// FIXME - read cpu state via function call!
+	intval_t	and,
+			equal,
+			fill,
+			test	= CPU_state.pc.val.intval;
+
+	// make sure PC is defined.
+	if ((CPU_state.pc.flags & MVALUE_DEFINED) == 0) {
+		Throw_error(exception_pc_undefined);
+		CPU_state.pc.flags |= MVALUE_DEFINED;	// do not complain again
+		return SKIP_REMAINDER;
+	}
+
+	and = ALU_defined_int();
+	if (!Input_accept_comma())
+		Throw_error(exception_syntax);
+	equal = ALU_defined_int();
+	if (Input_accept_comma())
+		fill = ALU_any_int();
+	else
+		fill = CPU_state.type->default_align_value;
+	while ((test++ & and) != equal)
+		output_8(fill);
+	return ENSURE_EOS;
+}
+
+
+// select CPU ("!cpu" pseudo opcode)
+static enum eos po_cpu(void)
+{
+	const struct cpu_type	*cpu_buffer	= CPU_state.type;	// remember current cpu
+	const struct cpu_type	*new_cpu_type;
+
+	if (Input_read_and_lower_keyword()) {
+		new_cpu_type = cputype_find();
+		if (new_cpu_type)
+			CPU_state.type = new_cpu_type;
+		else
+			Throw_error("Unknown processor.");
+	}
+	// if there's a block, parse that and then restore old value!
+	if (Parse_optional_block())
+		CPU_state.type = cpu_buffer;
+	return ENSURE_EOS;
+}
+
+
+static const char	Error_old_offset_assembly[]	=
+	"\"!pseudopc/!realpc\" is obsolete; use \"!pseudopc {}\" instead.";
+
+
+// "!realpc" pseudo opcode (now obsolete)
+static enum eos po_realpc(void)
+{
+	Throw_error(Error_old_offset_assembly);
+	return ENSURE_EOS;
+}
+
+
+// start offset assembly
+// FIXME - split into PO (move to pseudoopcodes.c) and backend (move to output.c?)
+// TODO - maybe add a label argument to assign the block size afterwards (for assemble-to-end-address) (or add another pseudo opcode)
+static enum eos po_pseudopc(void)
+{
+	// FIXME - read pc using a function call!
+	intval_t	new_pc,
+			new_offset;
+	int		outer_flags	= CPU_state.pc.flags;
+
+	// set new
+	new_pc = ALU_defined_int();	// FIXME - allow for undefined!
+	new_offset = (new_pc - CPU_state.pc.val.intval) & 0xffff;
+	CPU_state.pc.val.intval = new_pc;
+	CPU_state.pc.flags |= MVALUE_DEFINED;	// FIXME - remove when allowing undefined!
+	// if there's a block, parse that and then restore old value!
+	if (Parse_optional_block()) {
+		// restore old
+		CPU_state.pc.val.intval = (CPU_state.pc.val.intval - new_offset) & 0xffff;
+		CPU_state.pc.flags = outer_flags;
+	} else {
+		// not using a block is no longer allowed
+		Throw_error(Error_old_offset_assembly);
+	}
+	return ENSURE_EOS;
+}
+
+
+// switch to long accumulator ("!al" pseudo opcode)
+static enum eos po_al(void)
+{
+	return set_register_length(&CPU_state.a_is_long, TRUE);
+}
+
+
+// switch to short accumulator ("!as" pseudo opcode)
+static enum eos po_as(void)
+{
+	return set_register_length(&CPU_state.a_is_long, FALSE);
+}
+
+
+// switch to long index registers ("!rl" pseudo opcode)
+static enum eos po_rl(void)
+{
+	return set_register_length(&CPU_state.xy_are_long, TRUE);
+}
+
+
+// switch to short index registers ("!rs" pseudo opcode)
+static enum eos po_rs(void)
+{
+	return set_register_length(&CPU_state.xy_are_long, FALSE);
+}
+
+
+// pseudo opcode table
+static struct ronode	pseudo_opcodes[]	= {
+	PREDEFNODE("align",	po_align),
+	PREDEFNODE("cpu",	po_cpu),
+	PREDEFNODE("pseudopc",	po_pseudopc),
+	PREDEFNODE("realpc",	po_realpc),	// obsolete
+	PREDEFNODE("al",	po_al),
+	PREDEFNODE("as",	po_as),
+	PREDEFNODE(s_rl,	po_rl),
+	PREDEFLAST("rs",	po_rs),
+	//    ^^^^ this marks the last element
+};
+
+
 // register pseudo opcodes (done later)
-// FIXME - move to basics.c
 void CPU_init(void)
 {
 	Tree_add_table(&pseudo_opcode_tree, pseudo_opcodes);

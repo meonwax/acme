@@ -18,7 +18,6 @@
 #include "dynabuf.h"
 #include "global.h"	// FIXME - remove when no longer needed
 #include "input.h"
-#include "macro.h"
 #include "mnemo.h"
 #include "pseudoopcodes.h"	// FIXME - remove when no longer needed
 #include "symbol.h"
@@ -41,7 +40,7 @@ static void parse_ram_block(int line_number, char *body)
 {
 	Input_now->line_number = line_number;	// set line number to loop start
 	Input_now->src.ram_ptr = body;	// set RAM read pointer to loop
-	// Parse loop body
+	// parse loop body
 	Parse_until_eob_or_eof();
 	if (GotByte != CHAR_EOB)
 		Bug_found("IllegalBlockTerminator", GotByte);
@@ -73,7 +72,7 @@ static void store_condition(struct loop_condition *condition, char terminator)
 			Throw_error(exception_syntax);
 			return;
 		}
-		// Write given condition into buffer
+		// write given condition into buffer
 		SKIPSPACE();
 		DYNABUF_CLEAR(GlobalDynaBuf);
 		Input_until_terminator(terminator);
@@ -88,7 +87,7 @@ static int check_condition(struct loop_condition *condition)
 {
 	intval_t	expression;
 
-	// First, check whether there actually *is* a condition
+	// first, check whether there actually *is* a condition
 	if (condition->body == NULL)
 		return TRUE;	// non-existing conditions are always true
 
@@ -103,8 +102,8 @@ static int check_condition(struct loop_condition *condition)
 }
 
 
-// looping assembly ("!do"). Has to be re-entrant.
-static enum eos PO_do(void)	// Now GotByte = illegal char
+// looping assembly ("!do"). has to be re-entrant.
+static enum eos po_do(void)	// now GotByte = illegal char
 {
 	struct loop_condition	condition1,
 				condition2;
@@ -113,24 +112,24 @@ static enum eos PO_do(void)	// Now GotByte = illegal char
 	char		*loop_body;
 	int		go_on,
 			loop_start;	// line number of loop pseudo opcode
-	// Init
+	// init
 	condition1.is_until = FALSE;
 	condition1.body = NULL;
 	condition2.is_until = FALSE;
 	condition2.body = NULL;
 	
-	// Read head condition to buffer
+	// read head condition to buffer
 	SKIPSPACE();
 	store_condition(&condition1, CHAR_SOB);
 	if (GotByte != CHAR_SOB)
 		Throw_serious_error(exception_no_left_brace);
-	// Remember line number of loop body,
+	// remember line number of loop body,
 	// then read block and get copy
 	loop_start = Input_now->line_number;
 	loop_body = Input_skip_or_store_block(TRUE);	// changes line number!
 	// now GotByte = '}'
-	NEXTANDSKIPSPACE();	// Now GotByte = first non-blank char after block
-	// Read tail condition to buffer
+	NEXTANDSKIPSPACE();	// now GotByte = first non-blank char after block
+	// read tail condition to buffer
 	store_condition(&condition2, CHAR_EOS);
 	// now GotByte = CHAR_EOS
 	// set up new input
@@ -142,15 +141,15 @@ static enum eos PO_do(void)	// Now GotByte = illegal char
 	// line number are not yet set up)
 	Input_now = &loop_input;
 	do {
-		// Check head condition
+		// check head condition
 		go_on = check_condition(&condition1);
 		if (go_on) {
 			parse_ram_block(loop_start, loop_body);
-			// Check tail condition
+			// check tail condition
 			go_on = check_condition(&condition2);
 		}
 	} while (go_on);
-	// Free memory
+	// free memory
 	free(condition1.body);
 	free(loop_body);
 	free(condition2.body);
@@ -165,10 +164,10 @@ static enum eos PO_do(void)	// Now GotByte = illegal char
 }
 
 
-// looping assembly ("!for"). Has to be re-entrant.
+// looping assembly ("!for"). has to be re-entrant.
 // old syntax: !for VAR, END { BLOCK }		VAR counts from 1 to END
 // new syntax: !for VAR, START, END { BLOCK }	VAR counts from START to END
-static enum eos PO_for(void)	// Now GotByte = illegal char
+static enum eos po_for(void)	// now GotByte = illegal char
 {
 	struct input	loop_input,
 			*outer_input;
@@ -186,7 +185,7 @@ static enum eos PO_for(void)	// Now GotByte = illegal char
 
 	if (Input_read_zone_and_keyword(&zone) == 0)	// skips spaces before
 		return SKIP_REMAINDER;
-	// Now GotByte = illegal char
+	// now GotByte = illegal char
 	force_bit = Input_get_force_bit();	// skips spaces after
 	symbol = symbol_find(zone, force_bit);
 	if (!Input_accept_comma()) {
@@ -248,7 +247,7 @@ static enum eos PO_for(void)	// Now GotByte = illegal char
 			symbol_set_value(symbol, &loop_counter, TRUE);
 		} while (loop_counter.val.intval != (counter_last + counter_increment));
 	}
-	// Free memory
+	// free memory
 	free(loop_body);
 	// restore previous input:
 	Input_now = outer_input;
@@ -278,7 +277,7 @@ static int skip_or_parse_block(int parse)
 
 
 // parse {block} [else {block}]
-static void parse_block_else_block(int parse_first)
+void flow_parse_block_else_block(int parse_first)
 {
 	// Parse first block.
 	// If it's not correctly terminated, return immediately (because
@@ -309,85 +308,6 @@ static void parse_block_else_block(int parse_first)
 }
 
 
-// conditional assembly ("!if"). Has to be re-entrant.
-static enum eos PO_if(void)	// Now GotByte = illegal char
-{
-	intval_t	cond;
-
-	cond = ALU_defined_int();
-	if (GotByte != CHAR_SOB)
-		Throw_serious_error(exception_no_left_brace);
-	parse_block_else_block(!!cond);
-	return ENSURE_EOS;
-}
-
-
-// conditional assembly ("!ifdef" and "!ifndef"). Has to be re-entrant.
-static enum eos ifdef_ifndef(int is_ifndef)	// Now GotByte = illegal char
-{
-	struct rwnode	*node;
-	struct symbol	*symbol;
-	zone_t		zone;
-	int		defined	= FALSE;
-
-	if (Input_read_zone_and_keyword(&zone) == 0)	// skips spaces before
-		return SKIP_REMAINDER;
-
-	Tree_hard_scan(&node, symbols_forest, zone, FALSE);
-	if (node) {
-		symbol = (struct symbol *) node->body;
-		// in first pass, count usage
-		if (pass_count == 0)
-			symbol->usage++;
-		if (symbol->result.flags & MVALUE_DEFINED)
-			defined = TRUE;
-	}
-	SKIPSPACE();
-	// if "ifndef", invert condition
-	if (is_ifndef)
-		defined = !defined;
-	if (GotByte != CHAR_SOB)
-		return defined ? PARSE_REMAINDER : SKIP_REMAINDER;
-
-	parse_block_else_block(defined);
-	return ENSURE_EOS;
-}
-
-
-// conditional assembly ("!ifdef"). Has to be re-entrant.
-static enum eos PO_ifdef(void)	// Now GotByte = illegal char
-{
-	return ifdef_ifndef(FALSE);
-}
-
-
-// conditional assembly ("!ifndef"). Has to be re-entrant.
-static enum eos PO_ifndef(void)	// Now GotByte = illegal char
-{
-	return ifdef_ifndef(TRUE);
-}
-
-
-// macro definition ("!macro").
-static enum eos PO_macro(void)	// Now GotByte = illegal char
-{
-	// In first pass, parse. In all other passes, skip.
-	if (pass_count == 0) {
-		Macro_parse_definition();	// now GotByte = '}'
-	} else {
-		// skip until CHAR_SOB ('{') is found.
-		// no need to check for end-of-statement, because such an
-		// error would already have been detected in first pass.
-		// for the same reason, there is no need to check for quotes.
-		while (GotByte != CHAR_SOB)
-			GetByte();
-		Input_skip_or_store_block(FALSE);	// now GotByte = '}'
-	}
-	GetByte();	// Proceed with next character
-	return ENSURE_EOS;
-}
-
-
 // parse a whole source code file
 void Parse_and_close_file(FILE *fd, const char *filename)
 {
@@ -405,57 +325,15 @@ void Parse_and_close_file(FILE *fd, const char *filename)
 }
 
 
-// include source file ("!source" or "!src"). Has to be re-entrant.
-static enum eos PO_source(void)	// Now GotByte = illegal char
-{
-	FILE		*fd;
-	char		local_gotbyte;
-	struct input	new_input,
-			*outer_input;
-
-	// Enter new nesting level.
-	// Quit program if recursion too deep.
-	if (--source_recursions_left < 0)
-		Throw_serious_error("Too deeply nested. Recursive \"!source\"?");
-	// Read file name. Quit function on error.
-	if (Input_read_filename(TRUE))
-		return SKIP_REMAINDER;
-
-	// If file could be opened, parse it. Otherwise, complain.
-	if ((fd = fopen(GLOBALDYNABUF_CURRENT, FILE_READBINARY))) {
-		char	filename[GlobalDynaBuf->size];
-
-		strcpy(filename, GLOBALDYNABUF_CURRENT);
-		outer_input = Input_now;	// remember old input
-		local_gotbyte = GotByte;	// CAUTION - ugly kluge
-		Input_now = &new_input;	// activate new input
-		Parse_and_close_file(fd, filename);
-		Input_now = outer_input;	// restore previous input
-		GotByte = local_gotbyte;	// CAUTION - ugly kluge
-	} else {
-		Throw_error(exception_cannot_open_input_file);
-	}
-	// Leave nesting level
-	++source_recursions_left;
-	return ENSURE_EOS;
-}
-
-
 // pseudo opcode table
 static struct ronode	pseudo_opcodes[]	= {
-	PREDEFNODE("do",	PO_do),
-	PREDEFNODE("for",	PO_for),
-	PREDEFNODE("if",	PO_if),
-	PREDEFNODE("ifdef",	PO_ifdef),
-	PREDEFNODE("ifndef",	PO_ifndef),
-	PREDEFNODE("macro",	PO_macro),
-	PREDEFNODE("source",	PO_source),
-	PREDEFLAST("src",	PO_source),
+	PREDEFNODE("do",	po_do),
+	PREDEFLAST("for",	po_for),
 	//    ^^^^ this marks the last element
 };
 
 
-// register pseudo opcodes and build keyword tree for until/while
+// register pseudo opcodes
 void Flow_init(void)
 {
 	Tree_add_table(&pseudo_opcode_tree, pseudo_opcodes);

@@ -5,15 +5,18 @@
 // pseudo opcode stuff
 #include <stdlib.h>
 #include <stdio.h>
-//#include "acme.h"
+#include "acme.h"
 #include "config.h"
 #include "cpu.h"
 #include "alu.h"
 #include "dynabuf.h"
+#include "flow.h"
 #include "input.h"
+#include "macro.h"
 #include "global.h"
 #include "output.h"
 #include "section.h"
+#include "symbol.h"
 #include "tree.h"
 #include "typesystem.h"
 #include "pseudoopcodes.h"
@@ -23,6 +26,7 @@
 static const char	s_08[]	= "08";
 #define s_8	(s_08 + 1)	// Yes, I know I'm sick
 #define s_16	(s_65816 + 3)	// Yes, I know I'm sick
+#define s_sl	(s_asl + 1)	// Yes, I know I'm sick
 
 
 // variables
@@ -244,6 +248,69 @@ static enum eos po_addr(void)	// now GotByte = illegal char
 	return PARSE_REMAINDER;
 }
 
+
+// (re)set symbol
+static enum eos po_set(void)	// now GotByte = illegal char
+{
+	struct result	result;
+	int		force_bit;
+	struct symbol	*symbol;
+	zone_t		zone;
+
+	if (Input_read_zone_and_keyword(&zone) == 0)	// skips spaces before
+		// now GotByte = illegal char
+		return SKIP_REMAINDER;
+
+	force_bit = Input_get_force_bit();	// skips spaces after
+	symbol = symbol_find(zone, force_bit);
+	if (GotByte != '=') {
+		Throw_error(exception_syntax);
+		return SKIP_REMAINDER;
+	}
+
+	// symbol = parsed value
+	GetByte();	// proceed with next char
+	ALU_any_result(&result);
+	// clear symbol's force bits and set new ones
+	symbol->result.flags &= ~(MVALUE_FORCEBITS | MVALUE_ISBYTE);
+	if (force_bit) {
+		symbol->result.flags |= force_bit;
+		result.flags &= ~(MVALUE_FORCEBITS | MVALUE_ISBYTE);
+	}
+	symbol_set_value(symbol, &result, TRUE);
+	return ENSURE_EOS;
+}
+
+
+// set file name for symbol list
+static enum eos po_sl(void)
+{
+	// bugfix: first read filename, *then* check for first pass.
+	// if skipping right away, quoted colons might be misinterpreted as EOS
+	// FIXME - why not just fix the skipping code to handle quotes? :)
+	// "!to" has been fixed as well
+
+	// read filename to global dynamic buffer
+	// if no file name given, exit (complaining will have been done)
+	if (Input_read_filename(FALSE))
+		return SKIP_REMAINDER;
+
+	// only process this pseudo opcode in first pass
+	if (pass_count)
+		return SKIP_REMAINDER;
+
+	// if symbol list file name already set, complain and exit
+	if (symbollist_filename) {
+		Throw_warning("Symbol list file name already chosen.");
+		return SKIP_REMAINDER;
+	}
+
+	// get malloc'd copy of filename
+	symbollist_filename = DynaBuf_get_copy(GlobalDynaBuf);
+	// ensure there's no garbage at end of line
+	return ENSURE_EOS;
+}
+
 /*
 // TODO - add "!skip AMOUNT" pseudo opcode as alternative to "* = * + AMOUNT" (needed for assemble-to-end-address)
 // the new pseudo opcode would skip the given amount of bytes without starting a new segment
@@ -294,6 +361,121 @@ static enum eos po_subzone(void)
 	Throw_error("\"!subzone {}\" is obsolete; use \"!zone {}\" instead.");
 	// call "!zone" instead
 	return po_zone();
+}
+
+
+// include source file ("!source" or "!src"). has to be re-entrant.
+static enum eos po_source(void)	// now GotByte = illegal char
+{
+	FILE		*fd;
+	char		local_gotbyte;
+	struct input	new_input,
+			*outer_input;
+
+	// enter new nesting level
+	// quit program if recursion too deep
+	if (--source_recursions_left < 0)
+		Throw_serious_error("Too deeply nested. Recursive \"!source\"?");
+	// read file name. quit function on error
+	if (Input_read_filename(TRUE))
+		return SKIP_REMAINDER;
+
+	// if file could be opened, parse it. otherwise, complain
+	if ((fd = fopen(GLOBALDYNABUF_CURRENT, FILE_READBINARY))) {
+		char	filename[GlobalDynaBuf->size];
+
+		strcpy(filename, GLOBALDYNABUF_CURRENT);
+		outer_input = Input_now;	// remember old input
+		local_gotbyte = GotByte;	// CAUTION - ugly kluge
+		Input_now = &new_input;	// activate new input
+		Parse_and_close_file(fd, filename);
+		Input_now = outer_input;	// restore previous input
+		GotByte = local_gotbyte;	// CAUTION - ugly kluge
+	} else {
+		Throw_error(exception_cannot_open_input_file);
+	}
+	// leave nesting level
+	++source_recursions_left;
+	return ENSURE_EOS;
+}
+
+
+// conditional assembly ("!if"). has to be re-entrant.
+static enum eos po_if(void)	// now GotByte = illegal char
+{
+	intval_t	cond;
+
+	cond = ALU_defined_int();
+	if (GotByte != CHAR_SOB)
+		Throw_serious_error(exception_no_left_brace);
+	flow_parse_block_else_block(!!cond);
+	return ENSURE_EOS;
+}
+
+
+// conditional assembly ("!ifdef" and "!ifndef"). has to be re-entrant.
+static enum eos ifdef_ifndef(int is_ifndef)	// now GotByte = illegal char
+{
+	struct rwnode	*node;
+	struct symbol	*symbol;
+	zone_t		zone;
+	int		defined	= FALSE;
+
+	if (Input_read_zone_and_keyword(&zone) == 0)	// skips spaces before
+		return SKIP_REMAINDER;
+
+	Tree_hard_scan(&node, symbols_forest, zone, FALSE);
+	if (node) {
+		symbol = (struct symbol *) node->body;
+		// in first pass, count usage
+		if (pass_count == 0)
+			symbol->usage++;
+		if (symbol->result.flags & MVALUE_DEFINED)
+			defined = TRUE;
+	}
+	SKIPSPACE();
+	// if "ifndef", invert condition
+	if (is_ifndef)
+		defined = !defined;
+	if (GotByte != CHAR_SOB)
+		return defined ? PARSE_REMAINDER : SKIP_REMAINDER;
+
+	flow_parse_block_else_block(defined);
+	return ENSURE_EOS;
+}
+
+
+// conditional assembly ("!ifdef"). has to be re-entrant.
+static enum eos po_ifdef(void)	// now GotByte = illegal char
+{
+	return ifdef_ifndef(FALSE);
+}
+
+
+// conditional assembly ("!ifndef"). has to be re-entrant.
+static enum eos po_ifndef(void)	// now GotByte = illegal char
+{
+	return ifdef_ifndef(TRUE);
+}
+
+
+// macro definition ("!macro").
+static enum eos po_macro(void)	// now GotByte = illegal char
+{
+	// in first pass, parse. In all other passes, skip.
+	if (pass_count == 0) {
+		Macro_parse_definition();	// now GotByte = '}'
+	} else {
+		// skip until CHAR_SOB ('{') is found.
+		// no need to check for end-of-statement, because such an
+		// error would already have been detected in first pass.
+		// for the same reason, there is no need to check for quotes.
+		while (GotByte != CHAR_SOB)
+			GetByte();
+		Input_skip_or_store_block(FALSE);	// now GotByte = '}'
+	}
+	GetByte();	// Proceed with next character
+	return ENSURE_EOS;
 }
 
 
@@ -390,35 +572,55 @@ static enum eos po_serious(void)
 }
 
 
+// end of source file ("!endoffile" or "!eof")
+static enum eos po_eof(void)
+{
+	// well, it doesn't end right here and now, but at end-of-line! :-)
+	Input_ensure_EOS();
+	Input_now->state = INPUTSTATE_EOF;
+	return AT_EOS_ANYWAY;
+}
+
 // pseudo opcode table
-static struct ronode	pseudo_opcodes[]	= {
-	PREDEFNODE("initmem",	po_initmem),
-	PREDEFNODE("to",	po_to),
-	PREDEFNODE(s_08,	po_8),
-	PREDEFNODE(s_8,		po_8),
-	PREDEFNODE("by",	po_8),
-	PREDEFNODE("byte",	po_8),
-	PREDEFNODE(s_16,	po_16),
-	PREDEFNODE("wo",	po_16),
-	PREDEFNODE("word",	po_16),
-	PREDEFNODE("24",	po_24),
-	PREDEFNODE("32",	po_32),
-	PREDEFNODE("bin",	po_binary),
-	PREDEFNODE("binary",	po_binary),
-	PREDEFNODE("fi",	po_fill),
-	PREDEFNODE("fill",	po_fill),
-	PREDEFNODE("addr",	po_addr),
-	PREDEFNODE("address",	po_addr),
-//	PREDEFNODE("skip",	po_skip),
-	PREDEFNODE(s_zone,	po_zone),
-	PREDEFNODE("zn",	po_zone),
-	PREDEFNODE(s_subzone,	po_subzone),
-	PREDEFNODE("sz",	po_subzone),
-//	PREDEFNODE("debug",	po_debug),
-//	PREDEFNODE("info",	po_info),
-	PREDEFNODE("warn",	po_warn),
-	PREDEFNODE(s_error,	po_error),
-	PREDEFLAST("serious",	po_serious),
+static struct ronode	pseudo_opcode_list[]	= {
+	PREDEFNODE("initmem",		po_initmem),
+	PREDEFNODE("to",		po_to),
+	PREDEFNODE(s_8,			po_8),
+	PREDEFNODE(s_08,		po_8),
+	PREDEFNODE("by",		po_8),
+	PREDEFNODE("byte",		po_8),
+	PREDEFNODE(s_16,		po_16),
+	PREDEFNODE("wo",		po_16),
+	PREDEFNODE("word",		po_16),
+	PREDEFNODE("24",		po_24),
+	PREDEFNODE("32",		po_32),
+	PREDEFNODE("bin",		po_binary),
+	PREDEFNODE("binary",		po_binary),
+	PREDEFNODE("fi",		po_fill),
+	PREDEFNODE("fill",		po_fill),
+	PREDEFNODE("addr",		po_addr),
+	PREDEFNODE("address",		po_addr),
+	PREDEFNODE("set",		po_set),
+	PREDEFNODE(s_sl,		po_sl),
+	PREDEFNODE("symbollist",	po_sl),
+//	PREDEFNODE("skip",		po_skip),
+	PREDEFNODE("zn",		po_zone),
+	PREDEFNODE(s_zone,		po_zone),
+	PREDEFNODE("sz",		po_subzone),
+	PREDEFNODE(s_subzone,		po_subzone),
+	PREDEFNODE("src",		po_source),
+	PREDEFNODE("source",		po_source),
+	PREDEFNODE("if",		po_if),
+	PREDEFNODE("ifdef",		po_ifdef),
+	PREDEFNODE("ifndef",		po_ifndef),
+	PREDEFNODE("macro",		po_macro),
+//	PREDEFNODE("debug",		po_debug),
+//	PREDEFNODE("info",		po_info),
+	PREDEFNODE("warn",		po_warn),
+	PREDEFNODE(s_error,		po_error),
+	PREDEFNODE("serious",		po_serious),
+	PREDEFNODE("eof",		po_eof),
+	PREDEFLAST("endoffile",		po_eof),
 	//    ^^^^ this marks the last element
 };
 
@@ -427,12 +629,12 @@ static struct ronode	pseudo_opcodes[]	= {
 void pseudoopcodes_init(void)
 {
 	user_message = DynaBuf_create(USERMSG_DYNABUF_INITIALSIZE);
-	Tree_add_table(&pseudo_opcode_tree, pseudo_opcodes);
+	Tree_add_table(&pseudo_opcode_tree, pseudo_opcode_list);
 }
 
 
 // parse a pseudo opcode. has to be re-entrant.
-void pseudoopcode_parse(void)	// Now GotByte = "!"
+void pseudoopcode_parse(void)	// now GotByte = "!"
 {
 	void		*node_body;
 	enum eos	(*fn)(void),

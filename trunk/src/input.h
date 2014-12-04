@@ -54,9 +54,7 @@ extern struct input	*Input_now;	// current input structure
 
 // Prototypes
 
-// register pseudo opcodes
-extern void Input_init(void);
-// Let current input point to start of file
+// let current input point to start of file
 extern void Input_new_file(const char *filename, FILE *fd);
 // get next byte from currently active byte source in shortened high-level
 // format. When inside quotes, use GetQuotedByte() instead!

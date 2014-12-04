@@ -29,7 +29,7 @@ dynabuf.o: config.h acme.h global.h input.h dynabuf.h dynabuf.c
 
 encoding.o: config.h alu.h acme.h dynabuf.h global.h output.h input.h tree.h encoding.h encoding.c
 
-flow.o: config.h acme.h alu.h dynabuf.h global.h input.h macro.h mnemo.h symbol.h tree.h flow.h flow.c
+flow.o: config.h acme.h alu.h dynabuf.h global.h input.h mnemo.h symbol.h tree.h flow.h flow.c
 
 global.o: config.h platform.h acme.h cpu.h input.h macro.h pseudoopcodes.h section.h symbol.h global.h global.c
 
@@ -43,7 +43,7 @@ output.o: config.h acme.h alu.h cpu.h dynabuf.h global.h input.h tree.h output.h
 
 platform.o: config.h platform.h platform.c
 
-pseudoopcodes.o: acme.h alu.h input.h output.h pseudoopcodes.h pseudoopcodes.c
+pseudoopcodes.o: acme.h alu.h input.h macro.h output.h pseudoopcodes.h pseudoopcodes.c
 
 section.o: config.h dynabuf.h global.h section.h tree.h section.h section.c
 
