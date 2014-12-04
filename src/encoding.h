@@ -1,5 +1,5 @@
 // ACME - a crossassembler for producing 6502/65c02/65816 code.
-// Copyright (C) 1998-2009 Marco Baye
+// Copyright (C) 1998-2014 Marco Baye
 // Have a look at "acme.c" for further info
 //
 // Character encoding stuff
@@ -7,14 +7,14 @@
 #define encoding_H
 
 
-// Prototypes
+// prototypes
 
-// register pseudo opcodes and build keyword tree for encoders
+// register pseudo opcodes (FIXME - remove!)
 extern void Encoding_init(void);
 // convert character using current encoding
-extern char (*Encoding_encode_char)(char);
-// Set "raw" as default encoding
-extern void Encoding_passinit(void);
+extern char encoding_encode_char(char);
+// set "raw" as default encoding
+extern void encoding_passinit(void);
 
 
 #endif

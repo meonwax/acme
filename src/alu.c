@@ -350,7 +350,7 @@ static void parse_quoted_character(char closing_quote)
 	}
 
 	// parse character
-	value = (intval_t) Encoding_encode_char(GotByte);
+	value = (intval_t) encoding_encode_char(GotByte);
 	// Read closing quote (hopefully)
 	if (GetQuotedByte() == closing_quote)
 		GetByte();	// if length == 1, proceed with next byte
