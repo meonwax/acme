@@ -32,7 +32,11 @@ extern const char	s_eor[];
 extern const char	s_error[];
 extern const char	s_lsr[];
 extern const char	s_scrxor[];
-// Error messages during assembly
+extern char		s_untitled[];
+extern const char	s_Zone[];
+#define s_zone	(s_subzone + 3)	// Yes, I know I'm sick
+extern const char	s_subzone[];
+// error messages during assembly
 extern const char	exception_cannot_open_input_file[];
 extern const char	exception_missing_string[];
 extern const char	exception_no_left_brace[];
@@ -42,7 +46,7 @@ extern const char	exception_no_right_brace[];
 extern const char	exception_number_out_of_range[];
 extern const char	exception_pc_undefined[];
 extern const char	exception_syntax[];
-// Byte flags table
+// byte flags table
 extern const char	Byte_flags[];
 #define BYTEFLAGS(c)	(Byte_flags[(unsigned char) c])
 #define STARTS_KEYWORD	(1u << 7)	// Byte is allowed to start a keyword
@@ -55,7 +59,7 @@ extern const char	Byte_flags[];
 
 
 // structures
-// different ways to handle end-of-statement:
+// different ways to handle end-of-statement: (FIXME - after grouping all pseudo opcodes, move to pseudoopcodes.c)
 enum eos {
 	SKIP_REMAINDER,		// skip remainder of line - (after errors)
 	ENSURE_EOS,		// make sure there's nothing left in statement
@@ -68,7 +72,7 @@ extern int	warn_on_indented_labels;	// warn if indented label is encountered
 extern int	warn_on_old_for;	// warn if "!for" with old syntax is found
 extern int	warn_on_type_mismatch;	// use type-checking system
 extern char	GotByte;	// Last byte read (processed)
-// Global counters
+// global counters
 extern int	pass_undefined_count;	// "NeedValue" type errors in current pass
 extern int	pass_real_errors;	// Errors yet
 extern signed long	max_errors;	// errors before giving up
@@ -104,7 +108,7 @@ do {				\
 
 // Prototypes
 
-// Allocate memory and die if not available
+// allocate memory and die if not available
 extern void *safe_malloc(size_t);
 // Parse block, beginning with next byte.
 // End reason (either CHAR_EOB or CHAR_EOF) can be found in GotByte afterwards
@@ -132,7 +136,7 @@ extern void Throw_error(const char *);
 // assembly. Example: "!fill" without a parameter - the program counter cannot
 // be set correctly in this case, so proceeding would be of no use at all.
 extern void Throw_serious_error(const char *);
-// Handle bugs
+// handle bugs
 extern void Bug_found(const char *, int);
 
 

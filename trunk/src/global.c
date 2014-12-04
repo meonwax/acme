@@ -37,6 +37,9 @@ const char	s_eor[]		= "eor";
 const char	s_error[]	= "error";
 const char	s_lsr[]		= "lsr";
 const char	s_scrxor[]	= "scrxor";
+char		s_untitled[]	= "<untitled>";	// FIXME - this is actually const
+const char	s_Zone[]	= "Zone";
+const char	s_subzone[]	= "subzone";
 // Exception messages during assembly
 const char	exception_cannot_open_input_file[] = "Cannot open input file.";
 const char	exception_missing_string[]	= "No string given.";
@@ -142,38 +145,6 @@ static void parse_pc_def(void)	// Now GotByte = "*"
 		Throw_error(exception_syntax);
 		Input_skip_remainder();
 	}
-}
-
-
-// Parse pseudo opcodes. Has to be re-entrant.
-static void parse_pseudo_opcode(void)	// Now GotByte = "!"
-{
-	void		*node_body;
-	enum eos	(*fn)(void),
-			then	= SKIP_REMAINDER;	// prepare for errors
-
-	GetByte();	// read next byte
-	// on missing keyword, return (complaining will have been done)
-	if (Input_read_and_lower_keyword()) {
-
-// move this to pseudoopcodes.c:
-		// search for tree item
-		if ((Tree_easy_scan(pseudo_opcode_tree, &node_body, GlobalDynaBuf))
-		&& node_body) {
-			fn = (enum eos (*)(void)) node_body;
-			SKIPSPACE();
-			// call function
-			then = fn();
-		} else {
-			Throw_error("Unknown pseudo opcode.");
-		}
-	}
-	if (then == SKIP_REMAINDER)
-		Input_skip_remainder();
-	else if (then == ENSURE_EOS)
-		Input_ensure_EOS();
-	// the other two possibilities (PARSE_REMAINDER and AT_EOS_ANYWAY)
-	// will lead to the remainder of the line being parsed by the mainloop.
 }
 
 
@@ -292,7 +263,7 @@ void Parse_until_eob_or_eof(void)
 					parse_forward_anon_def(&statement_flags);
 				break;
 			case PSEUDO_OPCODE_PREFIX:
-				parse_pseudo_opcode();
+				pseudoopcode_parse();
 				break;
 			case '*':
 				parse_pc_def();
