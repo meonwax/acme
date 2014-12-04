@@ -17,7 +17,7 @@
 
 #define RELEASE		"0.95.4"	// update before release (FIXME)
 #define CODENAME	"Fenchurch"	// update before release
-#define CHANGE_DATE	"4 Dec"	// update before release
+#define CHANGE_DATE	"5 Dec"	// update before release
 #define CHANGE_YEAR	"2014"		// update before release
 //#define HOME_PAGE	"http://home.pages.de/~mac_bacon/smorbrod/acme/"	// FIXME
 #define HOME_PAGE	"http://sourceforge.net/p/acme-crossass/"	// FIXME
@@ -246,7 +246,7 @@ static int perform_pass(void)
 	// if start address was given on command line, use it:
 	if (start_address != ILLEGAL_START_ADDRESS)
 		vcpu_set_pc(start_address, 0);
-	Encoding_passinit();	// set default encoding
+	encoding_passinit();	// set default encoding
 	Section_passinit();	// set initial zone (untitled)
 	// init variables
 	pass_undefined_count = 0;	// no "NeedValue" errors yet

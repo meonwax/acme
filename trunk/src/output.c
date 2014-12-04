@@ -59,8 +59,6 @@ static struct output	*out	= &default_output;
 struct vcpu		CPU_state;	// current CPU state
 
 // FIXME - move file format stuff to some other .c file!
-// predefined stuff
-static struct ronode	*file_format_tree	= NULL;	// tree to hold output formats
 // possible file formats
 enum output_format {
 	OUTPUT_FORMAT_UNSPECIFIED,	// default (uses "plain" actually)
@@ -68,7 +66,9 @@ enum output_format {
 	OUTPUT_FORMAT_CBM,		// load address, code (default for "!to" pseudo opcode)
 	OUTPUT_FORMAT_PLAIN		// code only
 };
-static struct ronode	file_formats[]	= {
+// predefined stuff
+static struct ronode	*file_format_tree	= NULL;	// tree to hold output formats
+static struct ronode	file_format_list[]	= {
 	PREDEFNODE("apple",	OUTPUT_FORMAT_APPLE),
 	PREDEFNODE(s_cbm,	OUTPUT_FORMAT_CBM),
 //	PREDEFNODE("o65",	OUTPUT_FORMAT_O65),
@@ -269,7 +269,7 @@ int output_set_output_format(void)
 
 	// make sure tree is initialised
 	if (file_format_tree == NULL)
-		Tree_add_table(&file_format_tree, file_formats);
+		Tree_add_table(&file_format_tree, file_format_list);
 	// perform lookup
 	if (!Tree_easy_scan(file_format_tree, &node_body, GlobalDynaBuf))
 		return 1;
