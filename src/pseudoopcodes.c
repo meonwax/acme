@@ -13,6 +13,7 @@
 #include "input.h"
 #include "global.h"
 #include "output.h"
+#include "section.h"
 #include "tree.h"
 #include "typesystem.h"
 #include "pseudoopcodes.h"
@@ -251,6 +252,51 @@ static enum eos po_skip(void)	// now GotByte = illegal char
 }
 */
 
+// switch to new zone ("!zone" or "!zn"). has to be re-entrant.
+static enum eos po_zone(void)
+{
+	struct section	entry_values;	// buffer for outer zone
+	char		*new_title;
+	int		allocated;
+
+	// remember everything about current structure
+	entry_values = *Section_now;
+	// set default values in case there is no valid title
+	new_title = s_untitled;
+	allocated = FALSE;
+	// Check whether a zone title is given. If yes and it can be read,
+	// get copy, remember pointer and remember to free it later on.
+	if (BYTEFLAGS(GotByte) & CONTS_KEYWORD) {
+		// Because we know of one character for sure,
+		// there's no need to check the return value.
+		Input_read_keyword();
+		new_title = DynaBuf_get_copy(GlobalDynaBuf);
+		allocated = TRUE;
+	}
+	// setup new section
+	// section type is "subzone", just in case a block follows
+	Section_new_zone(Section_now, "Subzone", new_title, allocated);
+	if (Parse_optional_block()) {
+		// Block has been parsed, so it was a SUBzone.
+		Section_finalize(Section_now);	// end inner zone
+		*Section_now = entry_values;	// restore entry values
+	} else {
+		// no block found, so it's a normal zone change
+		Section_finalize(&entry_values);	// end outer zone
+		Section_now->type = s_Zone;	// change type to "Zone"
+	}
+	return ENSURE_EOS;
+}
+
+// "!subzone" or "!sz" pseudo opcode (now obsolete)
+static enum eos po_subzone(void)
+{
+	Throw_error("\"!subzone {}\" is obsolete; use \"!zone {}\" instead.");
+	// call "!zone" instead
+	return po_zone();
+}
+
+
 // constants
 #define USERMSG_DYNABUF_INITIALSIZE	80
 
@@ -364,6 +410,10 @@ static struct ronode	pseudo_opcodes[]	= {
 	PREDEFNODE("addr",	po_addr),
 	PREDEFNODE("address",	po_addr),
 //	PREDEFNODE("skip",	po_skip),
+	PREDEFNODE(s_zone,	po_zone),
+	PREDEFNODE("zn",	po_zone),
+	PREDEFNODE(s_subzone,	po_subzone),
+	PREDEFNODE("sz",	po_subzone),
 //	PREDEFNODE("debug",	po_debug),
 //	PREDEFNODE("info",	po_info),
 	PREDEFNODE("warn",	po_warn),
@@ -378,4 +428,34 @@ void pseudoopcodes_init(void)
 {
 	user_message = DynaBuf_create(USERMSG_DYNABUF_INITIALSIZE);
 	Tree_add_table(&pseudo_opcode_tree, pseudo_opcodes);
+}
+
+
+// parse a pseudo opcode. has to be re-entrant.
+void pseudoopcode_parse(void)	// Now GotByte = "!"
+{
+	void		*node_body;
+	enum eos	(*fn)(void),
+			then	= SKIP_REMAINDER;	// prepare for errors
+
+	GetByte();	// read next byte
+	// on missing keyword, return (complaining will have been done)
+	if (Input_read_and_lower_keyword()) {
+		// search for tree item
+		if ((Tree_easy_scan(pseudo_opcode_tree, &node_body, GlobalDynaBuf))
+		&& node_body) {
+			fn = (enum eos (*)(void)) node_body;
+			SKIPSPACE();
+			// call function
+			then = fn();
+		} else {
+			Throw_error("Unknown pseudo opcode.");
+		}
+	}
+	if (then == SKIP_REMAINDER)
+		Input_skip_remainder();
+	else if (then == ENSURE_EOS)
+		Input_ensure_EOS();
+	// the other two possibilities (PARSE_REMAINDER and AT_EOS_ANYWAY)
+	// will lead to the remainder of the line being parsed by the mainloop.
 }

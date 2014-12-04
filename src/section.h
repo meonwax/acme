@@ -33,8 +33,6 @@ extern struct section	*Section_now;
 
 // Write given info into given zone structure and activate it
 extern void Section_new_zone(struct section *section, const char *type, char *title, int allocated);
-// register pseudo opcodes
-extern void Section_init(void);
 // Setup outermost section
 extern void Section_passinit(void);
 // Tidy up: If necessary, release section title.
