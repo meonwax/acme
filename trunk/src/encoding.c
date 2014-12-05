@@ -249,13 +249,6 @@ static enum eos po_scrxor(void)
 	return encode_string(&encoder_scr, num);
 }
 
-// "!cbm" pseudo opcode (now obsolete)
-static enum eos po_cbm(void)
-{
-	Throw_error("\"!cbm\" is obsolete; use \"!ct pet\" instead.");
-	return ENSURE_EOS;
-}
-
 // Set current encoding ("!convtab" pseudo opcode)
 static enum eos po_convtab(void)
 {
@@ -271,7 +264,6 @@ static enum eos po_convtab(void)
 
 // pseudo opcode table
 static struct ronode	pseudo_opcodes[]	= {
-	PREDEFNODE(s_cbm,	po_cbm),
 	PREDEFNODE("ct",	po_convtab),
 	PREDEFNODE("convtab",	po_convtab),
 	PREDEFNODE(s_pet,	po_pet),

@@ -134,14 +134,14 @@ static enum eos iterate(void (*fn)(intval_t))
 
 
 // Insert 8-bit values ("!08" / "!8" / "!by" / "!byte" pseudo opcode)
-static enum eos po_8(void)
+static enum eos po_byte(void)
 {
 	return iterate(output_8);
 }
 
 
 // Insert 16-bit values ("!16" / "!wo" / "!word" pseudo opcode)
-static enum eos po_16(void)
+static enum eos po_word(void)
 {
 	return iterate(output_le16);
 }
@@ -237,7 +237,7 @@ static enum eos po_fill(void)
 
 
 // force explicit label definitions to set "address" flag ("!addr"). Has to be re-entrant.
-static enum eos po_addr(void)	// now GotByte = illegal char
+static enum eos po_address(void)	// now GotByte = illegal char
 {
 	SKIPSPACE();
 	if (GotByte == CHAR_SOB) {
@@ -283,7 +283,7 @@ static enum eos po_set(void)	// now GotByte = illegal char
 
 
 // set file name for symbol list
-static enum eos po_sl(void)
+static enum eos po_symbollist(void)
 {
 	// bugfix: first read filename, *then* check for first pass.
 	// if skipping right away, quoted colons might be misinterpreted as EOS
@@ -356,13 +356,19 @@ static enum eos po_zone(void)
 }
 
 // "!subzone" or "!sz" pseudo opcode (now obsolete)
-static enum eos po_subzone(void)
+static enum eos obsolete_po_subzone(void)
 {
 	Throw_error("\"!subzone {}\" is obsolete; use \"!zone {}\" instead.");
 	// call "!zone" instead
 	return po_zone();
 }
 
+// "!cbm" pseudo opcode (now obsolete)
+static enum eos obsolete_po_cbm(void)
+{
+	Throw_error("\"!cbm\" is obsolete; use \"!ct pet\" instead.");
+	return ENSURE_EOS;
+}
 
 // include source file ("!source" or "!src"). has to be re-entrant.
 static enum eos po_source(void)	// now GotByte = illegal char
@@ -573,7 +579,7 @@ static enum eos po_serious(void)
 
 
 // end of source file ("!endoffile" or "!eof")
-static enum eos po_eof(void)
+static enum eos po_endoffile(void)
 {
 	// well, it doesn't end right here and now, but at end-of-line! :-)
 	Input_ensure_EOS();
@@ -585,29 +591,30 @@ static enum eos po_eof(void)
 static struct ronode	pseudo_opcode_list[]	= {
 	PREDEFNODE("initmem",		po_initmem),
 	PREDEFNODE("to",		po_to),
-	PREDEFNODE(s_8,			po_8),
-	PREDEFNODE(s_08,		po_8),
-	PREDEFNODE("by",		po_8),
-	PREDEFNODE("byte",		po_8),
-	PREDEFNODE(s_16,		po_16),
-	PREDEFNODE("wo",		po_16),
-	PREDEFNODE("word",		po_16),
+	PREDEFNODE(s_8,			po_byte),
+	PREDEFNODE(s_08,		po_byte),
+	PREDEFNODE("by",		po_byte),
+	PREDEFNODE("byte",		po_byte),
+	PREDEFNODE(s_16,		po_word),
+	PREDEFNODE("wo",		po_word),
+	PREDEFNODE("word",		po_word),
 	PREDEFNODE("24",		po_24),
 	PREDEFNODE("32",		po_32),
 	PREDEFNODE("bin",		po_binary),
 	PREDEFNODE("binary",		po_binary),
 	PREDEFNODE("fi",		po_fill),
 	PREDEFNODE("fill",		po_fill),
-	PREDEFNODE("addr",		po_addr),
-	PREDEFNODE("address",		po_addr),
+	PREDEFNODE("addr",		po_address),
+	PREDEFNODE("address",		po_address),
 	PREDEFNODE("set",		po_set),
-	PREDEFNODE(s_sl,		po_sl),
-	PREDEFNODE("symbollist",	po_sl),
+	PREDEFNODE(s_sl,		po_symbollist),
+	PREDEFNODE("symbollist",	po_symbollist),
 //	PREDEFNODE("skip",		po_skip),
 	PREDEFNODE("zn",		po_zone),
 	PREDEFNODE(s_zone,		po_zone),
-	PREDEFNODE("sz",		po_subzone),
-	PREDEFNODE(s_subzone,		po_subzone),
+	PREDEFNODE("sz",		obsolete_po_subzone),
+	PREDEFNODE(s_subzone,		obsolete_po_subzone),
+	PREDEFNODE(s_cbm,		obsolete_po_cbm),
 	PREDEFNODE("src",		po_source),
 	PREDEFNODE("source",		po_source),
 	PREDEFNODE("if",		po_if),
@@ -619,8 +626,8 @@ static struct ronode	pseudo_opcode_list[]	= {
 	PREDEFNODE("warn",		po_warn),
 	PREDEFNODE(s_error,		po_error),
 	PREDEFNODE("serious",		po_serious),
-	PREDEFNODE("eof",		po_eof),
-	PREDEFLAST("endoffile",		po_eof),
+	PREDEFNODE("eof",		po_endoffile),
+	PREDEFLAST("endoffile",		po_endoffile),
 	//    ^^^^ this marks the last element
 };
 
