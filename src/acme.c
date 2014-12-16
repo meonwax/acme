@@ -17,7 +17,7 @@
 
 #define RELEASE		"0.95.4"	// update before release (FIXME)
 #define CODENAME	"Fenchurch"	// update before release
-#define CHANGE_DATE	"5 Dec"	// update before release
+#define CHANGE_DATE	"16 Dec"	// update before release
 #define CHANGE_YEAR	"2014"		// update before release
 //#define HOME_PAGE	"http://home.pages.de/~mac_bacon/smorbrod/acme/"	// FIXME
 #define HOME_PAGE	"http://sourceforge.net/p/acme-crossass/"	// FIXME
@@ -242,7 +242,7 @@ static int perform_pass(void)
 
 	// call modules' "pass init" functions
 	Output_passinit();	// disable output, PC undefined
-	CPU_passinit(default_cpu);	// set default cpu type
+	cputype_passinit(default_cpu);	// set default cpu type
 	// if start address was given on command line, use it:
 	if (start_address != ILLEGAL_START_ADDRESS)
 		vcpu_set_pc(start_address, 0);
@@ -558,8 +558,6 @@ int main(int argc, const char *argv[])
 	cliargs_get_rest(&toplevel_src_count, &toplevel_sources, "No top level sources given");
 	// Init modules (most of them will just build keyword trees)
 	ALU_init();
-	CPU_init();
-	Encoding_init();
 	Flow_init();
 	Macro_init();
 	Mnemo_init();

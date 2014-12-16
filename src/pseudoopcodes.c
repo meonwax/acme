@@ -10,6 +10,7 @@
 #include "cpu.h"
 #include "alu.h"
 #include "dynabuf.h"
+#include "encoding.h"
 #include "flow.h"
 #include "input.h"
 #include "macro.h"
@@ -27,6 +28,7 @@ static const char	s_08[]	= "08";
 #define s_8	(s_08 + 1)	// Yes, I know I'm sick
 #define s_16	(s_65816 + 3)	// Yes, I know I'm sick
 #define s_sl	(s_asl + 1)	// Yes, I know I'm sick
+#define s_rl	(s_brl + 1)	// Yes, I know I'm sick
 
 
 // variables
@@ -161,6 +163,132 @@ static enum eos po_32(void)
 }
 
 
+// "!cbm" pseudo opcode (now obsolete)
+static enum eos obsolete_po_cbm(void)
+{
+	Throw_error("\"!cbm\" is obsolete; use \"!ct pet\" instead.");
+	return ENSURE_EOS;
+}
+
+// read encoding table from file
+static enum eos user_defined_encoding(void)
+{
+	char			local_table[256],
+				*buffered_table		= encoding_loaded_table;
+	const struct encoder	*buffered_encoder	= encoder_current;
+
+	encoding_load(local_table, GLOBALDYNABUF_CURRENT);
+	encoder_current = &encoder_file;	// activate new encoding
+	encoding_loaded_table = local_table;		// activate local table
+	// If there's a block, parse that and then restore old values
+	if (Parse_optional_block()) {
+		encoder_current = buffered_encoder;
+	} else {
+		// if there's *no* block, the table must be used from now on.
+		// copy the local table to the "outer" table
+		memcpy(buffered_table, local_table, 256);
+	}
+	// re-activate "outer" table (it might have been changed by memcpy())
+	encoding_loaded_table = buffered_table;
+	return ENSURE_EOS;
+}
+
+// use one of the pre-defined encodings (raw, pet, scr)
+static enum eos predefined_encoding(void)
+{
+	char			local_table[256],
+				*buffered_table		= encoding_loaded_table;
+	const struct encoder	*buffered_encoder	= encoder_current;
+
+	if (Input_read_and_lower_keyword()) {
+		const struct encoder	*new_encoder	= encoding_find();
+
+		if (new_encoder)
+			encoder_current = new_encoder;	// activate new encoder
+	}
+	encoding_loaded_table = local_table;	// activate local table
+	// if there's a block, parse that and then restore old values
+	if (Parse_optional_block())
+		encoder_current = buffered_encoder;
+	// re-activate "outer" table
+	encoding_loaded_table = buffered_table;
+	return ENSURE_EOS;
+}
+// set current encoding ("!convtab" pseudo opcode)
+static enum eos po_convtab(void)
+{
+	if ((GotByte == '<') || (GotByte == '"')) {
+		// if file name is missing, don't bother continuing
+		if (Input_read_filename(TRUE))
+			return SKIP_REMAINDER;
+		return user_defined_encoding();
+	} else {
+		return predefined_encoding();
+	}
+}
+// insert string(s)
+static enum eos encode_string(const struct encoder *inner_encoder, char xor)
+{
+	const struct encoder	*outer_encoder	= encoder_current;	// buffer encoder
+
+	// make given encoder the current one (for ALU-parsed values)
+	encoder_current = inner_encoder;
+	do {
+		if (GotByte == '"') {
+			// read initial character
+			GetQuotedByte();
+			// send characters until closing quote is reached
+			while (GotByte && (GotByte != '"')) {
+				output_8(xor ^ encoding_encode_char(GotByte));
+				GetQuotedByte();
+			}
+			if (GotByte == CHAR_EOS)
+				return AT_EOS_ANYWAY;
+
+			// after closing quote, proceed with next char
+			GetByte();
+		} else {
+			// Parse value. No problems with single characters
+			// because the current encoding is
+			// temporarily set to the given one.
+			output_8(ALU_any_int());
+		}
+	} while (Input_accept_comma());
+	encoder_current = outer_encoder;	// reactivate buffered encoder
+	return ENSURE_EOS;
+}
+// insert text string (default format)
+static enum eos po_text(void)
+{
+	return encode_string(encoder_current, 0);
+}
+// insert raw string
+static enum eos po_raw(void)
+{
+	return encode_string(&encoder_raw, 0);
+}
+// insert PetSCII string
+static enum eos po_pet(void)
+{
+	return encode_string(&encoder_pet, 0);
+}
+// insert screencode string
+static enum eos po_scr(void)
+{
+	return encode_string(&encoder_scr, 0);
+}
+// insert screencode string, XOR'd
+static enum eos po_scrxor(void)
+{
+	intval_t	num	= ALU_any_int();
+
+	if (Input_accept_comma() == FALSE) {
+		Throw_error(exception_syntax);
+		return SKIP_REMAINDER;
+	}
+	return encode_string(&encoder_scr, num);
+}
+
 // Include binary file ("!binary" pseudo opcode)
 // FIXME - split this into "parser" and "worker" fn and move worker fn somewhere else.
 static enum eos po_binary(void)
@@ -222,7 +350,7 @@ static enum eos po_binary(void)
 }
 
 
-// Reserve space by sending bytes of given value ("!fi" / "!fill" pseudo opcode)
+// reserve space by sending bytes of given value ("!fi" / "!fill" pseudo opcode)
 static enum eos po_fill(void)
 {
 	intval_t	fill	= FILLVALUE_FILL,
@@ -233,6 +361,128 @@ static enum eos po_fill(void)
 	while (size--)
 		output_8(fill);
 	return ENSURE_EOS;
+}
+
+
+// insert byte until PC fits condition
+static enum eos po_align(void)
+{
+	// FIXME - read cpu state via function call!
+	intval_t	and,
+			equal,
+			fill,
+			test	= CPU_state.pc.val.intval;
+
+	// make sure PC is defined.
+	if ((CPU_state.pc.flags & MVALUE_DEFINED) == 0) {
+		Throw_error(exception_pc_undefined);
+		CPU_state.pc.flags |= MVALUE_DEFINED;	// do not complain again
+		return SKIP_REMAINDER;
+	}
+
+	and = ALU_defined_int();
+	if (!Input_accept_comma())
+		Throw_error(exception_syntax);
+	equal = ALU_defined_int();
+	if (Input_accept_comma())
+		fill = ALU_any_int();
+	else
+		fill = CPU_state.type->default_align_value;
+	while ((test++ & and) != equal)
+		output_8(fill);
+	return ENSURE_EOS;
+}
+
+
+static const char	Error_old_offset_assembly[]	=
+	"\"!pseudopc/!realpc\" is obsolete; use \"!pseudopc {}\" instead.";
+// start offset assembly
+// FIXME - split in two parts and move backend to output.c?
+// TODO - maybe add a label argument to assign the block size afterwards (for assemble-to-end-address) (or add another pseudo opcode)
+static enum eos po_pseudopc(void)
+{
+	// FIXME - read pc using a function call!
+	intval_t	new_pc,
+			new_offset;
+	int		outer_flags	= CPU_state.pc.flags;
+
+	// set new
+	new_pc = ALU_defined_int();	// FIXME - allow for undefined!
+	new_offset = (new_pc - CPU_state.pc.val.intval) & 0xffff;
+	CPU_state.pc.val.intval = new_pc;
+	CPU_state.pc.flags |= MVALUE_DEFINED;	// FIXME - remove when allowing undefined!
+	// if there's a block, parse that and then restore old value!
+	if (Parse_optional_block()) {
+		// restore old
+		CPU_state.pc.val.intval = (CPU_state.pc.val.intval - new_offset) & 0xffff;
+		CPU_state.pc.flags = outer_flags;
+	} else {
+		// not using a block is no longer allowed
+		Throw_error(Error_old_offset_assembly);
+	}
+	return ENSURE_EOS;
+}
+
+
+// "!realpc" pseudo opcode (now obsolete)
+static enum eos obsolete_po_realpc(void)
+{
+	Throw_error(Error_old_offset_assembly);
+	return ENSURE_EOS;
+}
+
+
+// select CPU ("!cpu" pseudo opcode)
+static enum eos po_cpu(void)
+{
+	const struct cpu_type	*cpu_buffer	= CPU_state.type;	// remember current cpu
+	const struct cpu_type	*new_cpu_type;
+
+	if (Input_read_and_lower_keyword()) {
+		new_cpu_type = cputype_find();
+		if (new_cpu_type)
+			CPU_state.type = new_cpu_type;	// activate new cpu type
+		else
+			Throw_error("Unknown processor.");
+	}
+	// if there's a block, parse that and then restore old value
+	if (Parse_optional_block())
+		CPU_state.type = cpu_buffer;
+	return ENSURE_EOS;
+}
+
+
+// set register length, block-wise if needed.
+static enum eos set_register_length(int *var, int make_long)
+{
+	int	old_size	= *var;
+
+	// set new register length (or complain - whichever is more fitting)
+	vcpu_check_and_set_reg_length(var, make_long);
+	// if there's a block, parse that and then restore old value!
+	if (Parse_optional_block())
+		vcpu_check_and_set_reg_length(var, old_size);	// restore old length
+	return ENSURE_EOS;
+}
+// switch to long accumulator ("!al" pseudo opcode)
+static enum eos po_al(void)
+{
+	return set_register_length(&CPU_state.a_is_long, TRUE);
+}
+// switch to short accumulator ("!as" pseudo opcode)
+static enum eos po_as(void)
+{
+	return set_register_length(&CPU_state.a_is_long, FALSE);
+}
+// switch to long index registers ("!rl" pseudo opcode)
+static enum eos po_rl(void)
+{
+	return set_register_length(&CPU_state.xy_are_long, TRUE);
+}
+// switch to short index registers ("!rs" pseudo opcode)
+static enum eos po_rs(void)
+{
+	return set_register_length(&CPU_state.xy_are_long, FALSE);
 }
 
 
@@ -361,13 +611,6 @@ static enum eos obsolete_po_subzone(void)
 	Throw_error("\"!subzone {}\" is obsolete; use \"!zone {}\" instead.");
 	// call "!zone" instead
 	return po_zone();
-}
-
-// "!cbm" pseudo opcode (now obsolete)
-static enum eos obsolete_po_cbm(void)
-{
-	Throw_error("\"!cbm\" is obsolete; use \"!ct pet\" instead.");
-	return ENSURE_EOS;
 }
 
 // include source file ("!source" or "!src"). has to be re-entrant.
@@ -600,10 +843,27 @@ static struct ronode	pseudo_opcode_list[]	= {
 	PREDEFNODE("word",		po_word),
 	PREDEFNODE("24",		po_24),
 	PREDEFNODE("32",		po_32),
+	PREDEFNODE(s_cbm,		obsolete_po_cbm),
+	PREDEFNODE("ct",		po_convtab),
+	PREDEFNODE("convtab",		po_convtab),
+	PREDEFNODE("tx",		po_text),
+	PREDEFNODE("text",		po_text),
+	PREDEFNODE(s_raw,		po_raw),
+	PREDEFNODE(s_pet,		po_pet),
+	PREDEFNODE(s_scr,		po_scr),
+	PREDEFNODE(s_scrxor,		po_scrxor),
 	PREDEFNODE("bin",		po_binary),
 	PREDEFNODE("binary",		po_binary),
 	PREDEFNODE("fi",		po_fill),
 	PREDEFNODE("fill",		po_fill),
+	PREDEFNODE("align",		po_align),
+	PREDEFNODE("pseudopc",		po_pseudopc),
+	PREDEFNODE("realpc",		obsolete_po_realpc),
+	PREDEFNODE("cpu",		po_cpu),
+	PREDEFNODE("al",		po_al),
+	PREDEFNODE("as",		po_as),
+	PREDEFNODE(s_rl,		po_rl),
+	PREDEFNODE("rs",		po_rs),
 	PREDEFNODE("addr",		po_address),
 	PREDEFNODE("address",		po_address),
 	PREDEFNODE("set",		po_set),
@@ -614,7 +874,6 @@ static struct ronode	pseudo_opcode_list[]	= {
 	PREDEFNODE(s_zone,		po_zone),
 	PREDEFNODE("sz",		obsolete_po_subzone),
 	PREDEFNODE(s_subzone,		obsolete_po_subzone),
-	PREDEFNODE(s_cbm,		obsolete_po_cbm),
 	PREDEFNODE("src",		po_source),
 	PREDEFNODE("source",		po_source),
 	PREDEFNODE("if",		po_if),

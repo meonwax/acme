@@ -23,16 +23,10 @@ struct encoder {
 };
 
 
-// constants
-static const char	s_pet[]		= "pet";
-static const char	s_raw[]		= "raw";
-static const char	s_scr[]		= "scr";
-
-
 // variables
 static char		outermost_table[256];	// space for encoding table...
-static char		*loaded_table	= outermost_table;	// ...loaded from file
-static struct encoder	*current_encoder;	// gets set before each pass
+const struct encoder	*encoder_current;	// gets set before each pass
+char			*encoding_loaded_table	= outermost_table;	// ...loaded from file
 
 
 // encoder functions:
@@ -68,97 +62,26 @@ static char encoderfn_scr(char byte)
 // convert raw to whatever is defined in table
 static char encoderfn_file(char byte)
 {
-	return loaded_table[(unsigned char) byte];
+	return encoding_loaded_table[(unsigned char) byte];
 }
 
 
 // predefined encoder structs:
 
 
-static struct encoder	encoder_raw	= {
+const struct encoder	encoder_raw	= {
 	encoderfn_raw
 };
-static struct encoder	encoder_pet	= {
+const struct encoder	encoder_pet	= {
 	encoderfn_pet
 };
-static struct encoder	encoder_scr	= {
+const struct encoder	encoder_scr	= {
 	encoderfn_scr
 };
-static struct encoder	encoder_file	= {
+const struct encoder	encoder_file	= {
 	encoderfn_file
 };
 
-
-// functions
-
-// convert character using current encoding (exported for use by alu.c)
-char encoding_encode_char(char byte)
-{
-	return current_encoder->fn(byte);
-}
-
-// insert string(s)
-static enum eos encode_string(struct encoder *inner_encoder, char xor)
-{
-	struct encoder	*outer_encoder	= current_encoder;	// buffer encoder
-
-	// make given encoder the current one (for ALU-parsed values)
-	current_encoder = inner_encoder;
-	do {
-		if (GotByte == '"') {
-			// read initial character
-			GetQuotedByte();
-			// send characters until closing quote is reached
-			while (GotByte && (GotByte != '"')) {
-				output_8(xor ^ current_encoder->fn(GotByte));
-				GetQuotedByte();
-			}
-			if (GotByte == CHAR_EOS)
-				return AT_EOS_ANYWAY;
-
-			// after closing quote, proceed with next char
-			GetByte();
-		} else {
-			// Parse value. No problems with single characters
-			// because the current encoding is
-			// temporarily set to the given one.
-			output_8(ALU_any_int());
-		}
-	} while (Input_accept_comma());
-	current_encoder = outer_encoder;	// reactivate buffered encoder
-	return ENSURE_EOS;
-}
-
-// read encoding table from file
-static enum eos user_defined_encoding(void)
-{
-	FILE		*fd;
-	char		local_table[256],
-			*buffered_table		= loaded_table;
-	struct encoder	*buffered_encoder	= current_encoder;
-
-	fd = fopen(GLOBALDYNABUF_CURRENT, FILE_READBINARY);
-	if (fd) {
-		if (fread(local_table, sizeof(char), 256, fd) != 256)
-			Throw_error("Conversion table incomplete.");
-		fclose(fd);
-	} else {
-		Throw_error(exception_cannot_open_input_file);
-	}
-	current_encoder = &encoder_file;	// activate new encoding
-	loaded_table = local_table;		// activate local table
-	// If there's a block, parse that and then restore old values
-	if (Parse_optional_block()) {
-		current_encoder = buffered_encoder;
-	} else {
-		// if there's *no* block, the table must be used from now on.
-		// copy the local table to the "outer" table
-		memcpy(buffered_table, local_table, 256);
-	}
-	// re-activate "outer" table (it might have been changed by memcpy())
-	loaded_table = buffered_table;
-	return ENSURE_EOS;
-}
 
 // keywords for "!convtab" pseudo opcode
 static struct ronode	*encoder_tree	= NULL;	// tree to hold encoders
@@ -171,112 +94,48 @@ static struct ronode	encoder_list[]	= {
 };
 
 
-// use one of the pre-defined encodings (raw, pet, scr)
-static enum eos predefined_encoding(void)
-{
-	void		*node_body;
-	char		local_table[256],
-			*buffered_table		= loaded_table;
-	struct encoder	*buffered_encoder	= current_encoder;
-
-	// use one of the pre-defined encodings
-	if (Input_read_and_lower_keyword()) {
-		// make sure tree is initialised
-		if (encoder_tree == NULL)
-			Tree_add_table(&encoder_tree, encoder_list);
-		// perform lookup
-		if (Tree_easy_scan(encoder_tree, &node_body, GlobalDynaBuf)) {
-			current_encoder = (struct encoder *) node_body;	// activate new encoder
-		} else {
-			Throw_error("Unknown encoding.");
-		}
-	}
-	loaded_table = local_table;	// activate local table
-	// If there's a block, parse that and then restore old values
-	if (Parse_optional_block())
-		current_encoder = buffered_encoder;
-	// re-activate "outer" table
-	loaded_table = buffered_table;
-	return ENSURE_EOS;
-}
-
-
 // exported functions
+
+
+// convert character using current encoding (exported for use by alu.c and pseudoopcodes.c)
+char encoding_encode_char(char byte)
+{
+	return encoder_current->fn(byte);
+}
 
 // set "raw" as default encoding
 void encoding_passinit(void)
 {
-	current_encoder = &encoder_raw;
+	encoder_current = &encoder_raw;
 }
 
-
-
-// FIXME - move this to pseudoopcodes.c:
-
-// insert text string (default format)
-static enum eos po_text(void)
+// try to load encoding table from given file
+void encoding_load(char target[256], const char *filename)
 {
-	return encode_string(current_encoder, 0);
-}
+	FILE	*fd	= fopen(filename, FILE_READBINARY);
 
-// insert raw string
-static enum eos po_raw(void)
-{
-	return encode_string(&encoder_raw, 0);
-}
-
-// insert PetSCII string
-static enum eos po_pet(void)
-{
-	return encode_string(&encoder_pet, 0);
-}
-
-// insert screencode string
-static enum eos po_scr(void)
-{
-	return encode_string(&encoder_scr, 0);
-}
-
-// insert screencode string, XOR'd
-static enum eos po_scrxor(void)
-{
-	intval_t	num	= ALU_any_int();
-
-	if (Input_accept_comma() == FALSE) {
-		Throw_error(exception_syntax);
-		return SKIP_REMAINDER;
-	}
-	return encode_string(&encoder_scr, num);
-}
-
-// Set current encoding ("!convtab" pseudo opcode)
-static enum eos po_convtab(void)
-{
-	if ((GotByte == '<') || (GotByte == '"')) {
-		// if file name is missing, don't bother continuing
-		if (Input_read_filename(TRUE))
-			return SKIP_REMAINDER;
-		return user_defined_encoding();
+	if (fd) {
+		if (fread(target, sizeof(char), 256, fd) != 256)
+			Throw_error("Conversion table incomplete.");
+		fclose(fd);
 	} else {
-		return predefined_encoding();
+		Throw_error(exception_cannot_open_input_file);
 	}
 }
 
-// pseudo opcode table
-static struct ronode	pseudo_opcodes[]	= {
-	PREDEFNODE("ct",	po_convtab),
-	PREDEFNODE("convtab",	po_convtab),
-	PREDEFNODE(s_pet,	po_pet),
-	PREDEFNODE(s_raw,	po_raw),
-	PREDEFNODE(s_scr,	po_scr),
-	PREDEFNODE(s_scrxor,	po_scrxor),
-	PREDEFNODE("text",	po_text),
-	PREDEFLAST("tx",	po_text),
-	//    ^^^^ this marks the last element
-};
-
-// register pseudo opcodes
-void Encoding_init(void)
+// lookup encoder held in DynaBuf and return its struct pointer (or NULL on failure)
+const struct encoder *encoding_find(void)
 {
-	Tree_add_table(&pseudo_opcode_tree, pseudo_opcodes);
+	void	*node_body;
+
+	// make sure tree is initialised
+	if (encoder_tree == NULL)
+		Tree_add_table(&encoder_tree, encoder_list);
+	// perform lookup
+	if (!Tree_easy_scan(encoder_tree, &node_body, GlobalDynaBuf)) {
+		Throw_error("Unknown encoding.");
+		return NULL;
+	}
+
+	return node_body;
 }
