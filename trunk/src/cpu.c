@@ -55,7 +55,6 @@ static struct cpu_type	cpu_type_65816	= {
 	CPUFLAG_SUPPORTSLONGREGS,	// allows A and XY to be 16bits wide
 	234			// !align fills with "NOP"
 };
-#define s_rl	(s_brl + 1)	// Yes, I know I'm sick
 
 
 // variables
@@ -93,7 +92,9 @@ const struct cpu_type *cputype_find(void)
 
 // if cpu type and value match, set register length variable to value.
 // if cpu type and value don't match, complain instead.
-static void check_and_set_reg_length(int *var, int make_long)
+// FIXME - error message might be confusing if it is thrown not because of
+// initial change, but because of reverting back to old cpu type after "{}" block!
+void vcpu_check_and_set_reg_length(int *var, int make_long)
 {
 	if (((CPU_state.type->flags & CPUFLAG_SUPPORTSLONGREGS) == 0) && make_long)
 		Throw_error("Chosen CPU does not support long registers.");
@@ -102,165 +103,9 @@ static void check_and_set_reg_length(int *var, int make_long)
 }
 
 
-// set register length, block-wise if needed.
-static enum eos set_register_length(int *var, int make_long)
-{
-	int	old_size	= *var;
-
-	// set new register length (or complain - whichever is more fitting)
-	check_and_set_reg_length(var, make_long);
-	// if there's a block, parse that and then restore old value!
-	if (Parse_optional_block())
-		check_and_set_reg_length(var, old_size);	// restore old length
-	return ENSURE_EOS;
-}
-
-
 // set default values for pass
-void CPU_passinit(const struct cpu_type *cpu_type)
+void cputype_passinit(const struct cpu_type *cpu_type)
 {
 	// handle cpu type (default is 6502)
 	CPU_state.type = cpu_type ? cpu_type : &cpu_type_6502;
-}
-
-
-// FIXME - move to pseudoopcodes.c:
-
-
-// insert byte until PC fits condition
-static enum eos po_align(void)
-{
-	// FIXME - read cpu state via function call!
-	intval_t	and,
-			equal,
-			fill,
-			test	= CPU_state.pc.val.intval;
-
-	// make sure PC is defined.
-	if ((CPU_state.pc.flags & MVALUE_DEFINED) == 0) {
-		Throw_error(exception_pc_undefined);
-		CPU_state.pc.flags |= MVALUE_DEFINED;	// do not complain again
-		return SKIP_REMAINDER;
-	}
-
-	and = ALU_defined_int();
-	if (!Input_accept_comma())
-		Throw_error(exception_syntax);
-	equal = ALU_defined_int();
-	if (Input_accept_comma())
-		fill = ALU_any_int();
-	else
-		fill = CPU_state.type->default_align_value;
-	while ((test++ & and) != equal)
-		output_8(fill);
-	return ENSURE_EOS;
-}
-
-
-// select CPU ("!cpu" pseudo opcode)
-static enum eos po_cpu(void)
-{
-	const struct cpu_type	*cpu_buffer	= CPU_state.type;	// remember current cpu
-	const struct cpu_type	*new_cpu_type;
-
-	if (Input_read_and_lower_keyword()) {
-		new_cpu_type = cputype_find();
-		if (new_cpu_type)
-			CPU_state.type = new_cpu_type;
-		else
-			Throw_error("Unknown processor.");
-	}
-	// if there's a block, parse that and then restore old value!
-	if (Parse_optional_block())
-		CPU_state.type = cpu_buffer;
-	return ENSURE_EOS;
-}
-
-
-static const char	Error_old_offset_assembly[]	=
-	"\"!pseudopc/!realpc\" is obsolete; use \"!pseudopc {}\" instead.";
-
-
-// "!realpc" pseudo opcode (now obsolete)
-static enum eos po_realpc(void)
-{
-	Throw_error(Error_old_offset_assembly);
-	return ENSURE_EOS;
-}
-
-
-// start offset assembly
-// FIXME - split into PO (move to pseudoopcodes.c) and backend (move to output.c?)
-// TODO - maybe add a label argument to assign the block size afterwards (for assemble-to-end-address) (or add another pseudo opcode)
-static enum eos po_pseudopc(void)
-{
-	// FIXME - read pc using a function call!
-	intval_t	new_pc,
-			new_offset;
-	int		outer_flags	= CPU_state.pc.flags;
-
-	// set new
-	new_pc = ALU_defined_int();	// FIXME - allow for undefined!
-	new_offset = (new_pc - CPU_state.pc.val.intval) & 0xffff;
-	CPU_state.pc.val.intval = new_pc;
-	CPU_state.pc.flags |= MVALUE_DEFINED;	// FIXME - remove when allowing undefined!
-	// if there's a block, parse that and then restore old value!
-	if (Parse_optional_block()) {
-		// restore old
-		CPU_state.pc.val.intval = (CPU_state.pc.val.intval - new_offset) & 0xffff;
-		CPU_state.pc.flags = outer_flags;
-	} else {
-		// not using a block is no longer allowed
-		Throw_error(Error_old_offset_assembly);
-	}
-	return ENSURE_EOS;
-}
-
-
-// switch to long accumulator ("!al" pseudo opcode)
-static enum eos po_al(void)
-{
-	return set_register_length(&CPU_state.a_is_long, TRUE);
-}
-
-
-// switch to short accumulator ("!as" pseudo opcode)
-static enum eos po_as(void)
-{
-	return set_register_length(&CPU_state.a_is_long, FALSE);
-}
-
-
-// switch to long index registers ("!rl" pseudo opcode)
-static enum eos po_rl(void)
-{
-	return set_register_length(&CPU_state.xy_are_long, TRUE);
-}
-
-
-// switch to short index registers ("!rs" pseudo opcode)
-static enum eos po_rs(void)
-{
-	return set_register_length(&CPU_state.xy_are_long, FALSE);
-}
-
-
-// pseudo opcode table
-static struct ronode	pseudo_opcodes[]	= {
-	PREDEFNODE("align",	po_align),
-	PREDEFNODE("cpu",	po_cpu),
-	PREDEFNODE("pseudopc",	po_pseudopc),
-	PREDEFNODE("realpc",	po_realpc),	// obsolete
-	PREDEFNODE("al",	po_al),
-	PREDEFNODE("as",	po_as),
-	PREDEFNODE(s_rl,	po_rl),
-	PREDEFLAST("rs",	po_rs),
-	//    ^^^^ this marks the last element
-};
-
-
-// register pseudo opcodes (done later)
-void CPU_init(void)
-{
-	Tree_add_table(&pseudo_opcode_tree, pseudo_opcodes);
 }

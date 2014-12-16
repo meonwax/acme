@@ -102,36 +102,20 @@ static int check_condition(struct loop_condition *condition)
 }
 
 
-// looping assembly ("!do"). has to be re-entrant.
-static enum eos po_do(void)	// now GotByte = illegal char
+struct loop_total {
+	struct loop_condition	head_cond;
+	int			start;	// line number of loop pseudo opcode
+	char			*body;
+	struct loop_condition	tail_cond;
+};
+
+// back end function for "!do" pseudo opcode
+static void do_loop(struct loop_total *loop)
 {
-	struct loop_condition	condition1,
-				condition2;
-	struct input	loop_input,
-			*outer_input;
-	char		*loop_body;
-	int		go_on,
-			loop_start;	// line number of loop pseudo opcode
-	// init
-	condition1.is_until = FALSE;
-	condition1.body = NULL;
-	condition2.is_until = FALSE;
-	condition2.body = NULL;
-	
-	// read head condition to buffer
-	SKIPSPACE();
-	store_condition(&condition1, CHAR_SOB);
-	if (GotByte != CHAR_SOB)
-		Throw_serious_error(exception_no_left_brace);
-	// remember line number of loop body,
-	// then read block and get copy
-	loop_start = Input_now->line_number;
-	loop_body = Input_skip_or_store_block(TRUE);	// changes line number!
-	// now GotByte = '}'
-	NEXTANDSKIPSPACE();	// now GotByte = first non-blank char after block
-	// read tail condition to buffer
-	store_condition(&condition2, CHAR_EOS);
-	// now GotByte = CHAR_EOS
+	struct input	loop_input;
+	struct input	*outer_input;
+	int		go_on;
+
 	// set up new input
 	loop_input = *Input_now;	// copy current input structure into new
 	loop_input.source_is_ram = TRUE;	// set new byte source
@@ -142,17 +126,17 @@ static enum eos po_do(void)	// now GotByte = illegal char
 	Input_now = &loop_input;
 	do {
 		// check head condition
-		go_on = check_condition(&condition1);
+		go_on = check_condition(&loop->head_cond);
 		if (go_on) {
-			parse_ram_block(loop_start, loop_body);
+			parse_ram_block(loop->start, loop->body);
 			// check tail condition
-			go_on = check_condition(&condition2);
+			go_on = check_condition(&loop->tail_cond);
 		}
 	} while (go_on);
 	// free memory
-	free(condition1.body);
-	free(loop_body);
-	free(condition2.body);
+	free(loop->head_cond.body);
+	free(loop->body);
+	free(loop->tail_cond.body);
 	// restore previous input:
 	Input_now = outer_input;
 	GotByte = CHAR_EOS;	// CAUTION! Very ugly kluge.
@@ -160,6 +144,37 @@ static enum eos po_do(void)	// now GotByte = illegal char
 	// it was CHAR_EOS. We could just call GetByte() to get real input, but
 	// then the main loop could choke on unexpected bytes. So we pretend
 	// that we got the outer input's GotByte value magically back.
+}
+
+
+// move to pseudoopcodes.c:
+
+// looping assembly ("!do"). has to be re-entrant.
+static enum eos po_do(void)	// now GotByte = illegal char
+{
+	struct loop_total	loop;
+
+	// init
+	loop.head_cond.is_until = FALSE;
+	loop.head_cond.body = NULL;
+	loop.tail_cond.is_until = FALSE;
+	loop.tail_cond.body = NULL;
+	
+	// read head condition to buffer
+	SKIPSPACE();
+	store_condition(&loop.head_cond, CHAR_SOB);
+	if (GotByte != CHAR_SOB)
+		Throw_serious_error(exception_no_left_brace);
+	// remember line number of loop body,
+	// then read block and get copy
+	loop.start = Input_now->line_number;
+	loop.body = Input_skip_or_store_block(TRUE);	// changes line number!
+	// now GotByte = '}'
+	NEXTANDSKIPSPACE();	// now GotByte = first non-blank char after block
+	// read tail condition to buffer
+	store_condition(&loop.tail_cond, CHAR_EOS);
+	// now GotByte = CHAR_EOS
+	do_loop(&loop);
 	return AT_EOS_ANYWAY;
 }
 
@@ -185,6 +200,7 @@ static enum eos po_for(void)	// now GotByte = illegal char
 
 	if (Input_read_zone_and_keyword(&zone) == 0)	// skips spaces before
 		return SKIP_REMAINDER;
+
 	// now GotByte = illegal char
 	force_bit = Input_get_force_bit();	// skips spaces after
 	symbol = symbol_find(zone, force_bit);
@@ -192,6 +208,7 @@ static enum eos po_for(void)	// now GotByte = illegal char
 		Throw_error(exception_syntax);
 		return SKIP_REMAINDER;
 	}
+
 	first_arg = ALU_defined_int();
 	if (Input_accept_comma()) {
 		old_algo = FALSE;	// new format - yay!

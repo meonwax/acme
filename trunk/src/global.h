@@ -36,6 +36,9 @@ extern char		s_untitled[];
 extern const char	s_Zone[];
 #define s_zone	(s_subzone + 3)	// Yes, I know I'm sick
 extern const char	s_subzone[];
+extern const char	s_pet[];
+extern const char	s_raw[];
+extern const char	s_scr[];
 // error messages during assembly
 extern const char	exception_cannot_open_input_file[];
 extern const char	exception_missing_string[];

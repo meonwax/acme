@@ -129,7 +129,11 @@ static struct operator ops_modulo	= {OPHANDLE_MODULO,	26};	// dyadic
 static struct operator ops_negate	= {OPHANDLE_NEGATE,	28};	// monadic
 static struct operator ops_powerof	= {OPHANDLE_POWEROF,	29};	// dyadic, right-associative
 static struct operator ops_not		= {OPHANDLE_NOT,	30};	// monadic
-	// function calls act as if they were monadic operators
+	// function calls act as if they were monadic operators.
+	// they need high priorities to make sure they are evaluated once the
+	// parentheses' content is known:
+	// "sin(3 + 4) DYADIC_OPERATOR 5" becomes "sin 7 DYADIC_OPERATOR 5",
+	// so function calls' priority must be higher than all dyadic operators.
 static struct operator ops_addr		= {OPHANDLE_ADDR,	32};	// function
 static struct operator ops_int		= {OPHANDLE_INT,	32};	// function
 static struct operator ops_float	= {OPHANDLE_FLOAT,	32};	// function
@@ -559,7 +563,7 @@ static void parse_function_call(void)
 	DynaBuf_to_lower(function_dyna_buf, GlobalDynaBuf);
 	// search for tree item
 	if (Tree_easy_scan(function_tree, &node_body, function_dyna_buf))
-		PUSH_OPERATOR((struct operator*) node_body);
+		PUSH_OPERATOR((struct operator *) node_body);
 	else
 		Throw_error("Unknown function.");
 }
@@ -697,6 +701,13 @@ static void expect_operand_or_monadic_operator(void)
 			} else {
 				if (GotByte == '(') {
 					parse_function_call();
+// i thought about making the parentheses optional, so you can write "a = sin b"
+// just like "a = not b". but then each new function name would have to be made
+// a reserved keyword, otherwise stuff like "a = sin * < b" would be ambiguous:
+// it could mean either "compare sine of PC to b" or "multiply 'sin' by low byte
+// of b".
+// however, apart from that check above, function calls have nothing to do with
+// parentheses: "sin(x+y)" gets parsed just like "not(x+y)".
 				} else {
 					get_symbol_value(ZONE_GLOBAL);
 					goto now_expect_dyadic;

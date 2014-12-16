@@ -40,6 +40,11 @@ const char	s_scrxor[]	= "scrxor";
 char		s_untitled[]	= "<untitled>";	// FIXME - this is actually const
 const char	s_Zone[]	= "Zone";
 const char	s_subzone[]	= "subzone";
+const char	s_pet[]		= "pet";
+const char	s_raw[]		= "raw";
+const char	s_scr[]		= "scr";
+
+
 // Exception messages during assembly
 const char	exception_cannot_open_input_file[] = "Cannot open input file.";
 const char	exception_missing_string[]	= "No string given.";
