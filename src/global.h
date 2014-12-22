@@ -61,14 +61,6 @@ extern const char	Byte_flags[];
 // bits 2, 1 and 0 are currently unused
 
 
-// structures
-// different ways to handle end-of-statement: (FIXME - after grouping all pseudo opcodes, move to pseudoopcodes.c)
-enum eos {
-	SKIP_REMAINDER,		// skip remainder of line - (after errors)
-	ENSURE_EOS,		// make sure there's nothing left in statement
-	PARSE_REMAINDER,	// parse what's left
-	AT_EOS_ANYWAY,		// actually, same as PARSE_REMAINDER
-};
 extern int	pass_count;
 extern int	Process_verbosity;	// Level of additional output
 extern int	warn_on_indented_labels;	// warn if indented label is encountered

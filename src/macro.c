@@ -3,6 +3,7 @@
 // Have a look at "acme.c" for further info
 //
 // Macro stuff
+#include "macro.h"
 #include <string.h>	// needs strlen() + memcpy()
 #include "config.h"
 #include "platform.h"
@@ -14,7 +15,6 @@
 #include "section.h"
 #include "symbol.h"
 #include "tree.h"
-#include "macro.h"
 
 
 // Constants

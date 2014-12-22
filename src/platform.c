@@ -3,8 +3,8 @@
 // Have a look at "acme.c" for further info
 //
 // Platform specific stuff
-#include "config.h"
 #include "platform.h"
+#include "config.h"
 
 
 // Amiga

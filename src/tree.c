@@ -2,11 +2,11 @@
 // Copyright (C) 1998-2014 Marco Baye
 // Have a look at "acme.c" for further info
 //
-// Tree stuff
+// tree stuff
+#include "tree.h"
 #include "config.h"
 #include "dynabuf.h"
 #include "global.h"
-#include "tree.h"
 #include "platform.h"
 
 

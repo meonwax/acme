@@ -7,6 +7,7 @@
 // 22 Nov 2007	"warn on indented labels" is now a CLI switch
 // 25 Sep 2011	Fixed bug in !sl (colons in filename could be interpreted as EOS)
 // 23 Nov 2014	Added label output in VICE format
+#include "symbol.h"
 #include <stdio.h>
 #include "acme.h"
 #include "alu.h"
@@ -15,9 +16,7 @@
 #include "input.h"
 #include "output.h"
 #include "platform.h"
-#include "pseudoopcodes.h"	// FIXME - remove when no longer needed
 #include "section.h"
-#include "symbol.h"
 #include "tree.h"
 #include "typesystem.h"
 

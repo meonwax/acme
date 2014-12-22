@@ -3,6 +3,7 @@
 // Have a look at "acme.c" for further info
 //
 // pseudo opcode stuff
+#include "pseudoopcodes.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include "acme.h"
@@ -20,8 +21,15 @@
 #include "symbol.h"
 #include "tree.h"
 #include "typesystem.h"
-#include "pseudoopcodes.h"
 
+
+// different ways to handle end-of-statement:
+enum eos {
+	SKIP_REMAINDER,		// skip remainder of line - (after errors)
+	ENSURE_EOS,		// make sure there's nothing left in statement
+	PARSE_REMAINDER,	// parse what's left
+	AT_EOS_ANYWAY		// actually, same as PARSE_REMAINDER
+};
 
 // constants
 static const char	s_08[]	= "08";
@@ -32,7 +40,7 @@ static const char	s_08[]	= "08";
 
 
 // variables
-struct ronode	*pseudo_opcode_tree	= NULL;	// tree to hold pseudo opcodes
+static struct ronode	*pseudo_opcode_tree	= NULL;	// tree to hold pseudo opcodes
 
 
 // not really a pseudo opcode, but close enough to be put here:
@@ -637,7 +645,7 @@ static enum eos po_source(void)	// now GotByte = illegal char
 		outer_input = Input_now;	// remember old input
 		local_gotbyte = GotByte;	// CAUTION - ugly kluge
 		Input_now = &new_input;	// activate new input
-		Parse_and_close_file(fd, filename);
+		flow_parse_and_close_file(fd, filename);
 		Input_now = outer_input;	// restore previous input
 		GotByte = local_gotbyte;	// CAUTION - ugly kluge
 	} else {
@@ -705,6 +713,92 @@ static enum eos po_ifdef(void)	// now GotByte = illegal char
 static enum eos po_ifndef(void)	// now GotByte = illegal char
 {
 	return ifdef_ifndef(TRUE);
+}
+
+
+// looping assembly ("!for"). has to be re-entrant.
+// old syntax: !for VAR, END { BLOCK }		VAR counts from 1 to END
+// new syntax: !for VAR, START, END { BLOCK }	VAR counts from START to END
+static enum eos po_for(void)	// now GotByte = illegal char
+{
+	zone_t		zone;
+	int		force_bit;
+	intval_t	first_arg;
+	struct for_loop	loop;
+
+	if (Input_read_zone_and_keyword(&zone) == 0)	// skips spaces before
+		return SKIP_REMAINDER;
+
+	// now GotByte = illegal char
+	force_bit = Input_get_force_bit();	// skips spaces after
+	loop.symbol = symbol_find(zone, force_bit);
+	if (!Input_accept_comma()) {
+		Throw_error(exception_syntax);
+		return SKIP_REMAINDER;
+	}
+
+	first_arg = ALU_defined_int();
+	if (Input_accept_comma()) {
+		loop.old_algo = FALSE;	// new format - yay!
+		if (!warn_on_old_for)
+			Throw_first_pass_warning("Found new \"!for\" syntax.");
+		loop.counter_first = first_arg;	// use given argument
+		loop.counter_last = ALU_defined_int();	// read second argument
+		loop.counter_increment = (loop.counter_last < loop.counter_first) ? -1 : 1;
+	} else {
+		loop.old_algo = TRUE;	// old format - booo!
+		if (warn_on_old_for)
+			Throw_first_pass_warning("Found old \"!for\" syntax.");
+		if (first_arg < 0)
+			Throw_serious_error("Loop count is negative.");
+		loop.counter_first = 0;	// CAUTION - old algo pre-increments and therefore starts with 1!
+		loop.counter_last = first_arg;	// use given argument
+		loop.counter_increment = 1;
+	}
+	if (GotByte != CHAR_SOB)
+		Throw_serious_error(exception_no_left_brace);
+
+	// remember line number of loop pseudo opcode
+	loop.block.start = Input_now->line_number;
+	// read loop body into DynaBuf and get copy
+	loop.block.body = Input_skip_or_store_block(TRUE);	// changes line number!
+
+	flow_forloop(&loop);
+	// free memory
+	free(loop.block.body);
+
+	// GotByte of OuterInput would be '}' (if it would still exist)
+	GetByte();	// fetch next byte
+	return ENSURE_EOS;
+}
+
+
+// looping assembly ("!do"). has to be re-entrant.
+static enum eos po_do(void)	// now GotByte = illegal char
+{
+	struct do_loop	loop;
+
+	// read head condition to buffer
+	SKIPSPACE();
+	flow_store_doloop_condition(&loop.head_cond, CHAR_SOB);	// must be freed!
+	if (GotByte != CHAR_SOB)
+		Throw_serious_error(exception_no_left_brace);
+	// remember line number of loop body,
+	// then read block and get copy
+	loop.block.start = Input_now->line_number;
+	// reading block changes line number!
+	loop.block.body = Input_skip_or_store_block(TRUE);	// must be freed!
+	// now GotByte = '}'
+	NEXTANDSKIPSPACE();	// now GotByte = first non-blank char after block
+	// read tail condition to buffer
+	flow_store_doloop_condition(&loop.tail_cond, CHAR_EOS);	// must be freed!
+	// now GotByte = CHAR_EOS
+	flow_doloop(&loop);
+	// free memory
+	free(loop.head_cond.body);
+	free(loop.block.body);
+	free(loop.tail_cond.body);
+	return AT_EOS_ANYWAY;
 }
 
 
@@ -879,6 +973,8 @@ static struct ronode	pseudo_opcode_list[]	= {
 	PREDEFNODE("if",		po_if),
 	PREDEFNODE("ifdef",		po_ifdef),
 	PREDEFNODE("ifndef",		po_ifndef),
+	PREDEFNODE("for",		po_for),
+	PREDEFNODE("do",		po_do),
 	PREDEFNODE("macro",		po_macro),
 //	PREDEFNODE("debug",		po_debug),
 //	PREDEFNODE("info",		po_info),

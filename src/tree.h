@@ -2,16 +2,15 @@
 // Copyright (C) 1998-2014 Marco Baye
 // Have a look at "acme.c" for further info
 //
-// Tree stuff
+// tree stuff
 #ifndef tree_H
 #define tree_H
 
 
-#include <stdio.h>
-#include "config.h"
+#include <stdio.h>	// for FILE
 
 
-// Macros for pre-defining tree node tables
+// macros for pre-defining tree node tables
 #define PREDEFNODE(s, v)	{NULL, NULL, 1, s, (void *) (v)}
 #define PREDEFLAST(s, v)	{NULL, NULL, 0, s, (void *) (v)}
 
@@ -40,12 +39,13 @@ struct rwnode {
 };
 
 
-// Prototypes
+// prototypes
 
 // Add predefined tree items to given tree.
 extern void Tree_add_table(struct ronode **tree, struct ronode *table_to_add);
 // Search for a given ID string in a given tree. Store "body" component in
 // node_body and return TRUE. Return FALSE if no matching item found.
+struct dynabuf;
 extern int Tree_easy_scan(struct ronode *tree, void **node_body, struct dynabuf *dyna_buf);
 // Search for a "RAM tree" item. Save pointer to found tree item in given
 // location. If no matching item is found, check the "create" flag: If set,

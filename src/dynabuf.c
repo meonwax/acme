@@ -3,12 +3,12 @@
 // Have a look at "acme.c" for further info
 //
 // Dynamic buffer stuff
+#include "dynabuf.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include "acme.h"
 #include "global.h"
-#include "dynabuf.h"
 #include "input.h"
 
 

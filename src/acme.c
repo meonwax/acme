@@ -17,15 +17,15 @@
 
 #define RELEASE		"0.95.4"	// update before release (FIXME)
 #define CODENAME	"Fenchurch"	// update before release
-#define CHANGE_DATE	"16 Dec"	// update before release
+#define CHANGE_DATE	"22 Dec"	// update before release
 #define CHANGE_YEAR	"2014"		// update before release
 //#define HOME_PAGE	"http://home.pages.de/~mac_bacon/smorbrod/acme/"	// FIXME
 #define HOME_PAGE	"http://sourceforge.net/p/acme-crossass/"	// FIXME
 
+#include "acme.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "acme.h"
 #include "alu.h"
 #include "cliargs.h"
 #include "config.h"
@@ -254,7 +254,7 @@ static int perform_pass(void)
 	// Process toplevel files
 	for (ii = 0; ii < toplevel_src_count; ++ii) {
 		if ((fd = fopen(toplevel_sources[ii], FILE_READBINARY))) {
-			Parse_and_close_file(fd, toplevel_sources[ii]);
+			flow_parse_and_close_file(fd, toplevel_sources[ii]);
 		} else {
 			fprintf(stderr, "Error: Cannot open toplevel file \"%s\".\n", toplevel_sources[ii]);
 			// FIXME - if "filename" starts with "-", tell user to give options FIRST, files SECOND!
@@ -558,7 +558,6 @@ int main(int argc, const char *argv[])
 	cliargs_get_rest(&toplevel_src_count, &toplevel_sources, "No top level sources given");
 	// Init modules (most of them will just build keyword trees)
 	ALU_init();
-	Flow_init();
 	Macro_init();
 	Mnemo_init();
 	Output_init(fill_value);
