@@ -7,10 +7,6 @@
 #define pseudoopcodes_H
 
 
-// FIXME - after grouping all pseudo opcodes in .c file, make this static:
-extern struct ronode	*pseudo_opcode_tree;	// tree to hold pseudo opcodes
-
-
 // call when "* = EXPRESSION" is parsed
 extern void notreallypo_setpc(void);
 // register pseudo opcodes

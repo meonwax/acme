@@ -7,7 +7,8 @@
 #define input_H
 
 
-#include <stdio.h>
+#include <stdio.h>	// for FILE
+#include "config.h"	// for zone_t
 
 
 // type definitions

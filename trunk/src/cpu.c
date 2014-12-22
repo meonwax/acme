@@ -3,15 +3,14 @@
 // Have a look at "acme.c" for further info
 //
 // CPU type stuff
+#include "cpu.h"
 #include "config.h"
 #include "alu.h"
-#include "cpu.h"
 #include "dynabuf.h"
 #include "global.h"	// FIXME - remove when no longer needed
 #include "input.h"
 #include "mnemo.h"
 #include "output.h"
-#include "pseudoopcodes.h"	// FIXME - remove when no longer needed
 #include "tree.h"
 
 

@@ -7,8 +7,8 @@
 // 25 Sep 2011	Fixed bug in !to (colons in filename could be interpreted as EOS)
 //  5 Mar 2014	Fixed bug where setting *>0xffff resulted in hangups.
 // 19 Nov 2014	Merged Johann Klasek's report listing generator patch
+#include "output.h"
 #include <stdlib.h>
-//#include <stdio.h>
 #include <string.h>	// for memset()
 #include "acme.h"
 #include "alu.h"
@@ -17,7 +17,6 @@
 #include "dynabuf.h"
 #include "global.h"
 #include "input.h"
-#include "output.h"
 #include "platform.h"
 #include "tree.h"
 

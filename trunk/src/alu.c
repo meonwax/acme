@@ -11,10 +11,10 @@
 //  7 May 2014	C-style "==" operators are now recognized (but
 //		give a warning).
 // 31 May 2014	Added "0b" binary number prefix as alternative to "%".
+#include "alu.h"
 #include <stdlib.h>
 #include <math.h>	// only for fp support
 #include "platform.h"
-#include "alu.h"
 #include "dynabuf.h"
 #include "encoding.h"
 #include "global.h"

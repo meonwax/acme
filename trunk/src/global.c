@@ -8,12 +8,12 @@
 //  2 Jun 2014	Added warn_on_old_for and warn_on_type_mismatch
 // 19 Nov 2014	Merged Johann Klasek's report listing generator patch
 // 23 Nov 2014	Merged Martin Piper's "--msvc" error output patch
+#include "global.h"
 #include <stdio.h>
 #include "platform.h"
 #include "acme.h"
 #include "cpu.h"
 #include "dynabuf.h"
-#include "global.h"
 #include "input.h"
 #include "macro.h"
 #include "output.h"

@@ -4,13 +4,12 @@
 //
 // Input stuff
 // 19 Nov 2014	Merged Johann Klasek's report listing generator patch
+#include "input.h"
 #include "config.h"
 #include "alu.h"
 #include "dynabuf.h"
 #include "global.h"	// FIXME - remove when no longer needed
-#include "input.h"
 #include "platform.h"
-#include "pseudoopcodes.h"	// FIXME - remove when no longer needed
 #include "section.h"
 #include "tree.h"
 
@@ -327,6 +326,7 @@ void Input_ensure_EOS(void)	// Now GotByte = first char to test
 // If "Store" is FALSE, NULL is returned.
 // After calling this function, GotByte holds '}'. Unless EOF was found first,
 // but then a serious error would have been thrown.
+// FIXME - use a struct block *ptr argument!
 char *Input_skip_or_store_block(int store)
 {
 	char	byte;

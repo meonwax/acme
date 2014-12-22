@@ -2,7 +2,7 @@
 // Copyright (C) 1998-2014 Marco Baye
 // Have a look at "acme.c" for further info
 //
-// Type system stuff
+// type system stuff
 #include "typesystem.h"
 #include "config.h"
 #include "alu.h"

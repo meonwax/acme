@@ -3,6 +3,7 @@
 // Have a look at "acme.c" for further info
 //
 // Mnemonics stuff
+#include "mnemo.h"
 #include "config.h"
 #include "alu.h"
 #include "cpu.h"

@@ -3,10 +3,10 @@
 // Have a look at "acme.c" for further info
 //
 // CLI argument stuff
+#include "cliargs.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include "config.h"
-#include "cliargs.h"
 
 
 // constants

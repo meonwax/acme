@@ -3,15 +3,14 @@
 // Have a look at "acme.c" for further info
 //
 // Character encoding stuff
+#include "encoding.h"
 #include <stdio.h>
 #include <string.h>
 #include "alu.h"
 #include "acme.h"
 #include "dynabuf.h"
-#include "encoding.h"
 #include "global.h"	// FIXME - remove when no longer needed
 #include "output.h"
-#include "pseudoopcodes.h"	// FIXME - remove when no longer needed
 #include "input.h"
 #include "tree.h"
 
