@@ -13,6 +13,15 @@ outlining the platform specific changes.
 
 
 ----------------------------------------------------------------------
+Section:   New in release 0.95.5
+----------------------------------------------------------------------
+
+Fixed a bug causing crashes on program exit (a pointer to a local
+    struct kept being used later on, trashing the stack). Thanks to
+    Hoeppie for reporting this.
+
+
+----------------------------------------------------------------------
 Section:   New in release 0.95.4
 ----------------------------------------------------------------------
 
