@@ -15,10 +15,10 @@
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-#define RELEASE		"0.95.4"	// update before release (FIXME)
+#define RELEASE		"0.95.5"	// update before release (FIXME)
 #define CODENAME	"Fenchurch"	// update before release
-#define CHANGE_DATE	"22 Dec"	// update before release
-#define CHANGE_YEAR	"2014"		// update before release
+#define CHANGE_DATE	"5 Feb"	// update before release
+#define CHANGE_YEAR	"2015"		// update before release
 //#define HOME_PAGE	"http://home.pages.de/~mac_bacon/smorbrod/acme/"	// FIXME
 #define HOME_PAGE	"http://sourceforge.net/p/acme-crossass/"	// FIXME
 
@@ -172,7 +172,7 @@ static int report_open(struct report *report, const char *filename)
 // close report file
 static void report_close(struct report *report)
 {
-	if (report->fd) {
+	if (report && report->fd) {
 		fclose(report->fd);
 		report->fd = NULL;
 	}
@@ -269,14 +269,14 @@ static int perform_pass(void)
 }
 
 
-// do passes until done (or errors occured). Return whether output is ready.
+static struct report	global_report;
+// do passes until done (or errors occurred). Return whether output is ready.
 static int do_actual_work(void)
 {
-	struct report	my_report;
 	int		undefined_prev,	// "NeedValue" errors of previous pass
 			undefined_curr;	// "NeedValue" errors of current pass
 
-	report = &my_report;	// let global pointer point to something
+	report = &global_report;	// let global pointer point to something
 	report_init(report);	// we must init struct before doing passes
 	if (Process_verbosity > 1)
 		puts("First pass.");
