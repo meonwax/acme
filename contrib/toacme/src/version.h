@@ -1,0 +1,18 @@
+// ToACME - converts other source codes to ACME format.
+// Copyright (C) 1999-2003 Marco Baye
+// Have a look at "main.c" for further info
+//
+// version
+//
+#ifndef version_H
+#define version_H
+
+
+// Prototypes
+//
+extern void	version_show_info(const char[]);
+extern int	version_parse_id(const char[]);
+extern void	version_main(void);
+
+
+#endif

@@ -3,7 +3,7 @@
 // Have a look at "acme.c" for further info
 //
 // Output stuff
-// 24 Nov 2007	Added possibility to suppress segment overlap warnings 
+// 24 Nov 2007	Added possibility to suppress segment overlap warnings
 // 25 Sep 2011	Fixed bug in !to (colons in filename could be interpreted as EOS)
 //  5 Mar 2014	Fixed bug where setting *>0xffff resulted in hangups.
 // 19 Nov 2014	Merged Johann Klasek's report listing generator patch
@@ -344,10 +344,10 @@ void Output_save_file(FILE *fd)
 		PLATFORM_SETFILETYPE_APPLE(output_filename);
 		// output 16-bit load address in little-endian byte order
 		putc(start & 255, fd);
-		putc(start >>  8, fd);
+		putc(start >> 8, fd);
 		// output 16-bit length in little-endian byte order
 		putc(amount & 255, fd);
-		putc(amount >>  8, fd);
+		putc(amount >> 8, fd);
 		break;
 	case OUTPUT_FORMAT_UNSPECIFIED:
 	case OUTPUT_FORMAT_PLAIN:
@@ -357,7 +357,7 @@ void Output_save_file(FILE *fd)
 		PLATFORM_SETFILETYPE_CBM(output_filename);
 		// output 16-bit load address in little-endian byte order
 		putc(start & 255, fd);
-		putc(start >>  8, fd);
+		putc(start >> 8, fd);
 	}
 	// dump output buffer to file
 	fwrite(out->buffer + start, amount, 1, fd);
