@@ -1,5 +1,5 @@
 // ToACME - converts other source codes to ACME format.
-// Copyright (C) 1999-2006 Marco Baye
+// Copyright (C) 1999-2012 Marco Baye
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -26,45 +26,46 @@
 #include "version.h"
 
 
-// Guess what
-int main(int argc, char *argv[]) {
+// guess what
+int main(int argc, char *argv[])
+{
 	// handle "toacme -h" and "toacme --help" just like "toacme"
-	if(argc == 2) {
-		if((strcmp(argv[1], "-h") == 0)
+	if (argc == 2) {
+		if ((strcmp(argv[1], "-h") == 0)
 		|| (strcmp(argv[1], "--help") == 0))
 			argc = 1;
 	}
 	// "toacme" without any switches gives info and exits successfully
-	if(argc == 1) {
+	if (argc == 1) {
 		version_show_info(argv[0]);
-		return(EXIT_SUCCESS);
+		return EXIT_SUCCESS;
 	}
 	// check argument count
-	if(argc != 4) {
+	if (argc != 4) {
 		fputs("Wrong number of arguments.\n", stderr);
-		return(EXIT_FAILURE);
+		return EXIT_FAILURE;
 	}
 	// check format id
-	if(version_parse_id(argv[1])) {
+	if (version_parse_id(argv[1])) {
 		fputs("Unknown format id.\n", stderr);
-		return(EXIT_FAILURE);
+		return EXIT_FAILURE;
 	}
 	// be nice and ensure input and output are different
-	if(strcmp(argv[2], argv[3]) == 0) {
+	if (strcmp(argv[2], argv[3]) == 0) {
 		fputs("Input and output files must be different.\n", stderr);
-		return(EXIT_FAILURE);
+		return EXIT_FAILURE;
 	}
 	// try to open input file
 	global_input_stream = fopen(argv[2], "rb");
-	if(global_input_stream == NULL) {
+	if (global_input_stream == NULL) {
 		fputs("Cannot open input file.\n", stderr);
-		return(EXIT_FAILURE);
+		return EXIT_FAILURE;
 	}
 	// try to open output file
 	global_output_stream = fopen(argv[3], "w");
-	if(global_output_stream == NULL) {
+	if (global_output_stream == NULL) {
 		fputs("Cannot open output file.\n", stderr);
-		return(EXIT_FAILURE);
+		return EXIT_FAILURE;
 	}
 	// do the actual work
 	version_main();
@@ -72,5 +73,5 @@ int main(int argc, char *argv[]) {
 	fclose(global_output_stream);
 	PLATFORM_SETFILETYPE_TEXT(argv[3]);
 	fclose(global_input_stream);
-	return(EXIT_SUCCESS);
+	return EXIT_SUCCESS;
 }

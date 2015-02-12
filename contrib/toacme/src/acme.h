@@ -7,7 +7,7 @@
 #define acme_H
 
 
-// Constants
+// constants
 
 // pseudo opcodes and related keywords
 extern const char	ACME_po_to[];
@@ -34,8 +34,8 @@ extern const char	ACME_po_rl[];
 extern const char	ACME_po_rs[];
 
 
-// Prototypes
-extern void	ACME_switch_to_pet(void);
+// prototypes
+extern void ACME_switch_to_pet(void);
 
 
 #endif

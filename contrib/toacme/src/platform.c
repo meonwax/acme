@@ -14,8 +14,9 @@
 #include <kernel.h>	// defines _kernel_swi_regs
 #define OS_FILE	0x00008	// constant to call relevant SWI
 
-// Setting the created files' types
-void Platform_set_file_type_text(const char *filename) {
+// setting the created files' types
+void platform_set_file_type_text(const char *filename)
+{
 	_kernel_swi_regs	register_set;
 
 	register_set.r[0] = 18;// = SetFileType
@@ -28,5 +29,6 @@ void Platform_set_file_type_text(const char *filename) {
 //
 // other OS (not that much here)
 //
+
 
 #endif

@@ -8,9 +8,9 @@
 #include "io.h"
 
 
-// Constants
+// constants
 
-// Pseudo opcodes
+// pseudo opcodes
 const char	ACME_po_to[]		= "!to";
 const char	ACME_cbmformat[]	= ", cbm";
 const char	ACME_po_sl[]		= "!sl";
@@ -28,17 +28,18 @@ const char	ACME_po_if[]		= "!if";
 const char	ACME_else[]		= "} else {";
 const char	ACME_endif[]		= "}; (end of conditional assembly)\n";
 const char	ACME_po_eof[]		= "!eof";
-// Pseudo opcodes for 65816 (used by Flash8-AssBlaster)
+// pseudo opcodes for 65816 (used by Flash8-AssBlaster)
 const char	ACME_po_al[]		= "!al";
 const char	ACME_po_as[]		= "!as";
 const char	ACME_po_rl[]		= "!rl";
 const char	ACME_po_rs[]		= "!rs";
 
 
-// Functions
+// functions
 
-// Output pseudo opcode to make ACME use PetSCII encoding
-void ACME_switch_to_pet(void) {
+// output pseudo opcode to make ACME use PetSCII encoding
+void ACME_switch_to_pet(void)
+{
 	IO_put_string(
 "; ToACME: Adding pseudo opcode to use PetSCII encoding by default:\n"
 "!convtab pet\n"

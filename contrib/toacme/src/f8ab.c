@@ -14,12 +14,12 @@
 #include "scr2iso.h"
 
 
-// Constants
+// constants
 
 #define F8AB_ADDRESSING_MODES		23	// (FIXME - check back later!)
 
-// Mnemonic table in Flash8-AssBlaster order (without: JML, WDM)
-static const char*	mnemonic_table[]	= {
+// mnemonic table in Flash8-AssBlaster order (without: JML, WDM)
+static const char	*mnemonic_table[]	= {
 	MnemonicADC,	// $80 6502
 	MnemonicAND,	// $81 6502
 	MnemonicASL,	// $82 6502
@@ -116,8 +116,9 @@ static const char*	mnemonic_table[]	= {
 	MnemonicXCE,	// $db 65816
 };
 
+
 // PseudoOpcode table in Flash8-AssBlaster order
-static const char*	pseudo_opcode_table[]	= {
+static const char	*pseudo_opcode_table[]	= {
 #define F8AB_FIRST_PSEUDO_OPCODE	0xdc
 	NULL,			// (la) $dc
 	// NULL because ACME does not need a pseudo opcode for label defs
@@ -145,7 +146,8 @@ static const char*	pseudo_opcode_table[]	= {
 				// (FIXME - true? I only checked 0xed)
 };
 
-// Parse AssBlaster's packed number format. Returns error bits.
+
+// parse AssBlaster's packed number format. returns error bits.
 //#define AB_NUMVAL_FLAGBIT	0x80	// 10000000 indicates packed number
 #define F8AB_NUMVAL_ADD_65536	0x40	// 01000000
 #define F8AB_NUMVAL_ADD_256	0x20	// 00100000
@@ -160,67 +162,60 @@ static const char*	pseudo_opcode_table[]	= {
 #define F8AB_NUMVAL__SIZE_1	0x01	// 00000001
 #define F8AB_NUMVAL__SIZE_2	0x02	// 00000010
 #define F8AB_NUMVAL__SIZE_3	0x03	// 00000011
-static int parse_number(void) {	// now GotByte = first byte of packed number
+static int parse_number(void)	// now GotByte = first byte of packed number
+{
 	int			flags		= GotByte,
 				err_bits	= 0;
 	unsigned long int	value		= 0,
 				add		= 0;
 
 	// decode value
-	if(flags & F8AB_NUMVAL_ADD_65536)
+	if (flags & F8AB_NUMVAL_ADD_65536)
 		add += 65536;
-	if(flags & F8AB_NUMVAL_ADD_256)
+	if (flags & F8AB_NUMVAL_ADD_256)
 		add += 256;
-	if(flags & F8AB_NUMVAL_ADD_1)
+	if (flags & F8AB_NUMVAL_ADD_1)
 		add += 1;
-	switch(flags & F8AB_NUMVAL_SIZEMASK) {
-
-		case F8AB_NUMVAL__SIZE_0:// no bytes follow (0, 1, 256, 257)
+	switch (flags & F8AB_NUMVAL_SIZEMASK) {
+	case F8AB_NUMVAL__SIZE_0:	// no bytes follow (0, 1, 256, 257)
 		value = add;
 		break;
-
-		case F8AB_NUMVAL__SIZE_1:// one byte follows (2 to 511)
+	case F8AB_NUMVAL__SIZE_1:	// one byte follows (2 to 511)
 		value = add + IO_get_byte();
 		break;
-
-		case F8AB_NUMVAL__SIZE_2:// two bytes follow (512 to 65535)
+	case F8AB_NUMVAL__SIZE_2:	// two bytes follow (512 to 65535)
 		value = add + IO_get_le16();
 		break;
-
-		case F8AB_NUMVAL__SIZE_3:// three bytes follow (anything else)
+	case F8AB_NUMVAL__SIZE_3:	// three bytes follow (anything else)
 		value = add + IO_get_le24();
-
 	}
 	// continue parsing on next byte
 	IO_get_byte();
 
 	// decode output format
-	switch(flags & F8AB_NUMVAL_FORMATMASK) {
-
-		case F8AB_NUMVAL__FORMAT_BIN:
+	switch (flags & F8AB_NUMVAL_FORMATMASK) {
+	case F8AB_NUMVAL__FORMAT_BIN:
 		IO_put_byte('%');
 		AB_output_binary(value);
 		break;
-
-		case F8AB_NUMVAL__FORMAT_DEC:
+	case F8AB_NUMVAL__FORMAT_DEC:
 		fprintf(global_output_stream, "%lu", value);
 		break;
-
-		case F8AB_NUMVAL__FORMAT_HEX:
+	case F8AB_NUMVAL__FORMAT_HEX:
 hex_fallback:	IO_put_byte('$');
 		AB_output_hexadecimal(value);
 		break;
-
-		default:	// unknown output format
+	default:	// unknown output format
 		// remember to warn
 		err_bits |= AB_ERRBIT_UNKNOWN_NUMBER_FORMAT;
 		goto hex_fallback;
 	}
-	return(err_bits);
+	return err_bits;
 }
 
+
 // config struct for shared ab code
-struct ab_t	f8ab_conf	= {
+struct ab	f8ab_conf	= {
 	parse_number,
 	pseudo_opcode_table,
 	mnemonic_table,
@@ -230,9 +225,10 @@ struct ab_t	f8ab_conf	= {
 	F8AB_FIRST_UNUSED_CODE,
 };
 
+
 // main
 void f8ab_main(void) {
-	const char*	header_message;
+	const char	*header_message;
 
 	header_message = "Input does not have any known F8AB header.\n";
 	IO_set_input_padding(AB_ENDOFLINE);
@@ -253,11 +249,11 @@ void f8ab_main(void) {
 	// load_address_low, load_address_high, AB_ENDOFLINE, actual content
 	// newer versions of F8AB seem to use this:
 	// $ff, $00, $00, $03, AB_ENDOFLINE, actual content
-	if(IO_get_byte() == AB_ENDOFLINE) {
+	if (IO_get_byte() == AB_ENDOFLINE) {
 		IO_get_byte();	// skip it and pre-read first valid byte
 		header_message = "Input has F8AB 1.0 header.\n";
 	} else {
-		if((GotByte == 0)
+		if ((GotByte == 0)
 		&& (IO_get_byte() == 3)
 		&& (IO_get_byte() == AB_ENDOFLINE)) {
 			IO_get_byte();// skip and pre-read first valid byte

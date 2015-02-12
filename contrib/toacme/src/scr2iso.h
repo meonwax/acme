@@ -9,7 +9,7 @@
 #include "config.h"
 
 
-// Constants
+// constants
 extern const char	SCR2ISO_table[256];	// Conversion table
 #define SCR2ISO(v)	(SCR2ISO_table[(unsigned char) v])
 

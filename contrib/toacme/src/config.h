@@ -8,7 +8,7 @@
 #define config_H
 
 
-// Constants
+// constants
 #define SPACE		0x20
 #define SHIFTSPACE	0xa0
 
@@ -17,5 +17,6 @@ typedef int	bool;
 #define FALSE	0
 #define TRUE	1
 #endif
+
 
 #endif

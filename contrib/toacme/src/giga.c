@@ -13,10 +13,10 @@
 #include "pet2iso.h"
 
 
-// Constants
+// constants
 
 // token-to-(pseudo)opcode conversion table (FIXME)
-const char*	giga_token[]	= {
+const char	*giga_token[]	= {
 	"FIXME-CALL",		// $a0	.CALL
 	ACME_po_macro,		// $a1	.MACRO	(see MACRO_DEF_TOKEN below)
 	ACME_endmacro,		// $a2	.ENDMACRO
@@ -118,80 +118,79 @@ const char*	giga_token[]	= {
 };
 
 
-// Functions
+// functions
 
 // I don't know whether it's correct, but I had to start somewhere
 #define FIRST_TOKEN	0xa0
 #define MACRO_DEF_TOKEN	0xa1	// ugly kluge to add '{' at end of statement
 #define MACRO_TEXT	0xa8	// ugly kluge for giga string specialties
 #define MACRO_OUTFILE	0xa9	// ugly kluge for adding outfile format
-// Process opcode or pseudo opcode (tokenized)
-static int process_tokenized(void) {
-	const char*	token;
+// process opcode or pseudo opcode (tokenized)
+static int process_tokenized(void)
+{
+	const char	*token;
 	int		flags	= 0;
 
-	if(GotByte < FIRST_TOKEN) {
+	if (GotByte < FIRST_TOKEN) {
 		// macro call?
 		IO_put_byte('+');	// add macro call character
 		// fprintf(global_output_stream, "small value:$%x", GotByte);
 	} else {
-		switch(GotByte) {
-
-			case MACRO_DEF_TOKEN:
+		switch (GotByte) {
+		case MACRO_DEF_TOKEN:
 			flags |= FLAG_ADD_LEFT_BRACE;
 			break;
-
-			case MACRO_TEXT:
+		case MACRO_TEXT:
 			flags |= FLAG_ADD_ZERO | FLAG_CHANGE_LEFTARROW;
 			break;
-
-			case MACRO_OUTFILE:
+		case MACRO_OUTFILE:
 			flags |= FLAG_ADD_CBM;
-
 		}
 		flags |= FLAG_INSERT_SPACE;
 		token = giga_token[GotByte - FIRST_TOKEN];
-		if(token != NULL)
+		if (token != NULL)
 			IO_put_string(token);
 		IO_get_byte();
 	}
-	return(flags);
+	return flags;
 }
+
 
 // When tokens are known, maybe use the PseudoOpcode function from hypra?
 // ...for now deleted
 // [...]
 
-// Main routine for GigaAss conversion
-void giga_main(void) {
+// main routine for GigaAss conversion
+void giga_main(void)
+{
 	int	indent;
 
 	IO_set_input_padding(0);
 	IO_process_load_address();
 	ACME_switch_to_pet();
 	// loop: once for every line in the file
-	while(!IO_reached_eof) {
+	while (!IO_reached_eof) {
 		// skip link pointer (if it's zero, report as end marker)
-		if(IO_get_le16() == 0)
+		if (IO_get_le16() == 0)
 			IO_put_string("; ToACME: Found BASIC end marker.\n");
 		IO_get_le16();	// skip line number
 		// process line
 		IO_get_byte();
-		if((GotByte == SPACE) || (GotByte == ';')
+		if ((GotByte == SPACE) || (GotByte == ';')
 		|| (GotByte == '\0') || (GotByte > 0x7f))
 			indent = 0;
 		else
 			indent = GigaHypra_label_definition();
 		// skip spaces
-		while(GotByte == SPACE)
+		while (GotByte == SPACE)
 			IO_get_byte();
 		// if there is an opcode, process it
-		if((GotByte != ';') && (GotByte != '\0')) {
+		if ((GotByte != ';') && (GotByte != '\0')) {
 			GigaHypra_indent(indent);
 			GigaHypra_argument(process_tokenized());
 		}
 		// skip comment, if there is one
-		if(GotByte == ';')
+		if (GotByte == ';')
 			GigaHypra_comment();
 		// end of line
 		IO_put_byte('\n');

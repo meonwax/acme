@@ -7,10 +7,10 @@
 #define version_H
 
 
-// Prototypes
-extern void	version_show_info(const char[]);
-extern int	version_parse_id(const char[]);
-extern void	version_main(void);
+// prototypes
+extern void version_show_info(const char[]);
+extern int version_parse_id(const char[]);
+extern void version_main(void);
 
 
 #endif

@@ -4,11 +4,11 @@
 //
 // Version
 
-#define RELEASE_NUMBER	"0.10"		// change before release (FIXME)
-#define CHANGE_DATE	"4 Oct"		// change before release
-#define CHANGE_YEAR	"2006"		// change before release
+#define RELEASE_NUMBER	"0.11"		// change before release (FIXME)
+#define CHANGE_DATE	"8 Oct"		// change before release
+#define CHANGE_YEAR	"2012"		// change before release
 #define HOME_PAGE	"http://home.pages.de/~mac_bacon/smorbrod/acme/"
-#define FILE_TAG	";ACME 0.93"	// check before release
+#define FILE_TAG	";ACME 0.94.2"	// check before release
 
 #include <stdio.h>
 #include <string.h>
@@ -16,25 +16,25 @@
 #include "platform.h"
 
 
-// Variables
+// variables
 void	(*client_main)(void)	= NULL;
 
 
-// Functions
+// functions
 
 // show version info and usage
 void version_show_info(const char program_name[]) {
 	printf(
 "\n"
 "ToACME - converts other assemblers' source codes to ACME format.\n"
-"Release "RELEASE_NUMBER" ("CHANGE_DATE" "CHANGE_YEAR"), Copyright (C) 1999-"CHANGE_YEAR" Marco Baye.\n"
-PLATFORM_VERSION"\n"
-"Thanks to "STEFAN" for fixing the AssBlaster macro conversion code.\n"
+"Release " RELEASE_NUMBER " (" CHANGE_DATE " " CHANGE_YEAR "), Copyright (C) 1999-" CHANGE_YEAR " Marco Baye.\n"
+PLATFORM_VERSION "\n"
+"Thanks to " STEFAN " for fixing the AssBlaster macro conversion code.\n"
 "Thanks to Andreas Paul for helping with the Giga-Assembler mode.\n"
 "Thanks to Arndt Dettke for helping with the Hypra-Assembler mode.\n"
 "\n"
 "The newest version can be found at the ACME homepage:\n"
-HOME_PAGE"\n"
+HOME_PAGE "\n"
 "\n"
 "ToACME comes with ABSOLUTELY NO WARRANTY; for details read the help file.\n"
 "This is free software, and you are welcome to redistribute it under\n"
@@ -53,28 +53,34 @@ HOME_PAGE"\n"
 	, program_name);
 }
 
+
 extern void ab3_main(void);
 extern void f8ab_main(void);
 extern void giga_main(void);
 extern void hypra_main(void);
 extern void obj_main(void);
-// Check id string. Returns whether illegal.
-int version_parse_id(const char id[]) {
-	if(strcmp(id, "ab3") == 0)
+
+
+// check id string. returns whether illegal.
+int version_parse_id(const char id[])
+{
+	if (strcmp(id, "ab3") == 0)
 		client_main = ab3_main;
-	else if(strcmp(id, "f8ab") == 0)
+	else if (strcmp(id, "f8ab") == 0)
 		client_main = f8ab_main;
-	else if(strcmp(id, "giga") == 0)
+	else if (strcmp(id, "giga") == 0)
 		client_main = giga_main;
-	else if(strcmp(id, "hypra") == 0)
+	else if (strcmp(id, "hypra") == 0)
 		client_main = hypra_main;
-	else if(strcmp(id, "object") == 0)
+	else if (strcmp(id, "object") == 0)
 		client_main = obj_main;
-	return(client_main ? 0 : 1);
+	return client_main ? 0 : 1;
 }
 
+
 // do the actual work
-void version_main(void) {
+void version_main(void)
+{
 	IO_put_string(
 FILE_TAG "\n"
 "; ToACME: Converted by ToACME, release " RELEASE_NUMBER ".\n"

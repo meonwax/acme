@@ -1,4 +1,8 @@
 
+2012-10-08
+	Release 0.11
+	Beautified source, and added space after ',' in addressing modes.
+
 2006-10-04
 	Release 0.10
 	Adjusted support for illegals to latest changes in ACME.
