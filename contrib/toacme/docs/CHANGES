@@ -1,4 +1,10 @@
 
+2015-02-04
+	Release 0.12
+	Added "VisAss" converter mode.
+	Removed "umlaut fixing" and just went ahead with UTF-8.
+	Fixed home page (used the ACME sourceforge page).
+
 2012-10-08
 	Release 0.11
 	Beautified source, and added space after ',' in addressing modes.

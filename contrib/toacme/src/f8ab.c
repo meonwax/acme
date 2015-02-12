@@ -1,5 +1,5 @@
 // ToACME - converts other source codes to ACME format.
-// Copyright (C) 1999-2006 Marco Baye
+// Copyright (C) 1999-2015 Marco Baye
 // Have a look at "main.c" for further info
 //
 // Flash8-AssBlaster stuff
@@ -119,9 +119,7 @@ static const char	*mnemonic_table[]	= {
 
 // PseudoOpcode table in Flash8-AssBlaster order
 static const char	*pseudo_opcode_table[]	= {
-#define F8AB_FIRST_PSEUDO_OPCODE	0xdc
-	NULL,			// (la) $dc
-	// NULL because ACME does not need a pseudo opcode for label defs
+	NULL,			// (la) $dc	// NULL because ACME does not need a pseudo opcode for label defs
 	ACME_set_pc,		// (ba) $dd
 	ACME_po_byte,		// (by) $de
 	ACME_po_fill,		// (br) $df
@@ -131,17 +129,14 @@ static const char	*pseudo_opcode_table[]	= {
 	ACME_macro_call,	// (ma) $e3 (see AB_PSEUDOOFFSET_MACROCALL)
 	ACME_po_eof,		// (st) $e4
 //	ACME_po_scr is not available in F8AB. Huh?!
-	"; ToACME: Cannot convert \\wa.\n",
-				// (wa) $e5
+	"; ToACME: Cannot convert \\wa.\n",	// (wa) $e5
 	ACME_po_to,	// (on) $e6 (see AB_PSEUDOOFFSET_OUTFILE)
-	ACME_po_word,		// (wo) $e7
-	"; ToACME: Cannot convert \\kc.\n",
-				// (kc) $e8
+	ACME_po_word,		// (wo) $e7	
+	"; ToACME: Cannot convert \\kc.\n",	// (kc) $e8
 	ACME_po_rl,		// (rl) $e9
 	ACME_po_rs,		// (rs) $ea
 	ACME_po_al,		// (al) $eb
 	ACME_po_as,		// (as) $ec
-#define F8AB_FIRST_UNUSED_CODE		0xed
 				// 0xed-0xfe are unused in F8AB
 				// (FIXME - true? I only checked 0xed)
 };
@@ -215,14 +210,19 @@ hex_fallback:	IO_put_byte('$');
 
 
 // config struct for shared ab code
-struct ab	f8ab_conf	= {
+struct vab	f8ab_conf	= {
+	VABFLAG_ADD_DOT,
 	parse_number,
 	pseudo_opcode_table,
 	mnemonic_table,
 	F8AB_ADDRESSING_MODES,
 	// meaning of input bytes (0x80-0xec differ between AB3 and F8AB)
-	F8AB_FIRST_PSEUDO_OPCODE,
-	F8AB_FIRST_UNUSED_CODE,
+	0x80,	// first mnemonic
+	92,	// count
+	0xdc,	// first pseudo opcode
+	17,	// count
+	0xed,	// first unused value
+	18	// count
 };
 
 

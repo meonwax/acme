@@ -1,14 +1,110 @@
 // ToACME - converts other source codes to ACME format.
-// Copyright (C) 1999-2006 Marco Baye
+// Copyright (C) 1999-2015 Marco Baye
 // Have a look at "main.c" for further info
 //
-// stuff needed for both "AssBlaster 3.x" and "Flash8-AssBlaster"
+// stuff needed for "VisAss", "AssBlaster 3.x" and/or "Flash8-AssBlaster"
 
 #include <stdio.h>
 #include "ab.h"
 #include "acme.h"
+#include "mnemo.h"
 #include "io.h"
 #include "scr2iso.h"
+
+
+// comparison:
+//	VisAss			AssBlaster 3.x		F8-AssBlaster
+//	00-	Mnemonics?
+//	48-	PseudoOps
+//				80..86	Mnemonics	80..db	Mnemonics
+//				87..95	Illegals
+//				96..c7	Mnemonics
+//				c8..d4	PseudoOps	dc..ec	PseudoOps
+//				d5..fe	unused		ed..fe	unused
+//	ff	line mark	ff	line mark	ff	line mark
+
+// Mnemonic table in VisAss/AssBlaster 3.x order
+const char	*visass_ab3_mnemonic_table[]	= {
+	NULL,		// unused
+	MnemonicCPX, MnemonicCPY,
+	MnemonicLDX, MnemonicLDY,
+	MnemonicSTX, MnemonicSTY,
+//============================= start of illegals =============================
+	MnemonicSAX,	// broken in VisAss/AB3, see docs (called AAX)
+	MnemonicASR,	// broken in VisAss/AB3, see docs
+	MnemonicARR,	// broken in VisAss/AB3, see docs
+	MnemonicSBX,	// (called AXS)
+	MnemonicDCP,
+	MnemonicDOP,	// ACME uses a different opcode
+	MnemonicISC,
+	MnemonicJAM,	// ACME uses a different opcode (called KIL)
+	"!error \"See the ToACME docs about the illegal opcode LAR.\";",
+			// broken in VisAss/AB3? see docs
+	MnemonicLAX,	// broken in VisAss/AB3, see docs
+	MnemonicRLA, MnemonicRRA,
+	MnemonicSLO, MnemonicSRE,
+	MnemonicTOP,	// ACME uses a different opcode
+//============================== end of illegals ==============================
+	MnemonicADC, MnemonicAND, MnemonicASL,
+	MnemonicBIT,
+	MnemonicBCS, MnemonicBEQ, MnemonicBCC, MnemonicBMI,
+	MnemonicBNE, MnemonicBPL, MnemonicBVS, MnemonicBVC,
+	MnemonicBRK,
+	MnemonicCLC, MnemonicCLD, MnemonicCLI, MnemonicCLV,
+	MnemonicCMP,
+	MnemonicDEC, MnemonicDEX, MnemonicDEY,
+	MnemonicEOR,
+	MnemonicINC, MnemonicINX, MnemonicINY,
+	MnemonicJMP, MnemonicJSR,
+	MnemonicLDA,
+	MnemonicLSR,
+	MnemonicNOP,
+	MnemonicORA,
+	MnemonicPHA, MnemonicPHP, MnemonicPLA, MnemonicPLP,
+	MnemonicROL, MnemonicROR,
+	MnemonicRTI, MnemonicRTS,
+	MnemonicSBC,
+	MnemonicSEC, MnemonicSED, MnemonicSEI,
+	MnemonicSTA,
+	MnemonicTAX, MnemonicTAY, MnemonicTSX,
+	MnemonicTXA, MnemonicTXS, MnemonicTYA,
+};
+
+
+// PseudoOpcode table in VisAss/AssBlaster 3.x order
+const char	*visass_ab3_pseudo_opcode_table[]	= {
+	NULL,			// la	NULL because ACME does not need a pseudo opcode for label defs
+	ACME_set_pc,		// ba
+	ACME_po_byte,		// by
+	ACME_po_fill,		// br
+	ACME_po_pet,		// tx
+	ACME_po_macro,		// md	see AB_PSEUDOOFFSET_MACRODEF
+	ACME_endmacro,		// me
+	ACME_macro_call,	// ma	see AB_PSEUDOOFFSET_MACROCALL
+	ACME_po_eof,		// st
+	ACME_po_scr,		// ts
+	ACME_po_to,		// to	see AB_PSEUDOOFFSET_OUTFILE
+	ACME_po_word,		// wo
+	"; ToACME: Cannot convert \\kc.\n",	// kc
+	nothing			// "nothing"
+};
+// constants
+const char	nothing[]	= "doesnotmatter";	// rename to visass_nopseudoopcode
+
+
+void visass_ab3_illegals(void)
+{
+	IO_put_string(
+"; ToACME: Adding pseudo opcode to enable undocumented (\"illegal\") opcodes:\n"
+"\t!cpu 6510\n"
+"; ToACME: Support for illegal opcodes is somewhat broken in VisAss/AssBlaster.\n"
+"; ToACME:   Make sure you read the ToACME docs to know what you'll have to\n"
+"; ToACME:   look out for.\n"
+"; ToACME:   Should work: DCP, DOP, ISC, JAM (called KIL in VisAss/AssBlaster),\n"
+"; ToACME:     RLA, RRA, SBX (was called AXS in AssBlaster), SLO, SRE, TOP.\n"
+"; ToACME:   Trouble: ARR, ASR, LAX, SAX (called AAX in VisAss/AssBlaster).\n"
+	);
+}
 
 
 // constants
@@ -33,7 +129,6 @@ const char	warning_unknown_number_format[]	= "Warning: AssBlaster file uses unkn
 // 0x3c-0x40 unused ?
 // 0x41-0x5f upper case screen codes (used for comments)
 // 0x60-0x7f unused ?
-#define AB_FIRST_MNEMONIC	0x80
 //	0x80-0xec differ between AssBlaster 3.x and Flash8-AssBlaster
 // 0xed-0xfe unused ?
 // 0xff end-of-line
@@ -83,7 +178,7 @@ const char	*addressing_modes[][2]	= {
 
 
 // variables
-struct ab	*conf;
+struct vab	*conf;
 
 
 // functions
@@ -167,13 +262,15 @@ static void pipe_global_name(void)
 // level 1
 static void pipe_name(void)
 {
-	// Dieser kleine Hack macht alle lokalen ABL-Labels
-	// Auch unter ACME lokal.  nur mit '^' global markierte
-	// Labels werden auch global übernommen ...
-	if (GotByte == SCREENCODE_UPARROW)
-		IO_get_byte();	// global:	^witharrow => witharrow
-	else
-		IO_put_byte('.');	// local:	allothers => .allothers
+	if (conf->flags & VABFLAG_ADD_DOT) {
+		// Dieser kleine Hack macht alle lokalen ABL-Labels
+		// Auch unter ACME lokal.  nur mit '^' global markierte
+		// Labels werden auch global Ã¼bernommen ...
+		if (GotByte == SCREENCODE_UPARROW)
+			IO_get_byte();	// global:	^witharrow => witharrow
+		else
+			IO_put_byte('.');	// local:	allothers => .allothers
+	}
 	pipe_global_name();	// this does exactly what is needed
 }
 
@@ -253,7 +350,11 @@ static int parse_mnemo(int mnemonic_offset)
 			dot_replacement	= '.',
 			err_bits	= 0;
 
-	addressing_mode = IO_get_byte();	// get addressing mode
+	if (conf->address_mode_count > 2) {
+		addressing_mode = IO_get_byte();	// get addressing mode
+	} else {
+		addressing_mode = 1;	// dummy mode for VisAss
+	}
 	IO_get_byte();	// and fetch next (not handled here)
 	mnemonic = conf->mnemonics[mnemonic_offset];
 	if (mnemonic == NULL) {
@@ -296,10 +397,14 @@ static int parse_pseudo_opcode(int pseudo_offset)
 	int		err_bits	= 0;
 
 	IO_get_byte();	// and fetch next (not handled here)
-	IO_put_string("\t\t");
 	pseudo_opcode = conf->pseudo_opcodes[pseudo_offset];
-	if (pseudo_opcode)
+	if (pseudo_opcode != nothing)
+		IO_put_string("\t\t");
+	else
+		pseudo_opcode = NULL;
+	if (pseudo_opcode) {
 		IO_put_string(pseudo_opcode);
+	}
 	// check for special cases
 	switch (pseudo_offset) {
 	case AB_PSEUDOOFFSET_MACROCALL:	// (in ACME: '+')
@@ -329,18 +434,42 @@ static int parse_pseudo_opcode(int pseudo_offset)
 
 // main routine for AssBlaster conversion (works for both AB3 and F8AB).
 // call with first byte of first line pre-read (in GotByte)!
-void AB_main(struct ab *client_config)
+void AB_main(struct vab *client_config)
 {
 	int		err_bits;
 	const char	*comment_indent;
+	int		length_byte;
+	int		handled;
 
 	conf = client_config;
 	ACME_switch_to_pet();
 	// convert lines until EndOfFile
 	while (!IO_reached_eof) {
 		err_bits = 0;	// no errors yet (in this line)
+		handled = 0;
+		if (conf->flags & VABFLAG_HASLENGTHBYTE) {
+			length_byte = GotByte;
+			IO_get_byte();
+		}
 		comment_indent = "\t";
-		if (GotByte < AB_FIRST_MNEMONIC) {
+		if (GotByte >= conf->first_mnemonic
+		&& (GotByte < conf->first_mnemonic + conf->mnemonic_count)) {
+			handled = 1;
+			err_bits |= parse_mnemo(GotByte - conf->first_mnemonic);
+		}
+		if (GotByte >= conf->first_pseudo_opcode
+		&& (GotByte < conf->first_pseudo_opcode + conf->pseudo_opcode_count)) {
+			handled = 1;
+			err_bits |= parse_pseudo_opcode(GotByte - conf->first_pseudo_opcode);
+		}
+		if (GotByte >= conf->first_unused_byte_value
+		&& (GotByte != AB_ENDOFLINE)) {
+			handled = 1;
+			fprintf(global_output_stream, "; ToACME: AssBlaster file used unknown code ($%x). ", GotByte);
+			IO_get_byte();	// fetch next
+			err_bits |= parse_unspecified('.');	// output remainder
+		}
+		if (handled == 0) {
 			switch (GotByte) {
 			case 0:	// empty line
 				IO_get_byte();	// skip this byte
@@ -357,14 +486,6 @@ void AB_main(struct ab *client_config)
 			default:	// implied label definition
 				pipe_name();
 			}
-		} else if (GotByte < conf->first_pseudo_opcode) {
-			err_bits |= parse_mnemo(GotByte - AB_FIRST_MNEMONIC);
-		} else if (GotByte < conf->first_unused_byte_value) {
-			err_bits |= parse_pseudo_opcode(GotByte - conf->first_pseudo_opcode);
-		} else if (GotByte != AB_ENDOFLINE) {
-			fprintf(global_output_stream, "; ToACME: AssBlaster file used unknown code ($%x). ", GotByte);
-			IO_get_byte();	// fetch next
-			err_bits |= parse_unspecified('.');	// output remainder
 		}
 
 		// everything might be followed by a comment, so check
