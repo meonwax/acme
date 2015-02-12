@@ -36,15 +36,16 @@
 //	0x80-0xec differ between AssBlaster 3.x and F8-AssBlaster
 // 0xed-0xfe unused ?
 // 0xff end-of-line
-#define AB_PSEUDOOFFSET_MACROCALL	7	// index in PO table is equal
-#define AB_PSEUDOOFFSET_MACRODEF	5	// in AB3.x and F8-AB
+#define AB_PSEUDOOFFSET_MACRODEF	 5	// in AB3.x and F8-AB
+#define AB_PSEUDOOFFSET_MACROCALL	 7	// indices in PO table
+#define AB_PSEUDOOFFSET_OUTFILE		10	// are equal
 // after mnemonic or pseudo opcode, numbers may follow:
 #define AB_NUMVAL_FLAGBIT		0x80	// indicates packed number
 
 // Pre- and postfixes for addressing modes
 // Don't care whether argument is 8, 16 or 24 bits wide
 const char*	ab_address_modes[][2]	= {
-	{"",	""	},	// ($00=%.....) implicit
+	{"",	""	},	// ($00=%.....) implied
 	{" ",	""	},	// ($01=%....1) absolute
 	{" ",	",x"	},	// ($02=%...1.) absolute,x
 	{" ",	",y"	},	// ($03=%...11) absolute,y
@@ -112,8 +113,8 @@ void ab_generate_errors(int ErrBits) {
 // Convert macro/label name character.
 // AssBlaster allows '^', '[' and ']' in names, so replace these chars.
 //
-byte_t ab_conv_name_char(byte_t b) {
-	b = Scr2ISO_Table[b];
+char ab_conv_name_char(char b) {
+	b = SCR2ISO(b);
 	switch(b) {
 		case 0x40:
 		return(AB_LABELSPECIAL_NUL);
@@ -181,7 +182,7 @@ void ab_parse_quoted(void) {// now GotByte = unhandled opening quote
 	PutByte('"');
 	GetByte();
 	while((GotByte != AB_ENDOFLINE) && (GotByte != '"')) {
-		PutByte(Scr2ISO_Table[GotByte]);
+		PutByte(SCR2ISO(GotByte));
 		GetByte();
 	}
 	PutByte('"');
@@ -198,7 +199,7 @@ void ab_parse_quoted(void) {// now GotByte = unhandled opening quote
 // after macro names (at definitions and calls) and in the MVP/MVN addressing
 // mode. The kluge variable "dot_replacement" is used to replace the '.'
 // character with the correct character for ACME.
-int ab_parse_unspecified(char dot_replacement) {
+int ab_parse_unspecified(int dot_replacement) {
 	int	ErrBits	= 0;
 
 	while((GotByte != AB_ENDOFLINE) && (GotByte != AB_COMMENT)) {
@@ -217,7 +218,7 @@ int ab_parse_unspecified(char dot_replacement) {
 				if(GotByte == '"')
 					ab_parse_quoted();
 				else {
-					PutByte(Scr2ISO_Table[GotByte]);
+					PutByte(SCR2ISO(GotByte));
 					GetByte();
 				}
 			}
@@ -239,12 +240,12 @@ int ab_parse_macro_stuff(void) {	// now GotByte = unhandled byte
 // Process mnemonics (real opcodes). Returns error bits.
 // Level 1
 int ab_parse_mnemo(int mnemonic_offset) {
-	char		dot_replacement	= '.';
-	int		ErrBits	= 0;
-	byte_t		AddressingMode;
 	const char	*mnemonic,
 			*pre,
 			*post;
+	int		AddressingMode,
+			dot_replacement	= '.',
+			ErrBits		= 0;
 
 	AddressingMode = GetByte();	// get addressing mode
 	GetByte();	// and fetch next (not handled here)
@@ -271,12 +272,12 @@ int ab_parse_mnemo(int mnemonic_offset) {
 		fprintf(stderr, "Found an unknown addressing mode bit pattern ($%x). Please tell my programmer.\n", AddressingMode);
 	}
 	if(pre)
-		fputs(pre, global_output_stream);
+		PutString(pre);
 	else
 		PutByte(' ');
 	ErrBits |= ab_parse_unspecified(dot_replacement);	// output arg
 	if(post) {
-		fputs(post, global_output_stream);
+		PutString(post);
 	}
 	return(ErrBits);
 }
@@ -288,11 +289,11 @@ int ab_parse_pseudo_opcode(int pseudo_offset) {
 	int		ErrBits	= 0;
 
 	GetByte();	// and fetch next (not handled here)
-	fputs("\t\t", global_output_stream);
+	PutString("\t\t");
 	String = conf->pseudo_opcodes[pseudo_offset];
 	if(String)
-		fputs(String, global_output_stream);
-	// check for macro call/definition (need special handlers)
+		PutString(String);
+	// check for special cases
 	switch(pseudo_offset) {
 
 		case AB_PSEUDOOFFSET_MACROCALL:	// (in ACME: '+')
@@ -301,10 +302,15 @@ int ab_parse_pseudo_opcode(int pseudo_offset) {
 		break;
 
 		case AB_PSEUDOOFFSET_MACRODEF:	// macro definition
-		if(String)
-			PutByte(' ');// but here a space looks good :)
+		PutByte(' ');// but here a space looks good :)
 		ErrBits |= ab_parse_macro_stuff();
-		fputs(" {", global_output_stream);
+		PutString(" {");
+		break;
+
+		case AB_PSEUDOOFFSET_OUTFILE:	// outfile selection
+		PutByte(' ');// but here a space looks good :)
+		ErrBits |= ab_parse_unspecified('.');	// output arg(s)
+		PutString(PseudoTrail_ToFile);
 		break;
 
 		default:	// all other pseudo opcodes
@@ -348,7 +354,7 @@ void ab_main(struct ab_t* client_config) {
 				ErrBits |= ab_parse_unspecified('.');
 				break;
 
-				default:	// implicit label definition
+				default:	// implied label definition
 				ab_pipe_name();
 			}
 		} else if(GotByte < conf->first_pseudo_opcode) {
@@ -366,10 +372,10 @@ void ab_main(struct ab_t* client_config) {
 			// skip empty comments by checking next byte
 			if(GetByte() != AB_ENDOFLINE) {
 				// something's there, so pipe until end of line
-				fputs(comment_indent, global_output_stream);
+				PutString(comment_indent);
 				PutByte(';');
 				do
-					PutByte(Scr2ISO_Table[GotByte]);
+					PutByte(SCR2ISO(GotByte));
 				while(GetByte() != AB_ENDOFLINE);
 			}
 		}
@@ -381,12 +387,12 @@ void ab_main(struct ab_t* client_config) {
 		// if not at end-of-line, something's fishy
 		if(GotByte != AB_ENDOFLINE) {
 			if(GotByte == '\0')
-				fputs("; ToACME: found $00 - looks like end-of-file marker.", global_output_stream);
+				PutString("; ToACME: found $00 - looks like end-of-file marker.");
 			else {
 				fputs("Found data instead of end-of-line indicator!?.\n", stderr);
-				fputs("; ToACME: Garbage at end-of-line:", global_output_stream);
+				PutString("; ToACME: Garbage at end-of-line:");
 				do
-					PutByte(Scr2ISO_Table[GotByte]);
+					PutByte(SCR2ISO(GotByte));
 				while(GetByte() != AB_ENDOFLINE);
 			}
 		}

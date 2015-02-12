@@ -23,7 +23,7 @@
 // token-to-(pseudo)opcode conversion table (FIXME)
 const char*	giga_token[]	= {
 	"FIXME-CALL",		// $a0	.CALL
-	PseudoOp_MacroDef,	// $a1	.MACRO
+	PseudoOp_MacroDef,	// $a1	.MACRO	(see MACRO_DEF_TOKEN below)
 	PseudoOp_EndMacroDef,	// $a2	.ENDMACRO
 	NULL,			// $a3	.GLOBAL	(ACME does not need a pseudo
 	NULL,			// $a4	.EQUATE	 opcode for label definitions)
@@ -32,10 +32,10 @@ const char*	giga_token[]	= {
 	PseudoOp_Byte,		// $a5	.BYTE
 	PseudoOp_Word,		// $a6	.WORD
 	PseudoOp_Fill,		// $a7	.DS
-	PseudoOp_PetTxt,	// $a8	.TEXT
+	PseudoOp_PetTxt,	// $a8	.TEXT	(see MACRO_TEXT below)
 	// bis hier wird eingerückt
 	// ab hier wird nicht eingerückt
-	PseudoOp_ToFile,	// $a9	.OBJECT
+	PseudoOp_ToFile,	// $a9	.OBJECT	(see MACRO_OUTFILE below)
 	PseudoOp_SetPC,		// $aa	.BASE
 	"FIXME-CODE",		// $ab	.CODE
 	"FIXME-ON",		// $ac	.ON
@@ -135,20 +135,41 @@ const char*	giga_token[]	= {
 
 // I don't know whether it's correct, but I had to start somewhere
 #define FIRST_TOKEN	0xa0
+#define MACRO_DEF_TOKEN	0xa1	// ugly kluge to add '{' at end of statement
+#define MACRO_TEXT	0xa8	// ugly kluge for giga string specialties
+#define MACRO_OUTFILE	0xa9	// ugly kluge for adding outfile format
 // Process opcode or pseudo opcode (tokenized)
 //
 int giga_Tokenized(void) {
 	const char*	token;
+	int		flags	= 0;
 
-	if(GotByte < FIRST_TOKEN)
-		fprintf(global_output_stream, "small value:$%x", GotByte);
-	else {
-		token = giga_token[GotByte-FIRST_TOKEN];
+	if(GotByte < FIRST_TOKEN) {
+		// macro call?
+		PutByte('+');	// add macro call character
+		// fprintf(global_output_stream, "small value:$%x", GotByte);
+	} else {
+		switch(GotByte) {
+
+			case MACRO_DEF_TOKEN:
+			flags |= FLAG_ADD_LEFT_BRACE;
+			break;
+
+			case MACRO_TEXT:
+			flags |= FLAG_ADD_ZERO | FLAG_CHANGE_LEFTARROW;
+			break;
+
+			case MACRO_OUTFILE:
+			flags |= FLAG_ADD_CBM;
+
+		}
+		flags |= FLAG_INSERT_SPACE;
+		token = giga_token[GotByte - FIRST_TOKEN];
 		if(token != NULL)
-			fputs(token, global_output_stream);
+			PutString(token);
+		GetByte();
 	}
-	GetByte();
-	return(0);
+	return(flags);
 }
 
 // When tokens are known, maybe use the PseudoOpcode function from hypra?
@@ -167,13 +188,13 @@ void giga_main(void) {
 	while(!ReachedEOF) {
 		// skip link pointer (if it's zero, report as end marker)
 		if(GetLE16() == 0)
-			fputs("; ToACME: Found BASIC end marker.\n", global_output_stream);
+			PutString("; ToACME: Found BASIC end marker.\n");
 
 		GetLE16();	// skip line number
 
 		// process line
 		GetByte();
-		if((GotByte == ' ') || (GotByte == ';') || (GotByte == '\0') ||(GotByte>0x7f))
+		if((GotByte == ' ') || (GotByte == ';') || (GotByte == '\0') || (GotByte > 0x7f))
 			indent = 0;
 		else
 			indent = gigahypra_LabelDef();

@@ -15,7 +15,8 @@
 
 // Constants
 //
-extern const byte_t	Scr2ISO_Table[256];	// Conversion table
+extern const char	Scr2ISO_Table[256];	// Conversion table
+#define SCR2ISO(v)	(Scr2ISO_Table[(unsigned char) v])
 
 
 #endif

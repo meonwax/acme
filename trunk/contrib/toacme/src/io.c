@@ -15,10 +15,10 @@
 
 // Variables
 //
-byte_t	PaddingValue;
+int	PaddingValue;
 FILE	*global_input_stream;
 FILE	*global_output_stream;
-byte_t	GotByte		= 0;
+int	GotByte		= 0;
 bool	ReachedEOF	= FALSE;
 
 
@@ -28,14 +28,14 @@ bool	ReachedEOF	= FALSE;
 
 // Set byte sent after EOF
 //
-inline void input_set_padding(byte_t pad) {
+inline void input_set_padding(int pad) {
 
 	PaddingValue = pad;
 }
 
 // Fetch and buffer byte
 //
-byte_t GetByte(void) {
+int GetByte(void) {
 	int	w;
 
 	if(ReachedEOF)
@@ -44,7 +44,7 @@ byte_t GetByte(void) {
 		w = getc(global_input_stream);
 		if(w == EOF)
 			ReachedEOF = TRUE;
-		GotByte = (byte_t) w;
+		GotByte = w;
 	}
 	return(GotByte);
 }
@@ -59,6 +59,12 @@ unsigned int GetLE16(void) {
 // Output functions
 //
 
+
+// output string
+//
+inline void PutString(const char string[]) {
+	fputs(string, global_output_stream);
+}
 
 // Write byte to output file
 //
@@ -92,7 +98,7 @@ void io_process_load_address(void) {
 	int	load_address;
 
 	load_address = GetLE16();
-	fputs("; ToACME: Original source code file had load address $", global_output_stream);
+	PutString("; ToACME: Original source code file had load address $");
 	io_put_low_16b_hex(load_address);
 	PutByte('\n');
 }

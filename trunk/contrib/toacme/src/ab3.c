@@ -30,21 +30,37 @@ const char*	ab3_mnemonics[]	= {
 	MnemonicLDY,	// $84
 	MnemonicSTX,	// $85
 	MnemonicSTY,	// $86
-	"!illegal aax",	// $87 illegal aax (sta+stx)	this is broken in AB3!
-	"!illegal asr",	// $88 illegal asr (?)
-	"!illegal arr",	// $89 illegal arr (?)
-	"!illegal axs",	// $8a illegal axs (x=(a&x)-#)
-	"!illegal dcp",	// $8b illegal dcp (dec+cmp)
-	"!illegal dop",	// $8c illegal dop (double nop, skip next byte)
-	"!illegal isc",	// $8d illegal isc (inc+sbc)			aka isb
-	"!illegal kil",	// $8e illegal kil (kill/crash/halt)
-	"!illegal lar",	// $8f illegal lar (allocated, but never used in AB3?)
-	"!illegal lax",	// $90 illegal lax (lda+ldx)
-	"!illegal rla",	// $91 illegal rla (rol+and)
-	"!illegal rra",	// $92 illegal rra (ror+adc)
-	"!illegal slo",	// $93 illegal slo (asl+ora)
-	"!illegal sre",	// $94 illegal sre (lsr+eor)
-	"!illegal top",	// $95 illegal top (triple nop, skip next word)
+// start of illegals
+// There are no official mnemonics for undocumented opcodes, but f8ab seems
+// to confuse its ASR and ARR mnemonics. See below what they do.
+	MnemonicSAX,	// $87 sta + stx	totally broken in AB3! aka AAX
+// SAX is called AAX in f8ab, but it is totally broken: it generates wrong
+// opcodes, one addressing mode actually generates the same opcode as LDX abs8
+	"!illegal ASR",	// $88 0x6b (asr #8)			aka ARR
+// opcode 0x6b does an AND, then *rotates* A to the right and sets flags.
+// ARR would be a much better name. Possibly confused.
+	"!illegal ARR",	// $89 0x4b (arr #8)			aka ASR, ALR
+// opcode 0x4b does an AND, then *shifts* A to the right.
+// ASR would be a much better name. Possibly confused.
+	"!illegal AXS",	// $8a 0xcb (axs #8)			aka SBX, SAX
+// opcode 0xcb does X=(A&X)-#
+	MnemonicDCP,	// $8b dec + cmp
+	"!illegal DOP",	// $8c 0x64 (double nop, skip byte)	aka SKB
+// ...0x04,0x14,0x34,0x44,0x54,0x64,0x74,x80,0x82,0x89,0xc2,0xd4,0xe2,0xf4
+	MnemonicISC,	// $8d inc + sbc			aka ISB
+	"!illegal KIL",	// $8e 0x62 (kill/crash/hal)t	aka JAM, CRA, HLT
+// ...0x02,0x12,0x22,0x32,0x42,0x52,0x62,0x72,0x92,0xb2,0xd2,0xf2
+	"!illegal LAR",	// $8f lar	never used in AB3?	aka LAE, LAS
+// in case opcode 0xbb was meant - that's a uselessly complex operation
+	MnemonicLAX,	// $90 lda + ldx	partially broken in AB3!
+// LAX abs16,y generates opcode 0xbb (useless) instead of 0xbf.
+	MnemonicRLA,	// $91 rol + and
+	MnemonicRRA,	// $92 ror + adc
+	MnemonicSLO,	// $93 asl + ora
+	MnemonicSRE,	// $94 lsr + eor
+	"!illegal TOP",	// $95 0x5c (triple nop, skip word)	aka SKW
+// ...0x0c, 0x1c, 0x3c, 0x5c, 0x7c, 0xdc, 0xfc
+// end of illegals
 	MnemonicADC,	// $96
 	MnemonicAND,	// $97
 	MnemonicASL,	// $98
@@ -60,7 +76,7 @@ const char*	ab3_mnemonics[]	= {
 	MnemonicJMP, MnemonicJSR,				// $af-$b0
 	MnemonicLDA,						// $b1
 	MnemonicLSR,						// $b2
-	MnemonicNOP,						// $b3
+	MnemonicNOP,// 0x1a,0x3a,0x5a,0x7a,0xda,0xfa (legal 0xea)  $b3
 	MnemonicORA,						// $b4
 	MnemonicPHA, MnemonicPHP, MnemonicPLA, MnemonicPLP,	// $b5-$b8
 	MnemonicROL, MnemonicROR,				// $b9-$ba
@@ -80,12 +96,12 @@ const char*	ab3_pseudo_opcodes[]	= {
 	PseudoOp_Byte,		// (by) $ca
 	PseudoOp_Fill,		// (br) $cb
 	PseudoOp_PetTxt,	// (tx) $cc
-	PseudoOp_MacroDef,	// (md) $cd	index 5 in this table
+	PseudoOp_MacroDef,	// (md) $cd (see AB_PSEUDOOFFSET_MACRODEF)
 	PseudoOp_EndMacroDef,	// (me) $ce
-	PseudoOp_MacroCall,	// (ma) $cf	index 7 in this table
+	PseudoOp_MacroCall,	// (ma) $cf (see AB_PSEUDOOFFSET_MACROCALL)
 	PseudoOp_EOF,		// (st) $d0
 	PseudoOp_ScrTxt,	// (ts) $d1
-	PseudoOp_ToFile,	// (to) $d2
+	PseudoOp_ToFile,	// (to) $d2 (see AB_PSEUDOOFFSET_OUTFILE)
 	PseudoOp_Word,		// (wo) $d3
 	"; ToACME: Cannot convert \\kc.\n",
 				// (kc) $d4
@@ -178,6 +194,10 @@ struct ab_t	ab3_conf	= {
 //
 void ab3_main(void) {
 	input_set_padding(AB_ENDOFLINE);
+	PutString(
+"; ToACME: Adding pseudo opcode to enable undocumented (\"illegal\") opcodes:\n"
+"!cpu 6510\n"
+	);
 	io_process_load_address();
 	// first byte after load address should be AB_ENDOFLINE in AB3 sources
 	if(GetByte() == AB_ENDOFLINE) {

@@ -8,6 +8,7 @@
 
 // Includes
 //
+#include "acme.h"
 #include "gighyp.h"
 #include "io.h"
 #include "pet2iso.h"
@@ -21,7 +22,7 @@ void gigahypra_ConvComment(void) {
 	if(GetByte()) {
 		PutByte(';');
 		do
-			PutByte(Pet2ISO_Table[GotByte]);
+			PutByte(PET2ISO(GotByte));
 		while(GetByte());
 	}
 }
@@ -29,9 +30,9 @@ void gigahypra_ConvComment(void) {
 // Process operator
 //
 void gigahypra_Operator(void) {// '!' was last read
-	byte_t	Middle;
+	char	Middle;
 
-	Middle	= Pet2ISO_Table[GetByte()];
+	Middle	= PET2ISO(GetByte());
 	if((Middle != ';') && (Middle != 0)) {
 		if(GetByte() == '!') {
 			switch(Middle) {
@@ -53,11 +54,11 @@ void gigahypra_Operator(void) {// '!' was last read
 				break;
 
 				case '<':
-				fputs(" < ", global_output_stream);
+				PutString(" < ");
 				break;
 
 				case '>':
-				fputs(" > ", global_output_stream);
+				PutString(" > ");
 				break;
 
 				default:
@@ -85,57 +86,72 @@ void gigahypra_Indent(int indent) {
 
 // Process opcode and arguments
 //
-void gigahypra_Opcode(int Flags) {
-	int	NowOpen	= 0;// number of parentheses to close
+void gigahypra_Opcode(int flags) {
+	int	paren	= 0;	// number of open parentheses (to close)
 
 	// if needed, add separating space between opcode and argument
-	if(((Flags & FLAGS_NOSPACE) == 0) && (GotByte != ' ') && (GotByte != ';') && (GotByte != '\0'))
+	if((flags & FLAG_INSERT_SPACE) && (GotByte != ' ') && (GotByte != ';') && (GotByte != '\0'))
 			PutByte(' ');
 	// character loop
-	while((GotByte != ';') && (GotByte != 0)) {
+	while((GotByte != ';') && (GotByte != '\0')) {
 		if(GotByte == '!')
 			gigahypra_Operator();
 		if(GotByte == '"') {
 			// don't parse inside quotes
 			PutByte(GotByte);
 			GetByte();
-			while((GotByte != 0) && (GotByte != '"')) {
-				PutByte(Pet2ISO_Table[GotByte]);
+			while((GotByte != '\0') && (GotByte != '"')) {
+				if((GotByte == 0x5f)
+				&& (flags & FLAG_CHANGE_LEFTARROW))
+					PutString("\", 13,\"");
+				else
+					PutByte(PET2ISO(GotByte));
 				GetByte();
 			}
 			PutByte('"');
-			if(GotByte == '"') GetByte();
+			if(GotByte == '"') {
+				GetByte();
+				if((GotByte == '\0')
+				&& (flags & FLAG_ADD_ZERO))
+					PutString(", 0");
+			}
 		} else {
 			// most characters go here
 			switch(GotByte) {
 
 				case '(':
-				if(Flags & FLAGS_STRIPOPENING) {
-					Flags &= ~FLAGS_STRIPOPENING;
-					Flags |= FLAGS_STRIPCLOSING;
+				if(flags & FLAG_SKIP_OPENING) {
+					flags &= ~FLAG_SKIP_OPENING;
+					flags |= FLAG_SKIP_CLOSING;
 				} else {
-					NowOpen++;
-					PutByte(Pet2ISO_Table[GotByte]);
+					paren++;
+					PutByte(PET2ISO(GotByte));
 				}
 				break;
 
 				case ')':
-				if((Flags&FLAGS_STRIPCLOSING) && (NowOpen==0))
-					Flags &= ~FLAGS_STRIPCLOSING;
+				if((flags & FLAG_SKIP_CLOSING) && (paren == 0))
+					flags &= ~FLAG_SKIP_CLOSING;
 				else {
-					NowOpen--;
-					PutByte(Pet2ISO_Table[GotByte]);
+					paren--;
+					PutByte(PET2ISO(GotByte));
 				}
 				break;
 
+				case ' ':	// shift-space
+				PutByte(' ');	// space
+				break;
+
 				default:
-				PutByte(Pet2ISO_Table[GotByte]);
+				PutByte(PET2ISO(GotByte));
 
 			}
 			GetByte();
 		}
 	}
-	if(Flags & FLAGS_ADDLEFTBRACE)
+	if(flags & FLAG_ADD_CBM)
+		PutString(PseudoTrail_ToFile);
+	if(flags & FLAG_ADD_LEFT_BRACE)
 		PutByte('{');
 }
 
@@ -146,7 +162,7 @@ int gigahypra_LabelDef(void) {
 	int	count	= 0;
 
 	do {
-		PutByte(Pet2ISO_Table[GotByte]);
+		PutByte(PET2ISO(GotByte));
 		count++;
 		GetByte();
 	} while((GotByte != ' ') && (GotByte != ';') && (GotByte != 0));

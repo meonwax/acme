@@ -19,7 +19,7 @@ f8ab.o: config.h ab.h acme.h io.h mnemo.h scr2iso.h f8ab.c
 
 giga.o: config.h acme.h gighyp.h io.h mnemo.h pet2iso.h giga.c
 
-gighyp.o: config.h io.h pet2iso.h gighyp.h gighyp.c
+gighyp.o: config.h acme.h io.h pet2iso.h gighyp.h gighyp.c
 
 hypra.o: config.h acme.h gighyp.h io.h pet2iso.h hypra.c
 

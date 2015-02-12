@@ -15,7 +15,8 @@
 
 // Constants
 //
-extern const byte_t	Pet2ISO_Table[256];	// Conversion table
+extern const char	Pet2ISO_Table[256];	// Conversion table
+#define PET2ISO(v)	(Pet2ISO_Table[(unsigned char) v])
 
 
 #endif

@@ -27,6 +27,7 @@ extern const char	PseudoOp_ScrTxt[];
 extern const char	PseudoOp_SetPC[];
 extern const char	PseudoOp_Source[];
 extern const char	PseudoOp_ToFile[];
+extern const char	PseudoTrail_ToFile[];
 extern const char	PseudoOp_Word[];
 // pseudo opcodes for 65816 cpu
 extern const char	PseudoOp_al[];

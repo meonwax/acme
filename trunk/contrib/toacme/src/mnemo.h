@@ -32,6 +32,12 @@ extern const char	MnemonicSTA[], MnemonicSTX[], MnemonicSTY[];
 extern const char	MnemonicTSX[], MnemonicTXA[], MnemonicTAY[];
 extern const char	MnemonicTYA[], MnemonicTAX[], MnemonicTXS[];
 
+// Mnemonics of undocumented ("illegal") 6502 instructions
+extern const char	MnemonicSLO[], MnemonicRLA[];
+extern const char	MnemonicSRE[], MnemonicRRA[];
+extern const char	MnemonicSAX[], MnemonicLAX[];
+extern const char	MnemonicDCP[], MnemonicISC[];
+
 // Mnemonics of 65c02 instructions
 extern const char	MnemonicBRA[];
 extern const char	MnemonicPHX[], MnemonicPHY[];

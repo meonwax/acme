@@ -15,10 +15,15 @@
 
 // Constants
 //
-#define FLAGS_NOSPACE		(1u << 0)
-#define FLAGS_ADDLEFTBRACE	(1u << 1)
-#define FLAGS_STRIPOPENING	(1u << 2)
-#define FLAGS_STRIPCLOSING	(1u << 3)
+#define FLAG_INSERT_SPACE	(1u << 0)	// insert space before arg
+#define FLAG_ADD_LEFT_BRACE	(1u << 1)	// add '{' at end of statement
+#define FLAG_ADD_CBM		(1u << 2)	// add file format indicator
+#define FLAG_ADD_ZERO		(1u << 3)	// giga string specialty:
+	// open quote at end of line is *normal*. Closed quote: add ",0".
+#define FLAG_SKIP_OPENING	(1u << 4)	// strip '(' before args
+#define FLAG_SKIP_CLOSING	(1u << 5)	// strip ')' after args
+#define FLAG_CHANGE_LEFTARROW	(1u << 6)	// giga string specialty:
+	// '_' (left arrow on C64) is transformed to CR (0x0d).
 
 
 // Prototypes
@@ -26,7 +31,7 @@
 extern void	gigahypra_ConvComment(void);
 extern void	gigahypra_Operator(void);
 extern void	gigahypra_Indent(int indent);
-extern void	gigahypra_Opcode(int Flags);
+extern void	gigahypra_Opcode(int flags);
 extern int	gigahypra_LabelDef(void);
 
 

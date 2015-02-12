@@ -63,6 +63,16 @@ const char	MnemonicTXA[]	= "txa";
 const char	MnemonicTXS[]	= "txs";
 const char	MnemonicTYA[]	= "tya";
 
+// Mnemonics of undocumented ("illegal") 6502 instructions
+const char	MnemonicSLO[]	= " Slo";
+const char	MnemonicRLA[]	= " Rla";
+const char	MnemonicSRE[]	= " Sre";
+const char	MnemonicRRA[]	= " Rra";
+const char	MnemonicSAX[]	= " Sax";
+const char	MnemonicLAX[]	= " Lax";
+const char	MnemonicDCP[]	= " Dcp";
+const char	MnemonicISC[]	= " Isc";
+
 // Mnemonics of 65c02 instructions
 const char	MnemonicBRA[]	= "bra";
 const char	MnemonicPHX[]	= "phx";
