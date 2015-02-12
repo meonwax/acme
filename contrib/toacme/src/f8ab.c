@@ -1,13 +1,9 @@
 // ToACME - converts other source codes to ACME format.
-// Copyright (C) 1999-2003 Marco Baye
+// Copyright (C) 1999-2006 Marco Baye
 // Have a look at "main.c" for further info
 //
-// F8-AssBlaster stuff
-//
+// Flash8-AssBlaster stuff
 
-
-// Includes
-//
 #include <stdlib.h>
 #include <stdio.h>
 #include "config.h"
@@ -19,10 +15,11 @@
 
 
 // Constants
-//
 
-// Mnemonic table in F8-AssBlaster order (without: MnemonicJML, MnemonicWDM)
-const char*	f8ab_mnemonics[]	= {
+#define F8AB_ADDRESSING_MODES		23	// (FIXME - check back later!)
+
+// Mnemonic table in Flash8-AssBlaster order (without: JML, WDM)
+static const char*	mnemonic_table[]	= {
 	MnemonicADC,	// $80 6502
 	MnemonicAND,	// $81 6502
 	MnemonicASL,	// $82 6502
@@ -46,16 +43,16 @@ const char*	f8ab_mnemonics[]	= {
 	MnemonicCOP,	// $94 65816
 	MnemonicCPX,	// $95 6502
 	MnemonicCPY,	// $96 6502
-	MnemonicDEC,	// $97	F8AB uses DEA as the 65816's "DEC-implicit"
+	MnemonicDEC,	// $97	F8AB uses DEA as the 65816's "DEC implied"
 	MnemonicDEC,	// $98 6502
 	MnemonicDEX,	// $99 6502
 	MnemonicDEY,	// $9a 6502
 	MnemonicEOR,	// $9b 6502
-	MnemonicINC,	// $9c	F8AB uses INA as the 65816's "INC-implicit"
+	MnemonicINC,	// $9c	F8AB uses INA as the 65816's "INC implied"
 	MnemonicINC,	// $9d 6502
 	MnemonicINX,	// $9e 6502
-	// seems as if F8AB does not know MnemonicJML (65816)...
 	MnemonicINY,	// $9f 6502
+	// MnemonicJML (65816) seems to be unknown to F8AB ...
 	MnemonicJMP,	// $a0 6502
 	MnemonicJSL,	// $a1 65816	...but it *does* know JSL? Strange.
 	MnemonicJSR,	// $a2 6502
@@ -114,38 +111,41 @@ const char*	f8ab_mnemonics[]	= {
 	MnemonicTYA,	// $d7 6502
 	MnemonicTYX,	// $d8 65816
 	MnemonicWAI,	// $d9 65816
-	// seems as if F8AB does not know MnemonicWDM (65816)
+	// MnemonicWDM (65816) seems to be unknown to F8AB.
 	MnemonicXBA,	// $da 65816
 	MnemonicXCE,	// $db 65816
 };
 
-// PseudoOpcode table in F8-AssBlaster order
-const char*	f8ab_pseudo_opcodes[]	= {
+// PseudoOpcode table in Flash8-AssBlaster order
+static const char*	pseudo_opcode_table[]	= {
+#define F8AB_FIRST_PSEUDO_OPCODE	0xdc
 	NULL,			// (la) $dc
 	// NULL because ACME does not need a pseudo opcode for label defs
-	PseudoOp_SetPC,		// (ba) $dd
-	PseudoOp_Byte,		// (by) $de
-	PseudoOp_Fill,		// (br) $df
-	PseudoOp_PetTxt,	// (tx) $e0
-	PseudoOp_MacroDef,	// (md) $e1 (see AB_PSEUDOOFFSET_MACRODEF)
-	PseudoOp_EndMacroDef,	// (de) $e2
-	PseudoOp_MacroCall,	// (ma) $e3 (see AB_PSEUDOOFFSET_MACROCALL)
-	PseudoOp_EOF,		// (st) $e4
-//	PseudoOp_ScrTxt is not available in F8AB. Huh?!
+	ACME_set_pc,		// (ba) $dd
+	ACME_po_byte,		// (by) $de
+	ACME_po_fill,		// (br) $df
+	ACME_po_pet,		// (tx) $e0
+	ACME_po_macro,		// (md) $e1 (see AB_PSEUDOOFFSET_MACRODEF)
+	ACME_endmacro,		// (de) $e2
+	ACME_macro_call,	// (ma) $e3 (see AB_PSEUDOOFFSET_MACROCALL)
+	ACME_po_eof,		// (st) $e4
+//	ACME_po_scr is not available in F8AB. Huh?!
 	"; ToACME: Cannot convert \\wa.\n",
 				// (wa) $e5
-	PseudoOp_ToFile,	// (on) $e6 (see AB_PSEUDOOFFSET_OUTFILE)
-	PseudoOp_Word,		// (wo) $e7
+	ACME_po_to,	// (on) $e6 (see AB_PSEUDOOFFSET_OUTFILE)
+	ACME_po_word,		// (wo) $e7
 	"; ToACME: Cannot convert \\kc.\n",
 				// (kc) $e8
-	PseudoOp_rl,		// (rl) $e9
-	PseudoOp_rs,		// (rs) $ea
-	PseudoOp_al,		// (al) $eb
-	PseudoOp_as,		// (as) $ec
+	ACME_po_rl,		// (rl) $e9
+	ACME_po_rs,		// (rs) $ea
+	ACME_po_al,		// (al) $eb
+	ACME_po_as,		// (as) $ec
+#define F8AB_FIRST_UNUSED_CODE		0xed
+				// 0xed-0xfe are unused in F8AB
+				// (FIXME - true? I only checked 0xed)
 };
 
 // Parse AssBlaster's packed number format. Returns error bits.
-//
 //#define AB_NUMVAL_FLAGBIT	0x80	// 10000000 indicates packed number
 #define F8AB_NUMVAL_ADD_65536	0x40	// 01000000
 #define F8AB_NUMVAL_ADD_256	0x20	// 00100000
@@ -160,111 +160,110 @@ const char*	f8ab_pseudo_opcodes[]	= {
 #define F8AB_NUMVAL__SIZE_1	0x01	// 00000001
 #define F8AB_NUMVAL__SIZE_2	0x02	// 00000010
 #define F8AB_NUMVAL__SIZE_3	0x03	// 00000011
-int f8ab_parse_number(void) {	// now GotByte = first byte of packed number
-	int			Flags	= GotByte,
-				ErrBits	= 0;
-	unsigned long int	Value	= 0,
-				Add	= 0;
+static int parse_number(void) {	// now GotByte = first byte of packed number
+	int			flags		= GotByte,
+				err_bits	= 0;
+	unsigned long int	value		= 0,
+				add		= 0;
 
 	// decode value
-	if(Flags & F8AB_NUMVAL_ADD_65536)
-		Add += 65536;
-	if(Flags & F8AB_NUMVAL_ADD_256)
-		Add += 256;
-	if(Flags & F8AB_NUMVAL_ADD_1)
-		Add += 1;
-	switch(Flags & F8AB_NUMVAL_SIZEMASK) {
+	if(flags & F8AB_NUMVAL_ADD_65536)
+		add += 65536;
+	if(flags & F8AB_NUMVAL_ADD_256)
+		add += 256;
+	if(flags & F8AB_NUMVAL_ADD_1)
+		add += 1;
+	switch(flags & F8AB_NUMVAL_SIZEMASK) {
 
 		case F8AB_NUMVAL__SIZE_0:// no bytes follow (0, 1, 256, 257)
-		Value = Add;
+		value = add;
 		break;
 
 		case F8AB_NUMVAL__SIZE_1:// one byte follows (2 to 511)
-		Value = Add + GetByte();
+		value = add + IO_get_byte();
 		break;
 
 		case F8AB_NUMVAL__SIZE_2:// two bytes follow (512 to 65535)
-		Value = Add + GetLE16();
+		value = add + IO_get_le16();
 		break;
 
 		case F8AB_NUMVAL__SIZE_3:// three bytes follow (anything else)
-		Value = Add + GetByte() + (GetLE16() << 8);
+		value = add + IO_get_le24();
 
 	}
 	// continue parsing on next byte
-	GetByte();
+	IO_get_byte();
 
 	// decode output format
-	switch(Flags & F8AB_NUMVAL_FORMATMASK) {
+	switch(flags & F8AB_NUMVAL_FORMATMASK) {
 
 		case F8AB_NUMVAL__FORMAT_BIN:
-		PutByte('%');
-		ab_output_binary(Value);
+		IO_put_byte('%');
+		AB_output_binary(value);
 		break;
 
 		case F8AB_NUMVAL__FORMAT_DEC:
-		fprintf(global_output_stream, "%lu", Value);
+		fprintf(global_output_stream, "%lu", value);
 		break;
 
 		case F8AB_NUMVAL__FORMAT_HEX:
-hex_fallback:	PutByte('$');
-		ab_output_hexadecimal(Value);
+hex_fallback:	IO_put_byte('$');
+		AB_output_hexadecimal(value);
 		break;
 
 		default:	// unknown output format
 		// remember to warn
-		ErrBits |= AB_ERRBIT_UNKNOWN_NUMBER_FORMAT;
+		err_bits |= AB_ERRBIT_UNKNOWN_NUMBER_FORMAT;
 		goto hex_fallback;
 	}
-	return(ErrBits);
+	return(err_bits);
 }
 
 // config struct for shared ab code
 struct ab_t	f8ab_conf	= {
-	f8ab_parse_number,
-	f8ab_pseudo_opcodes,
-	f8ab_mnemonics,
-	23,	// number of addressing modes (FIXME - check back later!)
-	// meaning of input bytes (0x80-0xec differ between AB 3.x and F8-AB)
-	// 0x80: mnemos (56 6502 + 8 65c02 + 26 65816 + jml/jsl = 92)
-	0xdc,	// first pseudo opcode
-	0xed,	// first unused byte value
-	// 0xed-0xfe are unused in F8-AB (FIXME - true? I only checked 0xed)
+	parse_number,
+	pseudo_opcode_table,
+	mnemonic_table,
+	F8AB_ADDRESSING_MODES,
+	// meaning of input bytes (0x80-0xec differ between AB3 and F8AB)
+	F8AB_FIRST_PSEUDO_OPCODE,
+	F8AB_FIRST_UNUSED_CODE,
 };
 
 // main
-//
 void f8ab_main(void) {
 	const char*	header_message;
 
 	header_message = "Input does not have any known F8AB header.\n";
-	input_set_padding(AB_ENDOFLINE);
-	PutString(
+	IO_set_input_padding(AB_ENDOFLINE);
+	IO_put_string(
 "; ToACME: Adding pseudo opcode to enable 65816 opcodes:\n"
-"!cpu 65816\n"
+"\t!cpu 65816\n"
 "; ToACME: Adding two macros to fix F8AB's non-standard argument order\n"
 "; ToACME:   concerning MVP/MVN. While the commands are assembled with\n"
 "; ToACME:   the destination bank byte first, the WDC docs say that in\n"
 "; ToACME:   source codes, the source bank byte is given first.\n"
-"!macro F8AB_BROKEN_MVP .dest,.source {mvp .source,.dest}\n"
-"!macro F8AB_BROKEN_MVN .dest,.source {mvn .source,.dest}\n"
+"; ToACME:   In other words: The macros make sure that assembling this\n"
+"; ToACME:   source with ACME will produce the same binary F8AB produced.\n"
+"\t!macro F8AB_BROKEN_MVP .dest, .source {mvp .source, .dest}\n"
+"\t!macro F8AB_BROKEN_MVN .dest, .source {mvn .source, .dest}\n"
 	);
-	io_process_load_address();
+	IO_process_load_address();
 	// most AB files have this format:
 	// load_address_low, load_address_high, AB_ENDOFLINE, actual content
 	// newer versions of F8AB seem to use this:
 	// $ff, $00, $00, $03, AB_ENDOFLINE, actual content
-	if(GetByte() == AB_ENDOFLINE) {
-		GetByte();	// skip it and pre-read first valid byte
+	if(IO_get_byte() == AB_ENDOFLINE) {
+		IO_get_byte();	// skip it and pre-read first valid byte
 		header_message = "Input has F8AB 1.0 header.\n";
 	} else {
 		if((GotByte == 0)
-		&& (GetByte() == 3)
-		&& (GetByte() == AB_ENDOFLINE)) {
-			GetByte();// skip and pre-read first valid byte
+		&& (IO_get_byte() == 3)
+		&& (IO_get_byte() == AB_ENDOFLINE)) {
+			IO_get_byte();// skip and pre-read first valid byte
 			header_message = "Input has F8AB 1.2 header.\n";
 		}
 	}
 	fputs(header_message, stderr);
-	ab_main(&f8ab_conf);
+	AB_main(&f8ab_conf);
 }

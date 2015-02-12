@@ -1,20 +1,15 @@
 // ToACME - converts other source codes to ACME format.
-// Copyright (C) 1999-2003 Marco Baye
+// Copyright (C) 1999-2006 Marco Baye
 // Have a look at "main.c" for further info
 //
 // stuff needed for both "Hypra-Ass" and "Giga-Ass"
-//
 #ifndef gigahypra_H
 #define gigahypra_H
 
-
-// Includes
-//
 #include "config.h"
 
 
 // Constants
-//
 #define FLAG_INSERT_SPACE	(1u << 0)	// insert space before arg
 #define FLAG_ADD_LEFT_BRACE	(1u << 1)	// add '{' at end of statement
 #define FLAG_ADD_CBM		(1u << 2)	// add file format indicator
@@ -27,12 +22,11 @@
 
 
 // Prototypes
-//
-extern void	gigahypra_ConvComment(void);
-extern void	gigahypra_Operator(void);
-extern void	gigahypra_Indent(int indent);
-extern void	gigahypra_Opcode(int flags);
-extern int	gigahypra_LabelDef(void);
+extern void	GigaHypra_comment(void);
+extern void	GigaHypra_operator(void);
+extern void	GigaHypra_indent(int indent);
+extern void	GigaHypra_argument(int flags);
+extern int	GigaHypra_label_definition(void);
 
 
 #endif

@@ -1,13 +1,9 @@
 // ToACME - converts other source codes to ACME format.
-// Copyright (C) 1999-2005 Marco Baye
+// Copyright (C) 1999-2006 Marco Baye
 // Have a look at "main.c" for further info
 //
 // "GigaAss" stuff
-//
 
-
-// Includes
-//
 #include <stdio.h>
 #include "config.h"
 #include "acme.h"
@@ -18,34 +14,30 @@
 
 
 // Constants
-//
 
 // token-to-(pseudo)opcode conversion table (FIXME)
 const char*	giga_token[]	= {
 	"FIXME-CALL",		// $a0	.CALL
-	PseudoOp_MacroDef,	// $a1	.MACRO	(see MACRO_DEF_TOKEN below)
-	PseudoOp_EndMacroDef,	// $a2	.ENDMACRO
+	ACME_po_macro,		// $a1	.MACRO	(see MACRO_DEF_TOKEN below)
+	ACME_endmacro,		// $a2	.ENDMACRO
 	NULL,			// $a3	.GLOBAL	(ACME does not need a pseudo
 	NULL,			// $a4	.EQUATE	 opcode for label definitions)
-	// bis hier wird nicht eingerückt
-	// ab hier wird eingerückt
-	PseudoOp_Byte,		// $a5	.BYTE
-	PseudoOp_Word,		// $a6	.WORD
-	PseudoOp_Fill,		// $a7	.DS
-	PseudoOp_PetTxt,	// $a8	.TEXT	(see MACRO_TEXT below)
-	// bis hier wird eingerückt
-	// ab hier wird nicht eingerückt
-	PseudoOp_ToFile,	// $a9	.OBJECT	(see MACRO_OUTFILE below)
-	PseudoOp_SetPC,		// $aa	.BASE
+		// these are indented in the output file
+		ACME_po_byte,	// $a5	.BYTE
+		ACME_po_word,	// $a6	.WORD
+		ACME_po_fill,	// $a7	.DS
+		ACME_po_pet,	// $a8	.TEXT	(see MACRO_TEXT below)
+	ACME_po_to,		// $a9	.OBJECT	(see MACRO_OUTFILE below)
+	ACME_set_pc,		// $aa	.BASE
 	"FIXME-CODE",		// $ab	.CODE
 	"FIXME-ON",		// $ac	.ON
 	"FIXME-GOTO",		// $ad	.GOTO
-	PseudoOp_If,		// $ae	.IF
-	PseudoOp_Else,		// $af	.ELSE
-	PseudoOp_EndIf,		// $b0	.ENDIF
-	PseudoOp_LabelDump,	// $b1	.SYMBOLS
+	ACME_po_if,		// $ae	.IF
+	ACME_else,		// $af	.ELSE
+	ACME_endif,		// $b0	.ENDIF
+	ACME_po_sl,		// $b1	.SYMBOLS
 	"FIXME-LISTING",	// $b2	.LISTING
-	PseudoOp_EOF,		// $b3	.END
+	ACME_po_eof,		// $b3	.END
 	"FIXME-STOP",		// $b4	.STOP
 	"FIXME-PAGE",		// $b5	.PAGE
 	"FIXME-NOCODE",		// $b6	.NOCODE
@@ -58,66 +50,63 @@ const char*	giga_token[]	= {
 	"FIXME-$bd",		// $bd
 	"FIXME-$be",		// $be
 	"FIXME-$bf",		// $bf
-	// bis hier wird nicht eingerückt
-	// ab hier wird eingerückt
-	MnemonicCPX,		// $c0
-	MnemonicCPY,		// $c1
-	MnemonicLDX,		// $c2
-	MnemonicLDY,		// $c3
-	MnemonicCMP,		// $c4
-	MnemonicADC,		// $c5
-	MnemonicAND,		// $c6
-	MnemonicDEC,		// $c7
-	MnemonicEOR,		// $c8
-	MnemonicINC,		// $c9
-	MnemonicLDA,		// $ca
-	MnemonicASL,		// $cb
-	MnemonicBIT,		// $cc
-	MnemonicLSR,		// $cd
-	MnemonicORA,		// $ce
-	MnemonicROL,		// $cf
-	MnemonicROR,		// $d0
-	MnemonicSBC,		// $d1
-	MnemonicSTA,		// $d2
-	MnemonicSTX,		// $d3
-	MnemonicSTY,		// $d4
-	MnemonicJMP,		// $d5
-	MnemonicJSR,		// $d6
-	MnemonicTXA,		// $d7
-	MnemonicTAX,		// $d8
-	MnemonicTYA,		// $d9
-	MnemonicTAY,		// $da
-	MnemonicTSX,		// $db
-	MnemonicTXS,		// $dc
-	MnemonicPHP,		// $dd
-	MnemonicPLP,		// $de
-	MnemonicPHA,		// $df
-	MnemonicPLA,		// $e0
-	MnemonicBRK,		// $e1
-	MnemonicRTI,		// $e2
-	MnemonicRTS,		// $e3
-	MnemonicNOP,		// $e4
-	MnemonicCLC,		// $e5
-	MnemonicSEC,		// $e6
-	MnemonicCLI,		// $e7
-	MnemonicSEI,		// $e8
-	MnemonicCLV,		// $e9
-	MnemonicCLD,		// $ea
-	MnemonicSED,		// $eb
-	MnemonicDEY,		// $ec
-	MnemonicINY,		// $ed
-	MnemonicDEX,		// $ee
-	MnemonicINX,		// $ef
-	MnemonicBPL,		// $f0
-	MnemonicBMI,		// $f1
-	MnemonicBVC,		// $f2
-	MnemonicBVS,		// $f3
-	MnemonicBCC,		// $f4
-	MnemonicBCS,		// $f5
-	MnemonicBNE,		// $f6
-	MnemonicBEQ,		// $f7
-	// bis hier wird eingerückt
-	// ab hier wird nicht eingerückt
+		// these are indented in the output file
+		MnemonicCPX,	// $c0
+		MnemonicCPY,	// $c1
+		MnemonicLDX,	// $c2
+		MnemonicLDY,	// $c3
+		MnemonicCMP,	// $c4
+		MnemonicADC,	// $c5
+		MnemonicAND,	// $c6
+		MnemonicDEC,	// $c7
+		MnemonicEOR,	// $c8
+		MnemonicINC,	// $c9
+		MnemonicLDA,	// $ca
+		MnemonicASL,	// $cb
+		MnemonicBIT,	// $cc
+		MnemonicLSR,	// $cd
+		MnemonicORA,	// $ce
+		MnemonicROL,	// $cf
+		MnemonicROR,	// $d0
+		MnemonicSBC,	// $d1
+		MnemonicSTA,	// $d2
+		MnemonicSTX,	// $d3
+		MnemonicSTY,	// $d4
+		MnemonicJMP,	// $d5
+		MnemonicJSR,	// $d6
+		MnemonicTXA,	// $d7
+		MnemonicTAX,	// $d8
+		MnemonicTYA,	// $d9
+		MnemonicTAY,	// $da
+		MnemonicTSX,	// $db
+		MnemonicTXS,	// $dc
+		MnemonicPHP,	// $dd
+		MnemonicPLP,	// $de
+		MnemonicPHA,	// $df
+		MnemonicPLA,	// $e0
+		MnemonicBRK,	// $e1
+		MnemonicRTI,	// $e2
+		MnemonicRTS,	// $e3
+		MnemonicNOP,	// $e4
+		MnemonicCLC,	// $e5
+		MnemonicSEC,	// $e6
+		MnemonicCLI,	// $e7
+		MnemonicSEI,	// $e8
+		MnemonicCLV,	// $e9
+		MnemonicCLD,	// $ea
+		MnemonicSED,	// $eb
+		MnemonicDEY,	// $ec
+		MnemonicINY,	// $ed
+		MnemonicDEX,	// $ee
+		MnemonicINX,	// $ef
+		MnemonicBPL,	// $f0
+		MnemonicBMI,	// $f1
+		MnemonicBVC,	// $f2
+		MnemonicBVS,	// $f3
+		MnemonicBCC,	// $f4
+		MnemonicBCS,	// $f5
+		MnemonicBNE,	// $f6
+		MnemonicBEQ,	// $f7
 	"FIXME-$f8",		// $f8
 	"FIXME-$f9",		// $f9
 	"FIXME-$fa",		// $fa
@@ -130,8 +119,6 @@ const char*	giga_token[]	= {
 
 
 // Functions
-//
-
 
 // I don't know whether it's correct, but I had to start somewhere
 #define FIRST_TOKEN	0xa0
@@ -139,14 +126,13 @@ const char*	giga_token[]	= {
 #define MACRO_TEXT	0xa8	// ugly kluge for giga string specialties
 #define MACRO_OUTFILE	0xa9	// ugly kluge for adding outfile format
 // Process opcode or pseudo opcode (tokenized)
-//
-int giga_Tokenized(void) {
+static int process_tokenized(void) {
 	const char*	token;
 	int		flags	= 0;
 
 	if(GotByte < FIRST_TOKEN) {
 		// macro call?
-		PutByte('+');	// add macro call character
+		IO_put_byte('+');	// add macro call character
 		// fprintf(global_output_stream, "small value:$%x", GotByte);
 	} else {
 		switch(GotByte) {
@@ -166,8 +152,8 @@ int giga_Tokenized(void) {
 		flags |= FLAG_INSERT_SPACE;
 		token = giga_token[GotByte - FIRST_TOKEN];
 		if(token != NULL)
-			PutString(token);
-		GetByte();
+			IO_put_string(token);
+		IO_get_byte();
 	}
 	return(flags);
 }
@@ -177,43 +163,37 @@ int giga_Tokenized(void) {
 // [...]
 
 // Main routine for GigaAss conversion
-//
 void giga_main(void) {
 	int	indent;
 
-	input_set_padding(0);
-	io_process_load_address();
-	acme_SwitchToPet();
+	IO_set_input_padding(0);
+	IO_process_load_address();
+	ACME_switch_to_pet();
 	// loop: once for every line in the file
-	while(!ReachedEOF) {
+	while(!IO_reached_eof) {
 		// skip link pointer (if it's zero, report as end marker)
-		if(GetLE16() == 0)
-			PutString("; ToACME: Found BASIC end marker.\n");
-
-		GetLE16();	// skip line number
-
+		if(IO_get_le16() == 0)
+			IO_put_string("; ToACME: Found BASIC end marker.\n");
+		IO_get_le16();	// skip line number
 		// process line
-		GetByte();
-		if((GotByte == ' ') || (GotByte == ';') || (GotByte == '\0') || (GotByte > 0x7f))
+		IO_get_byte();
+		if((GotByte == SPACE) || (GotByte == ';')
+		|| (GotByte == '\0') || (GotByte > 0x7f))
 			indent = 0;
 		else
-			indent = gigahypra_LabelDef();
-
+			indent = GigaHypra_label_definition();
 		// skip spaces
-		while(GotByte == ' ')
-			GetByte();
-
+		while(GotByte == SPACE)
+			IO_get_byte();
 		// if there is an opcode, process it
 		if((GotByte != ';') && (GotByte != '\0')) {
-			gigahypra_Indent(indent);
-			gigahypra_Opcode(giga_Tokenized());
+			GigaHypra_indent(indent);
+			GigaHypra_argument(process_tokenized());
 		}
-
 		// skip comment, if there is one
 		if(GotByte == ';')
-			gigahypra_ConvComment();
-
+			GigaHypra_comment();
 		// end of line
-		PutByte('\n');
+		IO_put_byte('\n');
 	}
 }

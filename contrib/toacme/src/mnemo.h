@@ -1,9 +1,8 @@
 // ToACME - converts other source codes to ACME format.
-// Copyright (C) 1999-2003 Marco Baye
+// Copyright (C) 1999-2006 Marco Baye
 // Have a look at "main.c" for further info
 //
 // 6502 mnemonics
-//
 #ifndef mnemo_H
 #define mnemo_H
 
@@ -33,10 +32,11 @@ extern const char	MnemonicTSX[], MnemonicTXA[], MnemonicTAY[];
 extern const char	MnemonicTYA[], MnemonicTAX[], MnemonicTXS[];
 
 // Mnemonics of undocumented ("illegal") 6502 instructions
-extern const char	MnemonicSLO[], MnemonicRLA[];
-extern const char	MnemonicSRE[], MnemonicRRA[];
-extern const char	MnemonicSAX[], MnemonicLAX[];
-extern const char	MnemonicDCP[], MnemonicISC[];
+extern const char	MnemonicANC[], MnemonicARR[], MnemonicASR[];
+extern const char	MnemonicDCP[], MnemonicDOP[], MnemonicISC[];
+extern const char	MnemonicJAM[], MnemonicLAX[], MnemonicRLA[];
+extern const char	MnemonicRRA[], MnemonicSAX[], MnemonicSBX[];
+extern const char	MnemonicSLO[], MnemonicSRE[], MnemonicTOP[];
 
 // Mnemonics of 65c02 instructions
 extern const char	MnemonicBRA[];

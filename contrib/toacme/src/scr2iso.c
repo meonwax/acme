@@ -1,21 +1,16 @@
 // ToACME - converts other source codes to ACME format.
-// Copyright (C) 1999-2003 Marco Baye
+// Copyright (C) 1999-2006 Marco Baye
 // Have a look at "main.c" for further info
 //
 // Converting CBM screen code to ISO 8859/1
-//
 
-
-// Includes
-//
 #include "scr2iso.h"
 
 
 // Constants
-//
 
 // Conversion table
-const char	Scr2ISO_Table[256] = {
+const char	SCR2ISO_table[256] = {
 	0x40, 0x61, 0x62, 0x63, 0x64, 0x65, 0x66, 0x67,
 	0x68, 0x69, 0x6a, 0x6b, 0x6c, 0x6d, 0x6e, 0x6f,
 	0x70, 0x71, 0x72, 0x73, 0x74, 0x75, 0x76, 0x77,
