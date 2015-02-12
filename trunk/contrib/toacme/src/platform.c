@@ -1,13 +1,9 @@
 // ToACME - converts other source codes to ACME format.
-// Copyright (C) 1999-2003 Marco Baye
+// Copyright (C) 1999-2006 Marco Baye
 // Have a look at "main.c" for further info
 //
 // Platform specific stuff
-//
 
-
-// Includes
-//
 #include "platform.h"
 
 
@@ -19,13 +15,13 @@
 #define OS_FILE	0x00008	// constant to call relevant SWI
 
 // Setting the created files' types
-void Platform_SetFileType(const char *Filename, int Filetype) {
-	_kernel_swi_regs	RegSet;
+void Platform_set_file_type_text(const char *filename) {
+	_kernel_swi_regs	register_set;
 
-	RegSet.r[0] = 18;// = SetFileType
-	RegSet.r[1] = (int) Filename;
-	RegSet.r[2] = Filetype;
-	_kernel_swi(OS_FILE, &RegSet, &RegSet);
+	register_set.r[0] = 18;// = SetFileType
+	register_set.r[1] = (int) filename;
+	register_set.r[2] = 0xfff;
+	_kernel_swi(OS_FILE, &register_set, &register_set);
 }
 
 #else

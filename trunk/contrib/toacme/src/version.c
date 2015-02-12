@@ -1,17 +1,15 @@
 // ToACME - converts other source codes to ACME format.
-// Copyright (C) 1999-2003 Marco Baye
+// Copyright (C) 1999-2006 Marco Baye
 // Have a look at "main.c" for further info
 //
 // Version
-//
-#define RELEASE_NUMBER	"0.9"		// change before release (FIXME)
-#define CHANGE_DATE	"12 Mar"	// change before release
+
+#define RELEASE_NUMBER	"0.10"		// change before release (FIXME)
+#define CHANGE_DATE	"4 Oct"		// change before release
 #define CHANGE_YEAR	"2006"		// change before release
 #define HOME_PAGE	"http://home.pages.de/~mac_bacon/smorbrod/acme/"
+#define FILE_TAG	";ACME 0.93"	// check before release
 
-
-// Includes
-//
 #include <stdio.h>
 #include <string.h>
 #include "io.h"
@@ -19,15 +17,12 @@
 
 
 // Variables
-//
 void	(*client_main)(void)	= NULL;
 
 
 // Functions
-//
 
 // show version info and usage
-//
 void version_show_info(const char program_name[]) {
 	printf(
 "\n"
@@ -58,15 +53,13 @@ HOME_PAGE"\n"
 	, program_name);
 }
 
-// Check id string. Returns whether illegal.
-//
 extern void ab3_main(void);
 extern void f8ab_main(void);
 extern void giga_main(void);
 extern void hypra_main(void);
 extern void obj_main(void);
+// Check id string. Returns whether illegal.
 int version_parse_id(const char id[]) {
-
 	if(strcmp(id, "ab3") == 0)
 		client_main = ab3_main;
 	else if(strcmp(id, "f8ab") == 0)
@@ -81,10 +74,9 @@ int version_parse_id(const char id[]) {
 }
 
 // do the actual work
-//
 void version_main(void) {
-	PutString(
-";ACME 0.88\n"
+	IO_put_string(
+FILE_TAG "\n"
 "; ToACME: Converted by ToACME, release " RELEASE_NUMBER ".\n"
 	);
 	client_main();

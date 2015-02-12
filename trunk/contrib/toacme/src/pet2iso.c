@@ -1,21 +1,16 @@
 // ToACME - converts other source codes to ACME format.
-// Copyright (C) 1999-2003 Marco Baye
+// Copyright (C) 1999-2006 Marco Baye
 // Have a look at "main.c" for further info
 //
 // Converting CBM PetSCII code to ISO 8859/1
-//
 
-
-// Includes
-//
 #include "pet2iso.h"
 
 
 // Constants
-//
 
 // Conversion table
-const char	Pet2ISO_Table[256] = {
+const char	PET2ISO_table[256] = {
 	0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
 	0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f,
 	0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17,

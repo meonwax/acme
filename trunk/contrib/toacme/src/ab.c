@@ -1,13 +1,9 @@
 // ToACME - converts other source codes to ACME format.
-// Copyright (C) 1999-2005 Marco Baye
+// Copyright (C) 1999-2006 Marco Baye
 // Have a look at "main.c" for further info
 //
-// stuff needed for both "AssBlaster 3.x" and "F8-AssBlaster"
-//
+// stuff needed for both "AssBlaster 3.x" and "Flash8-AssBlaster"
 
-
-// Includes
-//
 #include <stdio.h>
 #include "ab.h"
 #include "acme.h"
@@ -16,7 +12,12 @@
 
 
 // Constants
-//
+
+// Generate error/warning messages
+const char	error_unknown_addressing[]	= "Conversion failed: AssBlaster file contains unknown addressing mode.\n";
+const char	error_unknown_compression[]	= "Conversion failed: AssBlaster file contains unknown number compression.\n";
+const char	warning_unknown_number_format[]	= "Warning: AssBlaster file uses unknown number format. Fallback to hexadecimal.\n";
+
 #define SCREENCODE_UPARROW	(0x1e)
 // replacement characters for problematic label names
 #define AB_LABELSPECIAL_NUL	('O')	// AssBlaster uses only lower case
@@ -33,10 +34,10 @@
 // 0x41-0x5f upper case screen codes (used for comments)
 // 0x60-0x7f unused ?
 #define AB_FIRST_MNEMONIC	0x80
-//	0x80-0xec differ between AssBlaster 3.x and F8-AssBlaster
+//	0x80-0xec differ between AssBlaster 3.x and Flash8-AssBlaster
 // 0xed-0xfe unused ?
 // 0xff end-of-line
-#define AB_PSEUDOOFFSET_MACRODEF	 5	// in AB3.x and F8-AB
+#define AB_PSEUDOOFFSET_MACRODEF	 5	// in AB3 and F8AB
 #define AB_PSEUDOOFFSET_MACROCALL	 7	// indices in PO table
 #define AB_PSEUDOOFFSET_OUTFILE		10	// are equal
 // after mnemonic or pseudo opcode, numbers may follow:
@@ -44,7 +45,7 @@
 
 // Pre- and postfixes for addressing modes
 // Don't care whether argument is 8, 16 or 24 bits wide
-const char*	ab_address_modes[][2]	= {
+const char*	addressing_modes[][2]	= {
 	{"",	""	},	// ($00=%.....) implied
 	{" ",	""	},	// ($01=%....1) absolute
 	{" ",	",x"	},	// ($02=%...1.) absolute,x
@@ -59,7 +60,7 @@ const char*	ab_address_modes[][2]	= {
 	{" (",	")"	},	// ($0b=%.1.11) indirect
 	// above: used by both AB3 and F8AB (except $0a, which is no longer
 	// used by F8AB. But it's indistinguishable from $01 anyway).
-	// FIXME - what does AB3 with the other unused addressing modes?
+	// FIXME - what does AB3 do with the other unused addressing modes?
 	// I think old AB3 sources may also use mode 0c!
 	// below: used by F8AB only
 	{NULL,	NULL	},	// ($0c=%.11..) unused (indirect-x)
@@ -67,6 +68,7 @@ const char*	ab_address_modes[][2]	= {
 	{NULL,	NULL	},	// ($0e=%.111.) unused (absolute)
 	{NULL,	NULL	},	// ($0f=%.1111) unused (absolute-x)
 	{" ",	""	},	// ($10=%1....) MVP/MVN in F8AB: arg1.arg2
+#define MVP_MVN_ADDRMODE	0x10
 	{NULL,	NULL	},	// ($11=%1...1) unused (indirect)
 	{NULL,	NULL	},	// ($12=%1..1.) unused (indirect long)
 	{" [",	"],y"	},	// ($13=%1..11) indirect-y long
@@ -78,33 +80,25 @@ const char*	ab_address_modes[][2]	= {
 	// as "arg1.arg2" instead of "arg1,arg2". Therefore the following
 	// constant is used to fix it on-the-fly.
 };
-#define AB_MVP_MVN_ADDRMODE	0x10
 
 
 // Variables
-//
 struct ab_t*	conf;
 
 
 // Functions
-//
 
-
-// Generate error/warning messages
 //
-const char	error_unknown_addressing[]	= "Conversion failed: AssBlaster file contains unknown addressing mode.\n";
-const char	error_unknown_compression[]	= "Conversion failed: AssBlaster file contains unknown number compression.\n";
-const char	warning_unknown_number_format[]	= "Warning: AssBlaster file uses unknown number format. Fallback to hexadecimal.\n";
-void ab_generate_errors(int ErrBits) {
-	if(ErrBits & AB_ERRBIT_UNKNOWN_ADDRMODE) {
+static void generate_errors(int err_bits) {
+	if(err_bits & AB_ERRBIT_UNKNOWN_ADDRMODE) {
 		fputs(error_unknown_addressing, stderr);
 		fprintf(global_output_stream, "; ToACME: %s", error_unknown_addressing);
 	}
-	if(ErrBits & AB_ERRBIT_UNKNOWN_NUMBER_COMPRESSION) {
+	if(err_bits & AB_ERRBIT_UNKNOWN_NUMBER_COMPRESSION) {
 		fputs(error_unknown_compression, stderr);
 		fprintf(global_output_stream, "; ToACME: %s", error_unknown_compression);
 	}
-	if(ErrBits & AB_ERRBIT_UNKNOWN_NUMBER_FORMAT) {
+	if(err_bits & AB_ERRBIT_UNKNOWN_NUMBER_FORMAT) {
 		fputs(warning_unknown_number_format, stderr);
 		fprintf(global_output_stream, "; ToACME: %s", warning_unknown_number_format);
 	}
@@ -112,10 +106,9 @@ void ab_generate_errors(int ErrBits) {
 
 // Convert macro/label name character.
 // AssBlaster allows '^', '[' and ']' in names, so replace these chars.
-//
-char ab_conv_name_char(char b) {
-	b = SCR2ISO(b);
-	switch(b) {
+static char conv_name_char(char byte) {
+	byte = SCR2ISO(byte);
+	switch(byte) {
 		case 0x40:
 		return(AB_LABELSPECIAL_NUL);
 		case '[':
@@ -127,69 +120,63 @@ char ab_conv_name_char(char b) {
 		case '^':
 		return(AB_LABELSPECIAL_UP);
 		default:
-		return(b);
+		return(byte);
 	}
 }
 
 // Output binary representation of value
-//
-void ab_output_binary(unsigned long int v) {
-	int	m	= 128;
+void AB_output_binary(unsigned long int value) {
+	int	mask	= 128;
 
-	if(v > 0xff)
-		ab_output_binary(v >> 8);
-	v &= 0xff;
-	while(m) {
-		PutByte((v & m) ? '1' : '0');
-		m >>= 1;
+	if(value > 0xff)
+		AB_output_binary(value >> 8);
+	value &= 0xff;
+	while(mask) {
+		IO_put_byte((value & mask) ? '1' : '0');
+		mask >>= 1;
 	}
 }
 
 // Output hex representation of value
-//
-void ab_output_hexadecimal(unsigned long int v) {
-	if(v > 0xff)
-		ab_output_hexadecimal(v >> 8);
-	io_put_low_byte_hex(v);
+void AB_output_hexadecimal(unsigned long int value) {
+	if(value > 0xff)
+		AB_output_hexadecimal(value >> 8);
+	IO_put_low_byte_hex(value);
 }
 
 // Convert and send macro/label name (until illegal character comes along)
-//
-void ab_pipe_global_name(void) {
+static void pipe_global_name(void) {
 	while((GotByte < 0x20) || ((GotByte >= '0') && (GotByte <= '9'))) {
-		PutByte(ab_conv_name_char(GotByte));
-		GetByte();
+		IO_put_byte(conv_name_char(GotByte));
+		IO_get_byte();
 	}
 }
 
 // Convert and send label name (until illegal character comes along)
 // Level 1
-void ab_pipe_name(void) {
+static void pipe_name(void) {
 	// Dieser kleine Hack macht alle lokalen ABL-Labels
 	// Auch unter ACME lokal.  nur mit '^' global markierte
 	// Labels werden auch global übernommen ...
 	if(GotByte == SCREENCODE_UPARROW)
-		GetByte();	// global:	^witharrow => witharrow
+		IO_get_byte();	// global:	^witharrow => witharrow
 	else
-		PutByte('.');	// local:	allothers => .allothers
-	ab_pipe_global_name();	// this does exactly what is needed
+		IO_put_byte('.');	// local:	allothers => .allothers
+	pipe_global_name();	// this does exactly what is needed
 }
 
 // Parse quoted strings
-//
-void ab_parse_quoted(void) {// now GotByte = unhandled opening quote
-
-	PutByte('"');
-	GetByte();
+static void parse_quoted(void) {// now GotByte = unhandled opening quote
+	IO_put_byte('"');
+	IO_get_byte();
 	while((GotByte != AB_ENDOFLINE) && (GotByte != '"')) {
-		PutByte(SCR2ISO(GotByte));
-		GetByte();
+		IO_put_byte(SCR2ISO(GotByte));
+		IO_get_byte();
 	}
-	PutByte('"');
-
+	IO_put_byte('"');
 	// Closing quote is handled, but EndOfLine must remain unhandled
 	if(GotByte == '"')
-		GetByte();
+		IO_get_byte();
 }
 
 // Parse label names, quoted strings, operators, literal values etc.
@@ -199,8 +186,8 @@ void ab_parse_quoted(void) {// now GotByte = unhandled opening quote
 // after macro names (at definitions and calls) and in the MVP/MVN addressing
 // mode. The kluge variable "dot_replacement" is used to replace the '.'
 // character with the correct character for ACME.
-int ab_parse_unspecified(int dot_replacement) {
-	int	ErrBits	= 0;
+static int parse_unspecified(char dot_replacement) {
+	int	err_bits	= 0;
 
 	while((GotByte != AB_ENDOFLINE) && (GotByte != AB_COMMENT)) {
 		// kluge: replace '.' character with current replacement and
@@ -210,45 +197,44 @@ int ab_parse_unspecified(int dot_replacement) {
 			dot_replacement = '.';		// in future, keep
 		}
 		if(GotByte & AB_NUMVAL_FLAGBIT)
-			ErrBits |= conf->number_parser();
+			err_bits |= conf->number_parser();
 		else {
 			if(GotByte < 0x20)
-				ab_pipe_name();
+				pipe_name();
 			else {
 				if(GotByte == '"')
-					ab_parse_quoted();
+					parse_quoted();
 				else {
-					PutByte(SCR2ISO(GotByte));
-					GetByte();
+					IO_put_byte(SCR2ISO(GotByte));
+					IO_get_byte();
 				}
 			}
 		}
 	}
-	return(ErrBits);
+	return(err_bits);
 }
 
 // Parse macro call or start of definition (beware of full stops).
 // Returns error bits.
-//
-int ab_parse_macro_stuff(void) {	// now GotByte = unhandled byte
+static int parse_macro_stuff(void) {	// now GotByte = unhandled byte
 	// I guess local macros are useless, so don't
 	// do the scope fixing as for macro names!
-	ab_pipe_global_name();
-	return(ab_parse_unspecified(' '));	// output macro arguments
+	pipe_global_name();
+	return(parse_unspecified(SPACE));	// output macro arguments
 }
 
 // Process mnemonics (real opcodes). Returns error bits.
 // Level 1
-int ab_parse_mnemo(int mnemonic_offset) {
+static int parse_mnemo(int mnemonic_offset) {
 	const char	*mnemonic,
 			*pre,
 			*post;
-	int		AddressingMode,
+	int		addressing_mode,
 			dot_replacement	= '.',
-			ErrBits		= 0;
+			err_bits	= 0;
 
-	AddressingMode = GetByte();	// get addressing mode
-	GetByte();	// and fetch next (not handled here)
+	addressing_mode = IO_get_byte();	// get addressing mode
+	IO_get_byte();	// and fetch next (not handled here)
 	mnemonic = conf->mnemonics[mnemonic_offset];
 	if(mnemonic == NULL) {
 		fputs("Found unused mnemo code in input file.\n", stderr);
@@ -256,10 +242,10 @@ int ab_parse_mnemo(int mnemonic_offset) {
 	}
 	fprintf(global_output_stream, "\t\t%s", mnemonic);
 	// determine prefix and postfix of addressing mode
-	if(AddressingMode < conf->address_mode_count) {
-		pre = ab_address_modes[AddressingMode][0];
-		post = ab_address_modes[AddressingMode][1];
-		if(AddressingMode == AB_MVP_MVN_ADDRMODE)
+	if(addressing_mode < conf->address_mode_count) {
+		pre = addressing_modes[addressing_mode][0];
+		post = addressing_modes[addressing_mode][1];
+		if(addressing_mode == MVP_MVN_ADDRMODE)
 			dot_replacement = ',';	// replace '.' with ','
 	} else {
 		pre = NULL;
@@ -268,79 +254,78 @@ int ab_parse_mnemo(int mnemonic_offset) {
 	// if addressing mode is invalid, set error bit
 	// output prefix (or space if invalid)
 	if((pre == NULL) || (post == NULL)) {
-		ErrBits |= AB_ERRBIT_UNKNOWN_ADDRMODE;
-		fprintf(stderr, "Found an unknown addressing mode bit pattern ($%x). Please tell my programmer.\n", AddressingMode);
+		err_bits |= AB_ERRBIT_UNKNOWN_ADDRMODE;
+		fprintf(stderr, "Found an unknown addressing mode bit pattern ($%x). Please tell my programmer.\n", addressing_mode);
 	}
 	if(pre)
-		PutString(pre);
+		IO_put_string(pre);
 	else
-		PutByte(' ');
-	ErrBits |= ab_parse_unspecified(dot_replacement);	// output arg
+		IO_put_byte(SPACE);
+	err_bits |= parse_unspecified(dot_replacement);	// output arg
 	if(post) {
-		PutString(post);
+		IO_put_string(post);
 	}
-	return(ErrBits);
+	return(err_bits);
 }
 
 // Process pseudo opcodes. Returns error bits.
 // Level 1
-int ab_parse_pseudo_opcode(int pseudo_offset) {
-	const char*	String;
-	int		ErrBits	= 0;
+static int parse_pseudo_opcode(int pseudo_offset) {
+	const char*	pseudo_opcode;
+	int		err_bits	= 0;
 
-	GetByte();	// and fetch next (not handled here)
-	PutString("\t\t");
-	String = conf->pseudo_opcodes[pseudo_offset];
-	if(String)
-		PutString(String);
+	IO_get_byte();	// and fetch next (not handled here)
+	IO_put_string("\t\t");
+	pseudo_opcode = conf->pseudo_opcodes[pseudo_offset];
+	if(pseudo_opcode)
+		IO_put_string(pseudo_opcode);
 	// check for special cases
 	switch(pseudo_offset) {
 
 		case AB_PSEUDOOFFSET_MACROCALL:	// (in ACME: '+')
 		// ACME does not like spaces after the macro call char
-		ErrBits |= ab_parse_macro_stuff();
+		err_bits |= parse_macro_stuff();
 		break;
 
 		case AB_PSEUDOOFFSET_MACRODEF:	// macro definition
-		PutByte(' ');// but here a space looks good :)
-		ErrBits |= ab_parse_macro_stuff();
-		PutString(" {");
+		IO_put_byte(SPACE);// but here a space looks good :)
+		err_bits |= parse_macro_stuff();
+		IO_put_string(" {");
 		break;
 
 		case AB_PSEUDOOFFSET_OUTFILE:	// outfile selection
-		PutByte(' ');// but here a space looks good :)
-		ErrBits |= ab_parse_unspecified('.');	// output arg(s)
-		PutString(PseudoTrail_ToFile);
+		IO_put_byte(SPACE);// but here a space looks good :)
+		err_bits |= parse_unspecified('.');	// output arg(s)
+		IO_put_string(ACME_cbmformat);
 		break;
 
 		default:	// all other pseudo opcodes
-		if((String)
+		if((pseudo_opcode)
 		&& (GotByte != AB_ENDOFLINE)
 		&& (GotByte != AB_COMMENT))
-			PutByte(' ');// but here a space looks good :)
-		ErrBits |= ab_parse_unspecified('.');	// output pseudo opcode's arg(s)
+			IO_put_byte(SPACE);// but here a space looks good :)
+		err_bits |= parse_unspecified('.');	// output pseudo opcode's arg(s)
 	}
-	return(ErrBits);
+	return(err_bits);
 }
 
-// Main routine for AssBlaster conversion (works for both AB3.x and F8-AB).
+// Main routine for AssBlaster conversion (works for both AB3 and F8AB).
 // Call with first byte of first line pre-read (in GotByte)!
-//
-void ab_main(struct ab_t* client_config) {
-	int		ErrBits;
+void AB_main(struct ab_t* client_config) {
+	int		err_bits;
 	const char	*comment_indent;
 
 	conf = client_config;
-	acme_SwitchToPet();
+	ACME_switch_to_pet();
 	// convert lines until EndOfFile
-	while(!ReachedEOF) {
-		ErrBits = 0;	// no errors yet (in this line)
+	while(!IO_reached_eof) {
+		err_bits = 0;	// no errors yet (in this line)
 		comment_indent = "\t";
 		if(GotByte < AB_FIRST_MNEMONIC) {
 			switch(GotByte) {
 
 				case 0:	// empty line
-				GetByte();	// skip this byte
+				IO_get_byte();	// skip this byte
 				break;
 
 				case AB_COMMENT:	// early comment
@@ -349,55 +334,55 @@ void ab_main(struct ab_t* client_config) {
 
 				case AB_SPACE:	// empty line or late comment
 				comment_indent = "\t\t\t\t";
-				GetByte();	// skip this space
+				IO_get_byte();	// skip this space
 				// output whatever found
-				ErrBits |= ab_parse_unspecified('.');
+				err_bits |= parse_unspecified('.');
 				break;
 
 				default:	// implied label definition
-				ab_pipe_name();
+				pipe_name();
 			}
 		} else if(GotByte < conf->first_pseudo_opcode) {
-			ErrBits |= ab_parse_mnemo(GotByte - AB_FIRST_MNEMONIC);
+			err_bits |= parse_mnemo(GotByte - AB_FIRST_MNEMONIC);
 		} else if(GotByte < conf->first_unused_byte_value) {
-			ErrBits |= ab_parse_pseudo_opcode(GotByte - conf->first_pseudo_opcode);
+			err_bits |= parse_pseudo_opcode(GotByte - conf->first_pseudo_opcode);
 		} else if(GotByte != AB_ENDOFLINE) {
 			fprintf(global_output_stream, "; ToACME: AssBlaster file used unknown code ($%x). ", GotByte);
-			GetByte();	// fetch next
-			ErrBits |= ab_parse_unspecified('.');	// output remainder
+			IO_get_byte();	// fetch next
+			err_bits |= parse_unspecified('.');// output remainder
 		}
 
 		// everything might be followed by a comment, so check
 		if(GotByte == AB_COMMENT) {
 			// skip empty comments by checking next byte
-			if(GetByte() != AB_ENDOFLINE) {
+			if(IO_get_byte() != AB_ENDOFLINE) {
 				// something's there, so pipe until end of line
-				PutString(comment_indent);
-				PutByte(';');
+				IO_put_string(comment_indent);
+				IO_put_byte(';');
 				do
-					PutByte(SCR2ISO(GotByte));
-				while(GetByte() != AB_ENDOFLINE);
+					IO_put_byte(SCR2ISO(GotByte));
+				while(IO_get_byte() != AB_ENDOFLINE);
 			}
 		}
 
 		// now check whether line generated any errors
-		if(ErrBits)
-			ab_generate_errors(ErrBits);
+		if(err_bits)
+			generate_errors(err_bits);
 
 		// if not at end-of-line, something's fishy
 		if(GotByte != AB_ENDOFLINE) {
 			if(GotByte == '\0')
-				PutString("; ToACME: found $00 - looks like end-of-file marker.");
+				IO_put_string("; ToACME: found $00 - looks like end-of-file marker.");
 			else {
 				fputs("Found data instead of end-of-line indicator!?.\n", stderr);
-				PutString("; ToACME: Garbage at end-of-line:");
+				IO_put_string("; ToACME: Garbage at end-of-line:");
 				do
-					PutByte(SCR2ISO(GotByte));
-				while(GetByte() != AB_ENDOFLINE);
+					IO_put_byte(SCR2ISO(GotByte));
+				while(IO_get_byte() != AB_ENDOFLINE);
 			}
 		}
-		PutByte('\n');
+		IO_put_byte('\n');
 		// read first byte of next line
-		GetByte();
+		IO_get_byte();
 	}
 }

@@ -1,5 +1,5 @@
 // ToACME - converts other source codes to ACME format.
-// Copyright (C) 1999-2003 Marco Baye
+// Copyright (C) 1999-2006 Marco Baye
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -14,11 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
-//
 
-
-// Includes
-//
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -30,10 +26,8 @@
 #include "version.h"
 
 
-// Main program
-//
+// Guess what
 int main(int argc, char *argv[]) {
-
 	// handle "toacme -h" and "toacme --help" just like "toacme"
 	if(argc == 2) {
 		if((strcmp(argv[1], "-h") == 0)
@@ -76,7 +70,7 @@ int main(int argc, char *argv[]) {
 	version_main();
 	// and then tidy up and exit
 	fclose(global_output_stream);
-	PLATFORM_SETFILETYPE(argv[3], FILETYPE_TEXT);
+	PLATFORM_SETFILETYPE_TEXT(argv[3]);
 	fclose(global_input_stream);
 	return(EXIT_SUCCESS);
 }

@@ -1,9 +1,8 @@
 // ToACME - converts other source codes to ACME format.
-// Copyright (C) 1999-2003 Marco Baye
+// Copyright (C) 1999-2006 Marco Baye
 // Have a look at "main.c" for further info
 //
 // assembler mnemonics
-//
 
 // Mnemonics of legal 6502 instructions
 const char	MnemonicADC[]	= "adc";
@@ -64,14 +63,21 @@ const char	MnemonicTXS[]	= "txs";
 const char	MnemonicTYA[]	= "tya";
 
 // Mnemonics of undocumented ("illegal") 6502 instructions
-const char	MnemonicSLO[]	= " Slo";
-const char	MnemonicRLA[]	= " Rla";
-const char	MnemonicSRE[]	= " Sre";
-const char	MnemonicRRA[]	= " Rra";
-const char	MnemonicSAX[]	= " Sax";
-const char	MnemonicLAX[]	= " Lax";
-const char	MnemonicDCP[]	= " Dcp";
-const char	MnemonicISC[]	= " Isc";
+const char	MnemonicSLO[]	= " SLO";
+const char	MnemonicRLA[]	= " RLA";
+const char	MnemonicSRE[]	= " SRE";
+const char	MnemonicRRA[]	= " RRA";
+const char	MnemonicSAX[]	= " SAX";
+const char	MnemonicLAX[]	= " LAX";
+const char	MnemonicDCP[]	= " DCP";
+const char	MnemonicISC[]	= " ISC";
+const char	MnemonicANC[]	= " ANC";
+const char	MnemonicARR[]	= " ARR";
+const char	MnemonicASR[]	= " ASR";
+const char	MnemonicSBX[]	= " SBX";
+const char	MnemonicDOP[]	= " DOP";
+const char	MnemonicTOP[]	= " TOP";
+const char	MnemonicJAM[]	= " JAM";
 
 // Mnemonics of 65c02 instructions
 const char	MnemonicBRA[]	= "bra";
