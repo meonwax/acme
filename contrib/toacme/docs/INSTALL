@@ -1,0 +1,23 @@
+
+
+                                ToACME
+
+                ...source code file converter for ACME
+
+
+Compiling and installing the executable
+---------------------------------------
+
+Change into the directory "toacme/src" that was created when
+unpacking the archive and simply type "make". This will compile the
+sources and produce an executable file.
+
+If you have root access:
+Change into superuser mode using "su" and type "make install" to move
+the executable to the appropriate directory (system-wide install).
+
+If you don't have root access:
+Type "make userinstall" to move the executable to your "~/bin"
+directory (user-specific install)
+
+Feel free to adjust the Makefile to your specific needs.

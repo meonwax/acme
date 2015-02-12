@@ -1,0 +1,86 @@
+
+
+VisAss, AssBlaster and Flash8-AssBlaster stuff
+----------------------------------------------
+
+The pseudo opcode "\kc" cannot be converted, because ACME does not
+have a matching pseudo opcode. The converter will insert an
+explanatory message in the output file.
+
+The pseudo opcode "\st" is converted to "!eof". To decide whether this
+makes sense or not is left as an exercise for the reader.
+
+"Marked" AssBlaster labels are converted to global ACME labels.
+"Unmarked" AssBlaster labels are converted to local ACME labels.
+If your AssBlaster sources contain marked (!) labels which read like
+mnemonics ("^lda", "^nop" "^sed" or the like), ACME will interpret
+the converted versions like instructions.
+THE CONVERTER DOES NOT HANDLE THIS PROBLEM YET, so you will have to
+change such label names by hand. If binaries produced by ACME and
+AssBlaster are the same size, you don't have this problem.
+
+AssBlaster allows the characters '[', ']' and '^' to be used in label
+names. These are converted to uppercase letters, which does not cause
+any problems - it just looks a bit strange... :)
+
+Empty comments (semicolons at end-of-line) are stripped.
+
+AssBlaster claims to support the 6510's undocumented ("illegal")
+instructions. Actually, when I checked, it confused some of the
+mnemonics ("asr" and "arr"), and for "lax" and "aax" (aka "sax") it
+actually generated wrong opcodes for some addressing modes.
+
+There's a slight problem with macros: Source codes that assemble fine
+with AssBlaster *might* give "label not defined" errors after ACME
+conversion. This is because AssBlaster macros can access all labels,
+while ACME macros can only access global labels (besides their
+arguments, of course).
+
+To fix such errors, you'll have to
+a) make the macro code reference global labels instead of local ones
+and
+b) define those global labels, of course.
+
+  AssBlaster	    ACME (unfixed)		ACME (fixed by you)
+
+  \md chk.c1,c2	    !macro chk .c1,.c2 {	!macro chk .c1,.c2 {
+  lda #c1	    lda #.c1			lda #.c1
+  ldx #c2	    ldx #.c2			ldx #.c2
+  jsr sub	    jsr .sub			jsr sub		;<-FIX
+  \de		    }				}
+
+  \ma chk.5,7	    +chk 5,7			+chk 5,7
+  rts		    rts				rts
+
+sub:		  .sub			      .sub
+  rts; later	    rts; later		      sub		;<-FIX
+						rts; later
+
+
+Hypra-Ass and Giga-Ass stuff
+----------------------------
+
+The following pseudo opcodes cannot be converted, because ACME does
+not have any matching pseudo opcode. The converter will insert an
+explanatory message in the output file.
+	.on	(uses BASIC line numbers)
+	.go	(uses BASIC line numbers)
+	.co	(for chained assembly)
+	.dp	(format rules)
+	.li	(list on printer)
+	.st	(stop output)
+
+Empty comments (semicolons at end-of-line) are stripped.
+
+There's a problem with macros: ACME macro parameters should be *local*
+labels, but in Hypra-Ass and Giga-Ass, all labels are global.
+THE CONVERTER DOES NOT HANDLE THIS PROBLEM, so you will have to fix
+the macros manually:
+
+  Hypra-Ass	    ACME (unfixed)		ACME (fixed by you)
+
+  .ma chk (c1,c2)   !macro chk c1,c2 {		!macro chk .c1,.c2 {
+  lda #c1	    lda #c1			lda #.c1
+  ldx #c2	    ldx #c2			ldx #.c2
+  jsr sub	    jsr sub			jsr sub
+  .rt		    }				}

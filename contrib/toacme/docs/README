@@ -1,0 +1,82 @@
+
+
+                                ToACME
+
+                ...source code file converter for ACME
+
+
+Copyright
+---------
+
+ToACME - a source code converter for the ACME crossassembler
+Copyright (C) 1998-2015 Marco Baye
+
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 2 of the License, or (at
+your option) any later version.
+
+This program is distributed in the hope that it will be useful, but
+WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the
+Free Software Foundation, Inc., 59 Temple Place, Suite 330,
+Boston, MA  02111-1307  USA
+
+
+Introduction
+------------
+
+ToACME is a file converter for the ACME crossassembler. It is meant to
+be a helpful tool for people switching from using another assembler to
+using ACME. In such cases, ToACME can be used to convert the source
+code files to ACME format.
+
+
+Use
+---
+
+ToACME can be invoked in two ways:
+
+toacme
+toacme <input format ID> <input file> <output file>
+
+Calling ToACME without any arguments will show a short message
+containing copyright information and a list of all known input
+formats.
+
+If called with three arguments, ToACME will interpret the first one
+as the format ID. It will then try to convert the input file,
+writing the result to the output file.
+
+Please keep in mind that this program cannot cope with *all*
+features other assemblers may use. So after having converted your
+sources, don't delete the original ones!
+
+Make sure the conversion worked by assembling the new sources using
+ACME and then comparing the resulting binaries with the ones your
+previous assembler produced.
+
+
+Known input formats
+-------------------
+
+Currently, ToACME supports these input file formats:
+
+format_id   source file format             quality
+--------------------------------------------------
+ab3         C64: AssBlaster 3.0 to 3.2        good
+f8ab        C64: Flash8-AssBlaster              ok
+giga        C64: Giga-Assembler      needs testing
+hypra       C64: Hypra-Assembler                ok
+object      object code files                 poor
+
+
+Contacting the author
+---------------------
+
+If you want to report a bug or make a suggestion, then simply send
+an email to marco@baye.de
