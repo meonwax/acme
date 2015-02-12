@@ -1,5 +1,5 @@
 // ToACME - converts other source codes to ACME format.
-// Copyright (C) 1999-2006 Marco Baye
+// Copyright (C) 1999-2015 Marco Baye
 // Have a look at "main.c" for further info
 //
 // Platform specific stuff
@@ -18,13 +18,6 @@ extern void	platform_set_file_type_text(const char *filename);
 #ifndef PLATFORM_VERSION
 #define PLATFORM_VERSION	"Platform independent version."
 #define PLATFORM_SETFILETYPE_TEXT(a)
-#endif
-
-// fix umlaut for DOS version
-#ifdef __DJGPP__
-#define STEFAN	"Stefan HÅbner"
-#else
-#define STEFAN	"Stefan H¸bner"
 #endif
 
 

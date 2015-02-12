@@ -1,5 +1,5 @@
 // ToACME - converts other source codes to ACME format.
-// Copyright (C) 1999-2012 Marco Baye
+// Copyright (C) 1999-2015 Marco Baye
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by

@@ -1,5 +1,5 @@
 // ToACME - converts other source codes to ACME format.
-// Copyright (C) 1999-2006 Marco Baye
+// Copyright (C) 1999-2015 Marco Baye
 // Have a look at "main.c" for further info
 //
 // AssBlaster 3.x stuff
@@ -9,7 +9,6 @@
 #include "config.h"
 #include "ab.h"
 #include "acme.h"
-#include "mnemo.h"
 #include "io.h"
 #include "scr2iso.h"
 
@@ -17,84 +16,6 @@
 // constants
 
 #define AB3_ADDRESSING_MODES	12
-
-// Mnemonic table in AssBlaster 3.x order
-static const char	*mnemonic_table[]	= {
-	NULL,		// $80 unused
-	MnemonicCPX,	// $81
-	MnemonicCPY,	// $82
-	MnemonicLDX,	// $83
-	MnemonicLDY,	// $84
-	MnemonicSTX,	// $85
-	MnemonicSTY,	// $86
-//============================= start of illegals =============================
-	MnemonicSAX,	// $87	(AAX in AB3)		broken in AB3, see docs
-	MnemonicASR,	// $88				broken in AB3, see docs
-	MnemonicARR,	// $89				broken in AB3, see docs
-	MnemonicSBX,	// $8a	(AXS in AB3)
-	MnemonicDCP,	// $8b
-	MnemonicDOP,	// $8c			different opcodes, same action
-	MnemonicISC,	// $8d
-	MnemonicJAM,	// $8e	(KIL in AB3)	different opcodes, same action
-	"!error \"See the ToACME docs about the illegal opcode LAR.\";",
-			// $8f				broken in AB3? see docs
-	MnemonicLAX,	// $90				broken in AB3, see docs
-	MnemonicRLA,	// $91
-	MnemonicRRA,	// $92
-	MnemonicSLO,	// $93
-	MnemonicSRE,	// $94
-	MnemonicTOP,	// $95			different opcodes, same action
-//============================== end of illegals ==============================
-	MnemonicADC,	// $96
-	MnemonicAND,	// $97
-	MnemonicASL,	// $98
-	MnemonicBIT,	// $99
-	MnemonicBCS, MnemonicBEQ, MnemonicBCC, MnemonicBMI,	// $9a-$9d
-	MnemonicBNE, MnemonicBPL, MnemonicBVS, MnemonicBVC,	// $9e-$a1
-	MnemonicBRK,						// $a2
-	MnemonicCLC, MnemonicCLD, MnemonicCLI, MnemonicCLV,	// $a3-$a6
-	MnemonicCMP,						// $a7
-	MnemonicDEC, MnemonicDEX, MnemonicDEY,			// $a8-$aa
-	MnemonicEOR,						// $ab
-	MnemonicINC, MnemonicINX, MnemonicINY,			// $ac-$ae
-	MnemonicJMP, MnemonicJSR,				// $af-$b0
-	MnemonicLDA,						// $b1
-	MnemonicLSR,						// $b2
-	MnemonicNOP,// 0x1a,0x3a,0x5a,0x7a,0xda,0xfa (legal 0xea)  $b3
-	MnemonicORA,						// $b4
-	MnemonicPHA, MnemonicPHP, MnemonicPLA, MnemonicPLP,	// $b5-$b8
-	MnemonicROL, MnemonicROR,				// $b9-$ba
-	MnemonicRTI, MnemonicRTS,	// ($bf-$c0 in F8AB)	   $bb-$bc
-	MnemonicSBC,						// $bd
-	MnemonicSEC, MnemonicSED, MnemonicSEI,			// $bc-$c0
-	MnemonicSTA,						// $c1
-	MnemonicTAX, MnemonicTAY, MnemonicTSX,			// $c2-$c4
-	MnemonicTXA, MnemonicTXS, MnemonicTYA,			// $c5-$c7
-};
-
-
-// PseudoOpcode table in AssBlaster 3.x order
-static const char	*pseudo_opcode_table[]	= {
-#define AB3_FIRST_PSEUDO_OPCODE		0xc8
-	NULL,			// (la) $c8
-	// NULL because ACME does not need a pseudo opcode for label defs
-	ACME_set_pc,		// (ba) $c9
-	ACME_po_byte,		// (by) $ca
-	ACME_po_fill,		// (br) $cb
-	ACME_po_pet,		// (tx) $cc
-	ACME_po_macro,		// (md) $cd (see AB_PSEUDOOFFSET_MACRODEF)
-	ACME_endmacro,		// (me) $ce
-	ACME_macro_call,	// (ma) $cf (see AB_PSEUDOOFFSET_MACROCALL)
-	ACME_po_eof,		// (st) $d0
-	ACME_po_scr,		// (ts) $d1
-	ACME_po_to,		// (to) $d2 (see AB_PSEUDOOFFSET_OUTFILE)
-	ACME_po_word,		// (wo) $d3
-	"; ToACME: Cannot convert \\kc.\n",
-				// (kc) $d4
-#define AB3_FIRST_UNUSED_CODE		0xd5
-				// 0xd5-0xfe are unused in AB3
-};
-
 
 // parse AssBlaster's packed number format. returns error bits.
 //#define AB_NUMVAL_FLAGBIT	0x80	// 10000000 indicates packed number
@@ -159,15 +80,20 @@ hex_fallback:	IO_put_byte('$');
 }
 
 
-// config struct for shared ab code
-struct ab	ab3_conf	= {
+// config struct for shared VisAss/AB code
+struct vab	ab3_conf	= {
+	VABFLAG_ADD_DOT,
 	parse_number,
-	pseudo_opcode_table,
-	mnemonic_table,
+	visass_ab3_pseudo_opcode_table,
+	visass_ab3_mnemonic_table,
 	AB3_ADDRESSING_MODES,
 	// meaning of input bytes (0x80-0xec differ between AB3 and F8AB)
-	AB3_FIRST_PSEUDO_OPCODE,
-	AB3_FIRST_UNUSED_CODE,
+	0x80,	// first mnemonic
+	40,	// count
+	0xc8,	// first pseudo opcode
+	13,	// count
+	0xd5,	// first unused value
+	42	// count
 };
 
 
@@ -175,16 +101,7 @@ struct ab	ab3_conf	= {
 void ab3_main(void)
 {
 	IO_set_input_padding(AB_ENDOFLINE);
-	IO_put_string(
-"; ToACME: Adding pseudo opcode to enable undocumented (\"illegal\") opcodes:\n"
-"\t!cpu 6510\n"
-"; ToACME: AssBlaster's support for illegal opcodes is somewhat broken.\n"
-"; ToACME:   Make sure you read the ToACME docs to know what you'll have to\n"
-"; ToACME:   look out for.\n"
-"; ToACME:   Should work: DCP, DOP, ISC, JAM (was called KIL in AssBlaster),\n"
-"; ToACME:     RLA, RRA, SBX (was called AXS in AssBlaster), SLO, SRE, TOP.\n"
-"; ToACME:   Trouble: ARR, ASR, LAX, SAX (was called AAX in AssBlaster).\n"
-	);
+	visass_ab3_illegals();
 	IO_process_load_address();
 	// first byte after load address should be AB_ENDOFLINE in AB3 sources
 	if (IO_get_byte() == AB_ENDOFLINE) {

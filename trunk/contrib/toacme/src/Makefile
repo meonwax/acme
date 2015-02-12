@@ -1,4 +1,4 @@
-CFLAGS		= -O3 -Wall
+CFLAGS		= -O3 -Wall -Wstrict-prototypes
 #LIBS		= -lm
 CC		= gcc
 RM		= rm
@@ -10,6 +10,8 @@ BINDIR		= /usr/local/bin
 USERBIN		= $(HOME)/bin
 
 all: $(PROGS)
+
+vis.o: config.h acme.h io.h mnemo.h scr2iso.h vis.c
 
 ab3.o: config.h ab.h acme.h io.h mnemo.h scr2iso.h ab3.c
 
@@ -39,8 +41,8 @@ scr2iso.o: config.h scr2iso.h scr2iso.c
 
 version.o: config.h version.c
 
-toacme: ab.o ab3.o acme.o f8ab.o giga.o gighyp.o hypra.o io.o main.o mnemo.o obj.o pet2iso.o platform.o scr2iso.o version.o
-	$(CC) $(LIBS) $(CFLAGS) -o toacme ab.o ab3.o acme.o f8ab.o giga.o gighyp.o hypra.o io.o main.o mnemo.o obj.o pet2iso.o platform.o scr2iso.o version.o
+toacme: vis.o ab.o ab3.o acme.o f8ab.o giga.o gighyp.o hypra.o io.o main.o mnemo.o obj.o pet2iso.o platform.o scr2iso.o version.o
+	$(CC) $(LIBS) $(CFLAGS) -o toacme vis.o ab.o ab3.o acme.o f8ab.o giga.o gighyp.o hypra.o io.o main.o mnemo.o obj.o pet2iso.o platform.o scr2iso.o version.o
 	strip toacme
 
 clean:
