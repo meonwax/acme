@@ -6,11 +6,12 @@
 #ifndef pet2iso_H
 #define pet2iso_H
 
+
 #include "config.h"
 
 
-// Constants
-extern const char	PET2ISO_table[256];	// Conversion table
+// constants
+extern const char	PET2ISO_table[256];	// conversion table
 #define PET2ISO(v)	(PET2ISO_table[(unsigned char) v])
 
 

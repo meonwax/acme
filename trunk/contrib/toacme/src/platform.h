@@ -10,8 +10,8 @@
 // check for RISC OS
 #ifdef __riscos__
 #define PLATFORM_VERSION	"Ported to RISC OS by Marco Baye."
-#define PLATFORM_SETFILETYPE_TEXT(a)	Platform_set_file_type_text(a);
-extern void	Platform_set_file_type_text(const char *filename);
+#define PLATFORM_SETFILETYPE_TEXT(a)	platform_set_file_type_text(a);
+extern void	platform_set_file_type_text(const char *filename);
 #endif
 
 // all other platforms

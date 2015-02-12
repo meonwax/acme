@@ -6,7 +6,8 @@
 #ifndef mnemo_H
 #define mnemo_H
 
-// Mnemonics of legal 6502 instructions
+
+// mnemonics of legal 6502 instructions
 extern const char	MnemonicADC[], MnemonicSBC[];
 extern const char	MnemonicAND[], MnemonicEOR[], MnemonicORA[];
 extern const char	MnemonicASL[], MnemonicLSR[];
@@ -31,21 +32,21 @@ extern const char	MnemonicSTA[], MnemonicSTX[], MnemonicSTY[];
 extern const char	MnemonicTSX[], MnemonicTXA[], MnemonicTAY[];
 extern const char	MnemonicTYA[], MnemonicTAX[], MnemonicTXS[];
 
-// Mnemonics of undocumented ("illegal") 6502 instructions
+// mnemonics of undocumented ("illegal") 6502 instructions
 extern const char	MnemonicANC[], MnemonicARR[], MnemonicASR[];
 extern const char	MnemonicDCP[], MnemonicDOP[], MnemonicISC[];
 extern const char	MnemonicJAM[], MnemonicLAX[], MnemonicRLA[];
 extern const char	MnemonicRRA[], MnemonicSAX[], MnemonicSBX[];
 extern const char	MnemonicSLO[], MnemonicSRE[], MnemonicTOP[];
 
-// Mnemonics of 65c02 instructions
+// mnemonics of 65c02 instructions
 extern const char	MnemonicBRA[];
 extern const char	MnemonicPHX[], MnemonicPHY[];
 extern const char	MnemonicPLX[], MnemonicPLY[];
 extern const char	MnemonicSTZ[];
 extern const char	MnemonicTRB[], MnemonicTSB[];
 
-// Mnemonics of 65816 instructions
+// mnemonics of 65816 instructions
 extern const char	MnemonicJML[], MnemonicJSL[];
 extern const char	MnemonicMVN[], MnemonicMVP[];
 extern const char	MnemonicPEI[];
@@ -67,5 +68,6 @@ extern const char	MnemonicTXY[], MnemonicTYX[];
 extern const char	MnemonicWAI[];
 extern const char	MnemonicWDM[];
 extern const char	MnemonicXBA[], MnemonicXCE[];
+
 
 #endif

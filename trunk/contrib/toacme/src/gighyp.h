@@ -6,6 +6,7 @@
 #ifndef gigahypra_H
 #define gigahypra_H
 
+
 #include "config.h"
 
 
@@ -22,11 +23,11 @@
 
 
 // Prototypes
-extern void	GigaHypra_comment(void);
-extern void	GigaHypra_operator(void);
-extern void	GigaHypra_indent(int indent);
-extern void	GigaHypra_argument(int flags);
-extern int	GigaHypra_label_definition(void);
+extern void GigaHypra_comment(void);
+extern void GigaHypra_operator(void);
+extern void GigaHypra_indent(int indent);
+extern void GigaHypra_argument(int flags);
+extern int GigaHypra_label_definition(void);
 
 
 #endif
