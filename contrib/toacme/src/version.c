@@ -4,9 +4,9 @@
 //
 // Version
 //
-#define RELEASE_NUMBER	"0.8"		// change before release (FIXME)
-#define CHANGE_DATE	"16 Jun"	// change before release
-#define CHANGE_YEAR	"2005"		// change before release
+#define RELEASE_NUMBER	"0.9"		// change before release (FIXME)
+#define CHANGE_DATE	"12 Mar"	// change before release
+#define CHANGE_YEAR	"2006"		// change before release
 #define HOME_PAGE	"http://home.pages.de/~mac_bacon/smorbrod/acme/"
 
 
@@ -34,8 +34,9 @@ void version_show_info(const char program_name[]) {
 "ToACME - converts other assemblers' source codes to ACME format.\n"
 "Release "RELEASE_NUMBER" ("CHANGE_DATE" "CHANGE_YEAR"), Copyright (C) 1999-"CHANGE_YEAR" Marco Baye.\n"
 PLATFORM_VERSION"\n"
-"Fixes for AssBlaster macro conversion done by "STEFAN".\n"
-"Token table for Giga-Assembler supplied by Andreas Paul.\n"
+"Thanks to "STEFAN" for fixing the AssBlaster macro conversion code.\n"
+"Thanks to Andreas Paul for helping with the Giga-Assembler mode.\n"
+"Thanks to Arndt Dettke for helping with the Hypra-Assembler mode.\n"
 "\n"
 "The newest version can be found at the ACME homepage:\n"
 HOME_PAGE"\n"
@@ -50,7 +51,7 @@ HOME_PAGE"\n"
 "--------------------------------------------------\n"
 "ab3         C64: AssBlaster 3.0 to 3.2        good\n"
 "f8ab        C64: Flash8-AssBlaster              ok\n"
-"giga        C64: Giga-Assembler      needs testing\n"
+"giga        C64: Giga-Assembler                 ok\n"
 "hypra       C64: Hypra-Assembler                ok\n"
 "object      object code files                 poor\n"
 "\n"
@@ -66,15 +67,15 @@ extern void hypra_main(void);
 extern void obj_main(void);
 int version_parse_id(const char id[]) {
 
-	if(strcmp(id, "ab3") == NULL)
+	if(strcmp(id, "ab3") == 0)
 		client_main = ab3_main;
-	else if(strcmp(id, "f8ab") == NULL)
+	else if(strcmp(id, "f8ab") == 0)
 		client_main = f8ab_main;
-	else if(strcmp(id, "giga") == NULL)
+	else if(strcmp(id, "giga") == 0)
 		client_main = giga_main;
-	else if(strcmp(id, "hypra") == NULL)
+	else if(strcmp(id, "hypra") == 0)
 		client_main = hypra_main;
-	else if(strcmp(id, "object") == NULL)
+	else if(strcmp(id, "object") == 0)
 		client_main = obj_main;
 	return(client_main ? 0 : 1);
 }
@@ -82,9 +83,9 @@ int version_parse_id(const char id[]) {
 // do the actual work
 //
 void version_main(void) {
-	fputs(
-";ACME 0.85\n"
+	PutString(
+";ACME 0.88\n"
 "; ToACME: Converted by ToACME, release " RELEASE_NUMBER ".\n"
-	, global_output_stream);
+	);
 	client_main();
 }

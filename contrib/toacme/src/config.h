@@ -9,11 +9,6 @@
 #define config_H
 
 
-// Types
-//
-typedef unsigned char	byte_t;
-
-
 // Constants
 //
 #ifndef FALSE

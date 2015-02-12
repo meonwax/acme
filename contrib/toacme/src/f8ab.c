@@ -127,14 +127,14 @@ const char*	f8ab_pseudo_opcodes[]	= {
 	PseudoOp_Byte,		// (by) $de
 	PseudoOp_Fill,		// (br) $df
 	PseudoOp_PetTxt,	// (tx) $e0
-	PseudoOp_MacroDef,	// (md) $e1	index 5 in this table
+	PseudoOp_MacroDef,	// (md) $e1 (see AB_PSEUDOOFFSET_MACRODEF)
 	PseudoOp_EndMacroDef,	// (de) $e2
-	PseudoOp_MacroCall,	// (ma) $e3	index 7 in this table
+	PseudoOp_MacroCall,	// (ma) $e3 (see AB_PSEUDOOFFSET_MACROCALL)
 	PseudoOp_EOF,		// (st) $e4
 //	PseudoOp_ScrTxt is not available in F8AB. Huh?!
 	"; ToACME: Cannot convert \\wa.\n",
 				// (wa) $e5
-	PseudoOp_ToFile,	// (on) $e6
+	PseudoOp_ToFile,	// (on) $e6 (see AB_PSEUDOOFFSET_OUTFILE)
 	PseudoOp_Word,		// (wo) $e7
 	"; ToACME: Cannot convert \\kc.\n",
 				// (kc) $e8
@@ -189,13 +189,7 @@ int f8ab_parse_number(void) {	// now GotByte = first byte of packed number
 
 		case F8AB_NUMVAL__SIZE_3:// three bytes follow (anything else)
 		Value = Add + GetByte() + (GetLE16() << 8);
-		break;
 
-		default:	// unknown number compression
-		// this is actually dead code for the F8-AB converter, as
-		// there are only four possible bit combinations... :)
-		// remember to generate error
-		ErrBits |= AB_ERRBIT_UNKNOWN_NUMBER_COMPRESSION;
 	}
 	// continue parsing on next byte
 	GetByte();
@@ -245,7 +239,7 @@ void f8ab_main(void) {
 
 	header_message = "Input does not have any known F8AB header.\n";
 	input_set_padding(AB_ENDOFLINE);
-	fputs(
+	PutString(
 "; ToACME: Adding pseudo opcode to enable 65816 opcodes:\n"
 "!cpu 65816\n"
 "; ToACME: Adding two macros to fix F8AB's non-standard argument order\n"
@@ -254,7 +248,7 @@ void f8ab_main(void) {
 "; ToACME:   source codes, the source bank byte is given first.\n"
 "!macro F8AB_BROKEN_MVP .dest,.source {mvp .source,.dest}\n"
 "!macro F8AB_BROKEN_MVN .dest,.source {mvn .source,.dest}\n"
-	, global_output_stream);
+	);
 	io_process_load_address();
 	// most AB files have this format:
 	// load_address_low, load_address_high, AB_ENDOFLINE, actual content

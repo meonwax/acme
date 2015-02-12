@@ -30,6 +30,7 @@ const char	PseudoOp_ScrTxt[]	= "!scr";
 const char	PseudoOp_SetPC[]	= "*=";
 const char	PseudoOp_Source[]	= "!src";
 const char	PseudoOp_ToFile[]	= "!to";
+const char	PseudoTrail_ToFile[]	= ", cbm";
 const char	PseudoOp_Word[]		= "!word";
 // Pseudo opcodes for 65816 (used by F8-AssBlaster)
 const char	PseudoOp_al[]		= "!al";
@@ -46,8 +47,8 @@ const char	PseudoOp_rs[]		= "!rs";
 //
 void acme_SwitchToPet(void) {
 
-	fputs(
+	PutString(
 "; ToACME: Adding pseudo opcode to use PetSCII encoding by default:\n"
 "!convtab pet\n"
-	, global_output_stream);
+	);
 }

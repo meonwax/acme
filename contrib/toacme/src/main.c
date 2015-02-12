@@ -36,8 +36,8 @@ int main(int argc, char *argv[]) {
 
 	// handle "toacme -h" and "toacme --help" just like "toacme"
 	if(argc == 2) {
-		if((strcmp(argv[1], "-h") == NULL)
-		|| (strcmp(argv[1], "--help") == NULL))
+		if((strcmp(argv[1], "-h") == 0)
+		|| (strcmp(argv[1], "--help") == 0))
 			argc = 1;
 	}
 	// "toacme" without any switches gives info and exits successfully
@@ -56,7 +56,7 @@ int main(int argc, char *argv[]) {
 		return(EXIT_FAILURE);
 	}
 	// be nice and ensure input and output are different
-	if(strcmp(argv[2], argv[3]) == NULL) {
+	if(strcmp(argv[2], argv[3]) == 0) {
 		fputs("Input and output files must be different.\n", stderr);
 		return(EXIT_FAILURE);
 	}

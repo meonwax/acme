@@ -1,4 +1,9 @@
 
+2006-03-12
+	Release 0.9
+	Improved "Giga Assembler" mode. Thanks to Andreas Paul for his help.
+	Fixed unimportant bug: Attempted to close output file twice.
+
 2005-06-16
 	Release 0.8
 	Merged all converters into one program ("toacme").

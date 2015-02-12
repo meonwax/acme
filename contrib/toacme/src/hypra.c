@@ -23,40 +23,40 @@
 // Process pseudo opcode
 //
 int hypra_PseudoOpcode(void) {// '.' was last read
-	byte_t	a,
-		b	= '\0';
+	int	a,
+		b	= '\0',
+		flags	= FLAG_INSERT_SPACE;
 	bool	fBlah	= TRUE;
-	int	Flags	= 0;
 
-	a = Pet2ISO_Table[GetByte()];
+	a = PET2ISO(GetByte());
 	if((a != ' ') && (a != ';') && (a != '\0')) {
-		b = Pet2ISO_Table[GetByte()];
+		b = PET2ISO(GetByte());
 		if((b != ' ') && (b != ';') && (b != '\0')) {
 			switch(a) {
 
 				case '.':
 				if(b == '.') {	// "..." = macro call
 					fBlah = FALSE;
-					fputs(PseudoOp_MacroCall, global_output_stream);
-					Flags |= FLAGS_STRIPOPENING;
+					PutString(PseudoOp_MacroCall);
+					flags |= FLAG_SKIP_OPENING;
 				}
 				break;
 
 				case 'a':
 				if(b == 'p') {	// ".ap" = append source file
 					fBlah = FALSE;
-					fputs(PseudoOp_Source, global_output_stream);
+					PutString(PseudoOp_Source);
 				}
 				break;
 
 				case 'b':
 				if(b == 'a') {	// ".ba" = set base address
 					fBlah = FALSE;
-					fputs(PseudoOp_SetPC, global_output_stream);
+					PutString(PseudoOp_SetPC);
 				}
 				if(b == 'y') {	// ".by" = insert bytes
 					fBlah = FALSE;
-					fputs(PseudoOp_Byte, global_output_stream);
+					PutString(PseudoOp_Byte);
 				}
 				break;
 
@@ -65,22 +65,22 @@ int hypra_PseudoOpcode(void) {// '.' was last read
 
 					case 'i':	// ".ei" = endif
 					fBlah = FALSE;
-					fputs(PseudoOp_EndIf, global_output_stream);
+					PutString(PseudoOp_EndIf);
 					break;
 
 					case 'l':	// ".el" = else
 					fBlah = FALSE;
-					fputs(PseudoOp_Else, global_output_stream);
+					PutString(PseudoOp_Else);
 					break;
 
 					case 'n':	// ".en" = end
 					fBlah = FALSE;
-					fputs(PseudoOp_EOF, global_output_stream);
+					PutString(PseudoOp_EOF);
 					break;
 
 					case 'q':	// ".eq" = label def
 					fBlah = FALSE;
-					Flags |= FLAGS_NOSPACE;
+					flags &= ~FLAG_INSERT_SPACE;
 					break;
 				}
 				break;
@@ -88,62 +88,63 @@ int hypra_PseudoOpcode(void) {// '.' was last read
 				case 'g':
 				if(b == 'l')	// ".gl" = global label def
 					fBlah = FALSE;
-				Flags |= FLAGS_NOSPACE;
+				flags &= ~FLAG_INSERT_SPACE;
 				break;
 
 				case 'i':
 				if(b == 'f') {	// ".if" = conditional assembly
 					fBlah = FALSE;
-					fputs(PseudoOp_If, global_output_stream);
-					Flags |= FLAGS_ADDLEFTBRACE;
+					PutString(PseudoOp_If);
+					flags |= FLAG_ADD_LEFT_BRACE;
 				}
 				break;
 
 				case 'm':
 				if(b == 'a') {	// ".ma" = macro definition
 					fBlah = FALSE;
-					fputs(PseudoOp_MacroDef, global_output_stream);
-					Flags |= FLAGS_STRIPOPENING | FLAGS_ADDLEFTBRACE;
+					PutString(PseudoOp_MacroDef);
+					flags |= FLAG_SKIP_OPENING | FLAG_ADD_LEFT_BRACE;
 				}
 				break;
 
 				case 'o':
 				if(b == 'b') {	// ".ob" = output to file
 					fBlah = FALSE;
-					fputs(PseudoOp_ToFile, global_output_stream);
+					PutString(PseudoOp_ToFile);
+					flags |= FLAG_ADD_CBM;
 				}
 				break;
 
 				case 'r':
 				if(b == 't') {	// ".rt" = end of macro def
 					fBlah = FALSE;
-					fputs(PseudoOp_EndMacroDef, global_output_stream);
+					PutString(PseudoOp_EndMacroDef);
 				}
 				break;
 
 				case 's':
 				if(b == 'y') {	// ".sy" = symbol dump
 					fBlah = FALSE;
-					fputs(PseudoOp_LabelDump, global_output_stream);
-					fputs("\"symboldump.txt\";", global_output_stream);
+					PutString(PseudoOp_LabelDump);
+					PutString("\"symboldump.txt\";");
 				}
 				break;
 
 				case 't':
 				if(b == 'x') {	// ".tx" = insert string
 					fBlah = FALSE;
-					fputs(PseudoOp_PetTxt, global_output_stream);
+					PutString(PseudoOp_PetTxt);
 				}
 				if(b == 's') {	// ".ts" = screen code string
 					fBlah = FALSE;
-					fputs(PseudoOp_ScrTxt, global_output_stream);
+					PutString(PseudoOp_ScrTxt);
 				}
 				break;
 
 				case 'w':
 				if(b == 'o') {	// ".wo" = insert words
 					fBlah = FALSE;
-					fputs(PseudoOp_Word, global_output_stream);
+					PutString(PseudoOp_Word);
 				}
 				break;
 
@@ -154,31 +155,31 @@ int hypra_PseudoOpcode(void) {// '.' was last read
 	} else
 		fBlah = TRUE;
 	if(fBlah) {
-		fputs("; ToACME: .", global_output_stream);
+		PutString("; ToACME: .");
 		if(a)
 			PutByte(a);
 		if(b)
 			PutByte(b);
-		fputs(" cannot be converted\n", global_output_stream);
+		PutString(" cannot be converted\n");
 	}
-	return(Flags);
+	return(flags);
 }
 
 // Process ocpode
 //
-int hypra_RealOpcode(void) {// character was last read
+void hypra_RealOpcode(void) {// character was last read
 
-	PutByte(Pet2ISO_Table[GotByte]);
+	PutByte(PET2ISO(GotByte));
 	GetByte();
-	if((GotByte == ' ') || (GotByte == ';') || (GotByte == 0))
-		return(0);
-	PutByte(Pet2ISO_Table[GotByte]);
+	if((GotByte == ' ') || (GotByte == ';') || (GotByte == '\0'))
+		return;
+	PutByte(PET2ISO(GotByte));
 	GetByte();
-	if((GotByte == ' ') || (GotByte == ';') || (GotByte == 0))
-		return(0);
-	PutByte(Pet2ISO_Table[GotByte]);
+	if((GotByte == ' ') || (GotByte == ';') || (GotByte == '\0'))
+		return;
+	PutByte(PET2ISO(GotByte));
 	GetByte();// exit with unused byte pre-read
-	return(0);
+	return;
 }
 
 // Main routine for HypraAss conversion
@@ -193,7 +194,7 @@ void hypra_main(void) {
 	while(!ReachedEOF) {
 		// skip link pointer (if it's zero, report as end marker)
 		if(GetLE16() == 0)
-			fputs("; ToACME: Found BASIC end marker.\n", global_output_stream);
+			PutString("; ToACME: Found BASIC end marker.\n");
 
 		GetLE16();	// skip line number
 
@@ -213,8 +214,10 @@ void hypra_main(void) {
 			// branch to relevant routine
 			if(GotByte == '.')
 				gigahypra_Opcode(hypra_PseudoOpcode());
-			else
-				gigahypra_Opcode(hypra_RealOpcode());
+			else {
+				hypra_RealOpcode();
+				gigahypra_Opcode(FLAG_INSERT_SPACE);
+			}
 		}
 
 		// skip comment, if there is one
