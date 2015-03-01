@@ -102,6 +102,7 @@ lib_cbm_c64_float_a = 1
 	fac1_compare_to_memAY		= $bc5b	; compare to mflpt value in memory
 	fac1_to_signed32		= $bc9b
 	fac1_int			= $bccc ; INT()
+	fac1_read_string0		= $bcf3	; use b7b5 instead; this only works after calling CHRGET
 	fac1_print_unsignedXA		= $bdcd
 	fac1_to_string			= $bddd	; string is stored at $0100 (address returned in AY)
 	fac1_sqr			= $bf71	; SQR()
