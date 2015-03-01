@@ -13,7 +13,7 @@ lib_cbm_flpt_a = 1
 ; This file contains a macro for writing floating point numbers in the six-byte
 ; "flpt" format, where the sign bit occupies the sixth byte.
 ; There are no interpreter functions to use this format, so you will have to
-; write you own functions for "copy-mem-to-fac1", "copy-fac2-to-mem" etc.
+; write your own functions for "copy-mem-to-fac1", "copy-fac2-to-mem" etc.
 
 ; Use the macro like this:
 ;		+flpt 3.1415926	; each use will take up six bytes of memory
