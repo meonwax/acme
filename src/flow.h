@@ -1,5 +1,5 @@
 // ACME - a crossassembler for producing 6502/65c02/65816 code.
-// Copyright (C) 1998-2009 Marco Baye
+// Copyright (C) 1998-2015 Marco Baye
 // Have a look at "acme.c" for further info
 //
 // flow control stuff (loops, conditional assembly etc.)
@@ -20,9 +20,12 @@ struct block {
 struct for_loop {
 	struct symbol	*symbol;
 	int		old_algo;	// actually bool
-	intval_t	counter_first,
-			counter_last,
-			counter_increment;
+	struct {
+		intval_t	first,
+				last,
+				increment;
+		int		addr_refs;	// address reference count
+	} counter;
 	struct block	block;
 };
 

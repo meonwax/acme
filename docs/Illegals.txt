@@ -14,6 +14,7 @@ In release 0.94.8, another one was added (lxa).
 In release 0.95.3, C64DTV2 support was added, which includes these
 opcodes as well.
 In release 0.95.4, the remaining seven were added.
+In release 0.95.6, "ANC" was removed from C64DTV2 mode.
 
 Here are the new mnemonics, possible addressing modes and generated
 opcodes (mnemonics in parentheses are used by other sources):
@@ -57,7 +58,7 @@ Example:
 
 *) Up until ACME version 0.95.1, anc#8 generated opcode 0x2b. Since
 ACME version 0.95.2, anc#8 generates opcode 0x0b. Both opcodes work
-the same way on a 6510. I am told 0x2b does not work on the C64DTV2.
+the same way on a real 6510 CPU, but they do not work on the C64DTV2.
 
 **) Note that DOP ("double nop") and TOP ("triple nop") can be used
 with implied addressing, but the generated opcodes are those for

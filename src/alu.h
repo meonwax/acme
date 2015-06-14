@@ -31,16 +31,31 @@
 
 // create dynamic buffer, operator/function trees and operator/operand stacks
 extern void ALU_init(void);
-// activate error output for "value undefined"
-extern void ALU_throw_errors(void);
-// returns int value (0 if result was undefined)
-extern intval_t ALU_any_int(void);
-// returns int value (if result was undefined, serious error is thrown)
-extern intval_t ALU_defined_int(void);
+// function pointer for "value undefined" error output.
+// set to NULL to suppress those errors,
+// set to Throw_error to show them.
+extern void (*ALU_optional_notdef_handler)(const char *);
+
+
+// FIXME - replace all the functions below with a single one using a "flags" arg!
+
+#define ACCEPT_EMPTY		(1u << 0)	// if not given, throws error
+#define ACCEPT_UNDEFINED	(1u << 1)	// if not given, undefined throws serious error
+//#define ACCEPT_INT		(1u << )	needed when strings come along!
+#define ACCEPT_FLOAT		(1u << 2)	// if not given, floats are converted to integer
+#define ACCEPT_OPENPARENTHESIS	(1u << 3)	// if not given, throws syntax error
+//#define ACCEPT_STRING
+// do I need ACCEPT_INT and/or ACCEPT_ADDRESS?
+
 // stores int value if given. Returns whether stored. Throws error if undefined.
 extern int ALU_optional_defined_int(intval_t *target);
+// returns int value (0 if result was undefined)
+extern intval_t ALU_any_int(void);
 // stores int value and flags (floats are transformed to int)
 extern void ALU_int_result(struct result *intresult);
+// stores int value and flags (floats are transformed to int)
+// if result was undefined, serious error is thrown
+extern void ALU_defined_int(struct result *intresult);
 // stores int value and flags, allowing for one '(' too many (x-indirect addr).
 // returns number of additional '(' (1 or 0).
 extern int ALU_liberal_int(struct result *intresult);

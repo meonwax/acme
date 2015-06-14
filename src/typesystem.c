@@ -39,8 +39,10 @@ void typesystem_want_imm(struct result *result)
 		return;
 	if (!(result->flags & MVALUE_DEFINED))
 		return;
-	if (result->addr_refs != 0)
+	if (result->addr_refs != 0) {
 		Throw_warning("Wrong type - expected integer.");
+		//printf("refcount should be 0, but is %d\n", result->addr_refs);
+	}
 }
 void typesystem_want_addr(struct result *result)
 {
@@ -48,6 +50,8 @@ void typesystem_want_addr(struct result *result)
 		return;
 	if (!(result->flags & MVALUE_DEFINED))
 		return;
-	if (result->addr_refs != 1)
+	if (result->addr_refs != 1) {
 		Throw_warning("Wrong type - expected address.");
+		//printf("refcount should be 1, but is %d\n", result->addr_refs);
+	}
 }

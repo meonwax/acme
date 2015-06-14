@@ -70,9 +70,7 @@ static void report_srcchar(char new_char)
 		report->asc_used = 0;	// clear buffer
 		prev_char = '\0';
 	}
-	if ((prev_char == '\n' || prev_char == '\r')) {
-// this check makes empty lines screw up line numbers:
-//	&& new_char != '\n') {
+	if (prev_char == '\n') {
 		// line start after line break detected and EOS processed,
 		// build report line:
 		// show line number...

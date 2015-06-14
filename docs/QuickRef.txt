@@ -284,7 +284,7 @@ This is a list of the operators currently known by ACME:
        14     arcsin(v)   Inverse of sin()
        14     arccos(v)   Inverse of cos()
        14     arctan(v)   Inverse of tan()
-       14     addr(v)     Mark as address
+       14     address(v)  Mark as address           addr(v)
        14     int(v)      Convert to integer
        14     float(v)    Convert to float
        13        !  v     Complement of             NOT

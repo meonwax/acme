@@ -13,6 +13,25 @@ outlining the platform specific changes.
 
 
 ----------------------------------------------------------------------
+Section:   New in release 0.95.6
+----------------------------------------------------------------------
+
+Fixed a bug: The "C64 DTV2" does not support the undocumented
+    ("illegal") opcodes 0x0b and 0x2b, therefore the "ANC #8"
+    mnemonic was removed from the "!cpu c64dtv2" mode. Thanks to
+    peiselulli for testing and reporting this.
+"Value not defined" error message now includes the name of the
+    undefined symbol. Thanks to Thomas Woinke for suggesting this
+    improvement.
+Fixed a bug in type system: "!for" loop counters were not correctly
+    flagged as "address" or "non-address".
+The "addr()" function can now also be written as "address()".
+Fixed a bug in report listing generator: CR characters in input caused
+    additional blank lines in output. Thanks to Johann Klasek for
+    submitting this patch.
+
+
+----------------------------------------------------------------------
 Section:   New in release 0.95.5
 ----------------------------------------------------------------------
 

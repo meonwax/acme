@@ -1,5 +1,5 @@
 // ACME - a crossassembler for producing 6502/65c02/65816 code.
-// Copyright (C) 1998-2014 Marco Baye
+// Copyright (C) 1998-2015 Marco Baye
 // Have a look at "acme.c" for further info
 //
 // Mnemonics stuff
@@ -146,8 +146,9 @@ static const char	exception_highbyte_zero[]	= "Using oversized addressing mode."
 static struct dynabuf	*mnemo_dyna_buf;	// dynamic buffer for mnemonics
 // predefined stuff
 static struct ronode	*mnemo_6502_tree	= NULL;	// holds 6502 mnemonics
-static struct ronode	*mnemo_6510_tree	= NULL;	// holds 6510 extensions
-static struct ronode	*mnemo_c64dtv2_tree	= NULL;	// holds C64DTV2 extensions
+static struct ronode	*mnemo_6502undoc1_tree	= NULL;	// holds 6502 undocumented ("illegal") opcodes supported by DTV2
+static struct ronode	*mnemo_6502undoc2_tree	= NULL;	// holds remaining 6502 undocumented ("illegal") opcodes (currently ANC only, maybe more will get moved)
+static struct ronode	*mnemo_c64dtv2_tree	= NULL;	// holds C64DTV2 extensions (BRA/SAC/SIR)
 static struct ronode	*mnemo_65c02_tree	= NULL;	// holds 65c02 extensions
 //static struct ronode	*mnemo_Rockwell65c02_tree	= NULL;	// Rockwell
 static struct ronode	*mnemo_WDC65c02_tree	= NULL;	// WDC's "stp"/"wai"
@@ -223,7 +224,7 @@ static struct ronode	mnemos_6502[]	= {
 	//    ^^^^ this marks the last element
 };
 
-static struct ronode	mnemos_6510[]	= {
+static struct ronode	mnemos_6502undoc1[]	= {
 	PREDEFNODE("slo", MERGE(GROUP_ACCU, IDX_SLO)),	// ASL + ORA (aka ASO)
 	PREDEFNODE("rla", MERGE(GROUP_ACCU, IDX_RLA)),	// ROL + AND
 	PREDEFNODE("sre", MERGE(GROUP_ACCU, IDX_SRE)),	// LSR + EOR (aka LSE)
@@ -237,7 +238,6 @@ static struct ronode	mnemos_6510[]	= {
 	PREDEFNODE("sha", MERGE(GROUP_ACCU, IDX_SHA)),	// {addr} = A & X & {H+1} (aka AXA aka AHX)
 	PREDEFNODE("shx", MERGE(GROUP_MISC, IDX_SHX)),	// {addr} = X & {H+1} (aka XAS aka SXA)
 	PREDEFNODE("shy", MERGE(GROUP_MISC, IDX_SHY)),	// {addr} = Y & {H+1} (aka SAY aka SYA)
-	PREDEFNODE("anc", MERGE(GROUP_MISC, IDX_ANC)),	// ROL + AND, ASL + ORA (aka AAC)
 	PREDEFNODE(s_asr, MERGE(GROUP_MISC, IDX_ASR)),	// LSR + EOR (aka ALR)
 	PREDEFNODE("arr", MERGE(GROUP_MISC, IDX_ARR)),	// ROR + ADC
 	PREDEFNODE("sbx", MERGE(GROUP_MISC, IDX_SBX)),	// DEX + CMP (aka AXS aka SAX)
@@ -246,6 +246,11 @@ static struct ronode	mnemos_6510[]	= {
 	PREDEFNODE("jam", MERGE(GROUP_MISC, IDX_JAM)),	// jam/crash/kill/halt-and-catch-fire
 	PREDEFNODE("ane", MERGE(GROUP_MISC, IDX_ANE)),	// A = (A | ??) & X & arg (aka XAA)
 	PREDEFLAST("lxa", MERGE(GROUP_MISC, IDX_LXA)),	// A,X = (A | ??) & arg (aka OAL aka ATX)
+	//    ^^^^ this marks the last element
+};
+
+static struct ronode	mnemos_6502undoc2[]	= {
+	PREDEFLAST("anc", MERGE(GROUP_MISC, IDX_ANC)),	// ROL + AND, ASL + ORA (aka AAC)
 	//    ^^^^ this marks the last element
 };
 
@@ -370,7 +375,8 @@ void Mnemo_init(void)
 {
 	mnemo_dyna_buf = DynaBuf_create(MNEMO_DYNABUF_INITIALSIZE);
 	Tree_add_table(&mnemo_6502_tree, mnemos_6502);
-	Tree_add_table(&mnemo_6510_tree, mnemos_6510);
+	Tree_add_table(&mnemo_6502undoc1_tree, mnemos_6502undoc1);
+	Tree_add_table(&mnemo_6502undoc2_tree, mnemos_6502undoc2);
 	Tree_add_table(&mnemo_c64dtv2_tree, mnemos_c64dtv2);
 	Tree_add_table(&mnemo_65c02_tree, mnemos_65c02);
 //	Tree_add_table(&mnemo_Rockwell65c02_tree, mnemos_Rockwell65c02);
@@ -908,7 +914,11 @@ int keyword_is_6510mnemo(int length)
 	// make lower case version of mnemonic in local dynamic buffer
 	DynaBuf_to_lower(mnemo_dyna_buf, GlobalDynaBuf);
 	// first check undocumented ("illegal") opcodes...
-	if (check_mnemo_tree(mnemo_6510_tree, mnemo_dyna_buf))
+	if (check_mnemo_tree(mnemo_6502undoc1_tree, mnemo_dyna_buf))
+		return TRUE;
+
+	// then check some more undocumented ("illegal") opcodes...
+	if (check_mnemo_tree(mnemo_6502undoc2_tree, mnemo_dyna_buf))
 		return TRUE;
 
 	// ...then check original opcodes
@@ -927,8 +937,8 @@ int keyword_is_c64dtv2mnemo(int length)
 	if (check_mnemo_tree(mnemo_c64dtv2_tree, mnemo_dyna_buf))
 		return TRUE;
 
-	// ...then check undocumented ("illegal") opcodes...
-	if (check_mnemo_tree(mnemo_6510_tree, mnemo_dyna_buf))
+	// ...then check a few undocumented ("illegal") opcodes...
+	if (check_mnemo_tree(mnemo_6502undoc1_tree, mnemo_dyna_buf))
 		return TRUE;
 
 	// ...then check original opcodes
