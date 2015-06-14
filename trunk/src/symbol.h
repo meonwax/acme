@@ -15,6 +15,8 @@ struct symbol {
 	struct result	result;	// expression flags and value
 	int		usage;	// usage count
 	int		pass;	// pass of creation (for anon counters)
+	// add flag to indicate "has already been reported as undefined"
+	// add file ref + line num of last definition
 };
 
 

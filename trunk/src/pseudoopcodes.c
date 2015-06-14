@@ -49,8 +49,9 @@ static struct ronode	*pseudo_opcode_tree	= NULL;	// tree to hold pseudo opcodes
 void notreallypo_setpc(void)
 {
 	int		segment_flags	= 0;
-	intval_t	new_addr	= ALU_defined_int();
+	struct result	intresult;
 
+	ALU_defined_int(&intresult);	// read new address
 	// check for modifiers
 	while (Input_accept_comma()) {
 		// parse modifier. if no keyword given, give up
@@ -66,24 +67,24 @@ void notreallypo_setpc(void)
 			return;
 		}
 	}
-	vcpu_set_pc(new_addr, segment_flags);
+	vcpu_set_pc(intresult.val.intval, segment_flags);
 }
 
 
 // define default value for empty memory ("!initmem" pseudo opcode)
 static enum eos po_initmem(void)
 {
-	intval_t	content;
+	struct result	intresult;
 
 	// ignore in all passes but in first
 	if (pass_count)
 		return SKIP_REMAINDER;
 
 	// get value
-	content = ALU_defined_int();
-	if ((content > 0xff) || (content < -0x80))
+	ALU_defined_int(&intresult);
+	if ((intresult.val.intval > 0xff) || (intresult.val.intval < -0x80))
 		Throw_error(exception_number_out_of_range);
-	if (output_initmem(content & 0xff))
+	if (output_initmem(intresult.val.intval & 0xff))
 		return SKIP_REMAINDER;
 	return ENSURE_EOS;
 }
@@ -361,12 +362,13 @@ static enum eos po_binary(void)
 // reserve space by sending bytes of given value ("!fi" / "!fill" pseudo opcode)
 static enum eos po_fill(void)
 {
-	intval_t	fill	= FILLVALUE_FILL,
-			size	= ALU_defined_int();
+	struct result	sizeresult;
+	intval_t	fill	= FILLVALUE_FILL;
 
+	ALU_defined_int(&sizeresult);	// FIXME - forbid addresses!
 	if (Input_accept_comma())
-		fill = ALU_any_int();
-	while (size--)
+		fill = ALU_any_int();	// FIXME - forbid addresses!
+	while (sizeresult.val.intval--)
 		output_8(fill);
 	return ENSURE_EOS;
 }
@@ -376,9 +378,9 @@ static enum eos po_fill(void)
 static enum eos po_align(void)
 {
 	// FIXME - read cpu state via function call!
-	intval_t	and,
-			equal,
-			fill,
+	struct result	andresult,
+			equalresult;
+	intval_t	fill,
 			test	= CPU_state.pc.val.intval;
 
 	// make sure PC is defined.
@@ -388,15 +390,15 @@ static enum eos po_align(void)
 		return SKIP_REMAINDER;
 	}
 
-	and = ALU_defined_int();
+	ALU_defined_int(&andresult);	// FIXME - forbid addresses!
 	if (!Input_accept_comma())
 		Throw_error(exception_syntax);
-	equal = ALU_defined_int();
+	ALU_defined_int(&equalresult);	// ...allow addresses (unlikely, but possible)
 	if (Input_accept_comma())
 		fill = ALU_any_int();
 	else
 		fill = CPU_state.type->default_align_value;
-	while ((test++ & and) != equal)
+	while ((test++ & andresult.val.intval) != equalresult.val.intval)
 		output_8(fill);
 	return ENSURE_EOS;
 }
@@ -410,14 +412,14 @@ static const char	Error_old_offset_assembly[]	=
 static enum eos po_pseudopc(void)
 {
 	// FIXME - read pc using a function call!
-	intval_t	new_pc,
-			new_offset;
+	struct result	new_pc_result;
+	intval_t	new_offset;
 	int		outer_flags	= CPU_state.pc.flags;
 
 	// set new
-	new_pc = ALU_defined_int();	// FIXME - allow for undefined!
-	new_offset = (new_pc - CPU_state.pc.val.intval) & 0xffff;
-	CPU_state.pc.val.intval = new_pc;
+	ALU_defined_int(&new_pc_result);	// FIXME - allow for undefined! (complaining about non-addresses would be logical, but annoying)
+	new_offset = (new_pc_result.val.intval - CPU_state.pc.val.intval) & 0xffff;
+	CPU_state.pc.val.intval = new_pc_result.val.intval;
 	CPU_state.pc.flags |= MVALUE_DEFINED;	// FIXME - remove when allowing undefined!
 	// if there's a block, parse that and then restore old value!
 	if (Parse_optional_block()) {
@@ -660,12 +662,12 @@ static enum eos po_source(void)	// now GotByte = illegal char
 // conditional assembly ("!if"). has to be re-entrant.
 static enum eos po_if(void)	// now GotByte = illegal char
 {
-	intval_t	cond;
+	struct result	cond_result;
 
-	cond = ALU_defined_int();
+	ALU_defined_int(&cond_result);
 	if (GotByte != CHAR_SOB)
 		Throw_serious_error(exception_no_left_brace);
-	flow_parse_block_else_block(!!cond);
+	flow_parse_block_else_block(!!cond_result.val.intval);
 	return ENSURE_EOS;
 }
 
@@ -723,7 +725,7 @@ static enum eos po_for(void)	// now GotByte = illegal char
 {
 	zone_t		zone;
 	int		force_bit;
-	intval_t	first_arg;
+	struct result	intresult;
 	struct for_loop	loop;
 
 	if (Input_read_zone_and_keyword(&zone) == 0)	// skips spaces before
@@ -737,23 +739,30 @@ static enum eos po_for(void)	// now GotByte = illegal char
 		return SKIP_REMAINDER;
 	}
 
-	first_arg = ALU_defined_int();
+	ALU_defined_int(&intresult);	// read first argument
+	loop.counter.addr_refs = intresult.addr_refs;
 	if (Input_accept_comma()) {
 		loop.old_algo = FALSE;	// new format - yay!
 		if (!warn_on_old_for)
 			Throw_first_pass_warning("Found new \"!for\" syntax.");
-		loop.counter_first = first_arg;	// use given argument
-		loop.counter_last = ALU_defined_int();	// read second argument
-		loop.counter_increment = (loop.counter_last < loop.counter_first) ? -1 : 1;
+		loop.counter.first = intresult.val.intval;	// use first argument
+		ALU_defined_int(&intresult);	// read second argument
+		loop.counter.last = intresult.val.intval;	// use second argument
+		// compare addr_ref counts and complain if not equal!
+		if (warn_on_type_mismatch
+		&& (intresult.addr_refs != loop.counter.addr_refs)) {
+			Throw_first_pass_warning("Wrong type for loop's END value - must match type of START value.");
+		}
+		loop.counter.increment = (loop.counter.last < loop.counter.first) ? -1 : 1;
 	} else {
 		loop.old_algo = TRUE;	// old format - booo!
 		if (warn_on_old_for)
 			Throw_first_pass_warning("Found old \"!for\" syntax.");
-		if (first_arg < 0)
+		if (intresult.val.intval < 0)
 			Throw_serious_error("Loop count is negative.");
-		loop.counter_first = 0;	// CAUTION - old algo pre-increments and therefore starts with 1!
-		loop.counter_last = first_arg;	// use given argument
-		loop.counter_increment = 1;
+		loop.counter.first = 0;	// CAUTION - old algo pre-increments and therefore starts with 1!
+		loop.counter.last = intresult.val.intval;	// use given argument
+		loop.counter.increment = 1;
 	}
 	if (GotByte != CHAR_SOB)
 		Throw_serious_error(exception_no_left_brace);

@@ -142,9 +142,12 @@ Using oversized addressing mode.
 
 Wrong type - expected address.
 Wrong type - expected integer.
+Wrong type for loop's END value - must match type of START value.
     These warnings are only given when type checking has been enabled
     using the "-Wtype-mismatch" switch. Make sure the argument type
     matches the instruction's addressing mode.
+    In "!for" loops, START and END must have the same type, which then
+    gets used for the loop counter.
 
 
 ----------------------------------------------------------------------
@@ -297,7 +300,7 @@ Unknown pseudo opcode.
 Unknown "* =" segment modifier.
     You used a modifier keyword ACME does not know.
 
-Value not yet defined.
+Value not defined (SYMBOL NAME).
     A value could not be worked out. Maybe you mistyped a symbol name.
     Whether this is given as a "normal" or as a serious error depends
     on the currently parsed pseudo opcode.

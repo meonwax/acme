@@ -56,25 +56,26 @@ void flow_forloop(struct for_loop *loop)
 	Input_now = &loop_input;
 	// init counter
 	loop_counter.flags = MVALUE_DEFINED | MVALUE_EXISTS;
-	loop_counter.val.intval = loop->counter_first;
+	loop_counter.val.intval = loop->counter.first;
+	loop_counter.addr_refs = loop->counter.addr_refs;
 	symbol_set_value(loop->symbol, &loop_counter, TRUE);
 	if (loop->old_algo) {
 		// old algo for old syntax:
 		// if count == 0, skip loop
-		if (loop->counter_last) {
+		if (loop->counter.last) {
 			do {
-				loop_counter.val.intval += loop->counter_increment;
+				loop_counter.val.intval += loop->counter.increment;
 				symbol_set_value(loop->symbol, &loop_counter, TRUE);
 				parse_ram_block(&loop->block);
-			} while (loop_counter.val.intval < loop->counter_last);
+			} while (loop_counter.val.intval < loop->counter.last);
 		}
 	} else {
 		// new algo for new syntax:
 		do {
 			parse_ram_block(&loop->block);
-			loop_counter.val.intval += loop->counter_increment;
+			loop_counter.val.intval += loop->counter.increment;
 			symbol_set_value(loop->symbol, &loop_counter, TRUE);
-		} while (loop_counter.val.intval != (loop->counter_last + loop->counter_increment));
+		} while (loop_counter.val.intval != (loop->counter.last + loop->counter.increment));
 	}
 	// restore previous input:
 	Input_now = outer_input;
@@ -119,7 +120,7 @@ void flow_store_doloop_condition(struct loop_condition *condition, char terminat
 // check a condition expression
 static int check_condition(struct loop_condition *condition)
 {
-	intval_t	expression;
+	struct result	intresult;
 
 	// first, check whether there actually *is* a condition
 	if (condition->body == NULL)
@@ -129,10 +130,10 @@ static int check_condition(struct loop_condition *condition)
 	Input_now->line_number = condition->line;
 	Input_now->src.ram_ptr = condition->body;
 	GetByte();	// proceed with next char
-	expression = ALU_defined_int();
+	ALU_defined_int(&intresult);
 	if (GotByte)
 		Throw_serious_error(exception_syntax);
-	return condition->is_until ? !expression : !!expression;
+	return condition->is_until ? !intresult.val.intval : !!intresult.val.intval;
 }
 
 

@@ -1,5 +1,5 @@
 // ACME - a crossassembler for producing 6502/65c02/65816 code.
-// Copyright (C) 1998-2014 Marco Baye
+// Copyright (C) 1998-2015 Marco Baye
 // Have a look at "acme.c" for further info
 //
 // Section stuff
@@ -20,6 +20,8 @@ struct section {
 
 
 // Constants
+// TODO: rename internal stuff from "zone" to "scope",
+// then add cheap locals (so there's SCOPE_GLOBAL, scope_zone and scope_cheap)
 #define ZONE_GLOBAL	0	// Number of "global zone"
 
 

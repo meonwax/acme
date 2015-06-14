@@ -18,41 +18,39 @@
 static struct cpu_type	cpu_type_6502	= {
 	keyword_is_6502mnemo,
 	CPUFLAG_INDIRECTJMPBUGGY,	// JMP ($xxFF) is buggy
-	234			// !align fills with "NOP"
+	234	// !align fills with "NOP"
 };
 static struct cpu_type	cpu_type_6510	= {
 	keyword_is_6510mnemo,
-	CPUFLAG_INDIRECTJMPBUGGY |	// JMP ($xxFF) is buggy
-		CPUFLAG_8B_AND_AB_NEED_0_ARG,	// ANE/LXA #$xx are unstable unless arg is $00
-	234			// !align fills with "NOP"
+	CPUFLAG_INDIRECTJMPBUGGY | CPUFLAG_8B_AND_AB_NEED_0_ARG,	// JMP ($xxFF) is buggy, ANE/LXA #$xx are unstable unless arg is $00
+	234	// !align fills with "NOP"
 };
 static struct cpu_type	cpu_type_c64dtv2	= {
 	keyword_is_c64dtv2mnemo,
-	CPUFLAG_INDIRECTJMPBUGGY |	// JMP ($xxFF) is buggy
-		CPUFLAG_8B_AND_AB_NEED_0_ARG,	// ANE/LXA #$xx are unstable unless arg is $00 (FIXME - correct?)
-	234			// !align fills with "NOP"
+	CPUFLAG_INDIRECTJMPBUGGY | CPUFLAG_8B_AND_AB_NEED_0_ARG,	// JMP ($xxFF) is buggy, ANE/LXA #$xx are unstable unless arg is $00
+	234	// !align fills with "NOP"
 };
 static struct cpu_type	cpu_type_65c02	= {
 	keyword_is_65c02mnemo,
-	0,			// no flags
-	234			// !align fills with "NOP"
+	0,	// no flags
+	234	// !align fills with "NOP"
 };
 /*
 static struct cpu_type	cpu_type_Rockwell65c02	= {
 	keyword_is_Rockwell65c02mnemo,
-	0,			// no flags
-	234			// !align fills with "NOP"
+	0,	// no flags
+	234	// !align fills with "NOP"
 };
 static struct cpu_type	cpu_type_WDC65c02	= {
 	keyword_is_WDC65c02mnemo,
-	0,			// no flags
-	234			// !align fills with "NOP"
+	0,	// no flags
+	234	// !align fills with "NOP"
 };
 */
 static struct cpu_type	cpu_type_65816	= {
 	keyword_is_65816mnemo,
 	CPUFLAG_SUPPORTSLONGREGS,	// allows A and XY to be 16bits wide
-	234			// !align fills with "NOP"
+	234	// !align fills with "NOP"
 };
 
 

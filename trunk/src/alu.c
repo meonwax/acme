@@ -1,5 +1,5 @@
 // ACME - a crossassembler for producing 6502/65c02/65816 code.
-// Copyright (C) 1998-2014 Marco Baye
+// Copyright (C) 1998-2015 Marco Baye
 // Have a look at "acme.c" for further info
 //
 // Arithmetic/logic unit
@@ -11,6 +11,7 @@
 //  7 May 2014	C-style "==" operators are now recognized (but
 //		give a warning).
 // 31 May 2014	Added "0b" binary number prefix as alternative to "%".
+// 28 Apr 2015	Added symbol name output to "value not defined" error.
 #include "alu.h"
 #include <stdlib.h>
 #include <math.h>	// only for fp support
@@ -27,12 +28,13 @@
 
 // constants
 
+#define ERRORMSG_DYNABUF_INITIALSIZE	256	// ad hoc
 #define FUNCTION_DYNABUF_INITIALSIZE	8	// enough for "arctan"
+#define UNDEFSYM_DYNABUF_INITIALSIZE	256	// ad hoc
 #define HALF_INITIAL_STACK_SIZE	8
 static const char	exception_div_by_zero[]	= "Division by zero.";
 static const char	exception_no_value[]	= "No value given.";
 static const char	exception_paren_open[]	= "Too many '('.";
-static const char	exception_undefined[]	= "Value not defined.";
 #define s_or	(s_eor + 1)	// Yes, I know I'm sick
 #define s_xor	(s_scrxor + 3)	// Yes, I know I'm sick
 static const char	s_arcsin[]	= "arcsin";
@@ -146,7 +148,9 @@ static struct operator ops_arctan	= {OPHANDLE_ARCTAN,	32};	// function
 
 
 // variables
+static struct dynabuf	*errormsg_dyna_buf;	// dynamic buffer for "value not defined" error
 static struct dynabuf	*function_dyna_buf;	// dynamic buffer for fn names
+static struct dynabuf	*undefsym_dyna_buf;	// dynamic buffer for name of undefined symbol
 static struct operator	**operator_stack	= NULL;
 static int		operator_stk_size	= HALF_INITIAL_STACK_SIZE;
 static int		operator_sp;		// operator stack pointer
@@ -183,6 +187,7 @@ static struct ronode	operator_list[]	= {
 static struct ronode	*function_tree	= NULL;	// tree to hold functions
 static struct ronode	function_list[]	= {
 	PREDEFNODE("addr",	&ops_addr),
+	PREDEFNODE("address",	&ops_addr),
 	PREDEFNODE("int",	&ops_int),
 	PREDEFNODE("float",	&ops_float),
 	PREDEFNODE(s_arcsin,	&ops_arcsin),
@@ -219,32 +224,28 @@ do {								\
 } while (0)
 
 
-// handle "NeedValue" type errors: problems that may be solved by performing
-// further passes. This function only counts, it will not show the errors to
-// the user.
-static void just_count(void)
+// generate "Value not defined" error message with added symbol name
+static char *value_not_defined(void)
 {
-	++pass_undefined_count;
+	DYNABUF_CLEAR(errormsg_dyna_buf);
+	DynaBuf_add_string(errormsg_dyna_buf, "Value not defined (");
+	DynaBuf_add_string(errormsg_dyna_buf, undefsym_dyna_buf->buffer);
+	DynaBuf_add_string(errormsg_dyna_buf, ").");
+	DynaBuf_append(errormsg_dyna_buf, '\0');
+	return errormsg_dyna_buf->buffer;
 }
 
 
-// handle "NeedValue" type errors: problems that may be solved by performing
-// further passes. This function counts these errors and shows them to the user.
-static void count_and_throw(void)
+// function pointer for "value undefined" error output. set to NULL to suppress those errors.
+void (*ALU_optional_notdef_handler)(const char *)	= NULL;
+
+// function to handle "result is undefined" type errors.
+// maybe split this into "_result_ is undefined" (in that case, count) and "symbol is undefined" (in that case, call handler)
+static void result_is_undefined(void)
 {
 	++pass_undefined_count;
-	Throw_error(exception_undefined);
-}
-
-
-// function pointer for "result is undefined" type errors.
-static void (*result_is_undefined)(void)	= just_count;
-
-
-// activate error output for "value undefined"
-void ALU_throw_errors(void)
-{
-	result_is_undefined = count_and_throw;
+	if (ALU_optional_notdef_handler)
+		ALU_optional_notdef_handler(value_not_defined());
 }
 
 
@@ -271,7 +272,9 @@ static void enlarge_operand_stack(void)
 // create dynamic buffer, operator/function trees and operator/operand stacks
 void ALU_init(void)
 {
+	errormsg_dyna_buf = DynaBuf_create(ERRORMSG_DYNABUF_INITIALSIZE);
 	function_dyna_buf = DynaBuf_create(FUNCTION_DYNABUF_INITIALSIZE);
+	undefsym_dyna_buf = DynaBuf_create(UNDEFSYM_DYNABUF_INITIALSIZE);
 	Tree_add_table(&operator_tree, operator_list);
 	Tree_add_table(&function_tree, function_list);
 	enlarge_operator_stack();
@@ -316,17 +319,39 @@ static intval_t my_asr(intval_t left, intval_t right)
 	return ~((~left) >> right);
 }
 
+// if undefined, remember name for error output
+static void check_for_def(int flags, int prefix, char *name, size_t length)
+{
+	if ((flags & MVALUE_DEFINED) == 0) {
+		DYNABUF_CLEAR(undefsym_dyna_buf);
+		if (prefix) {
+			DynaBuf_append(undefsym_dyna_buf, LOCAL_PREFIX);
+			length++;
+		}
+		DynaBuf_add_string(undefsym_dyna_buf, name);
+		if (length > undefsym_dyna_buf->size) {
+			Bug_found("Illegal symbol name length", undefsym_dyna_buf->size - length);
+		} else {
+			undefsym_dyna_buf->size = length;
+		}
+		DynaBuf_append(undefsym_dyna_buf, '\0');
+	}
+}
 
 // Lookup (and create, if necessary) symbol tree item and return its value.
 // DynaBuf holds the symbol's name and "zone" its zone.
+// The name length must be given explicitly because of anonymous forward labels;
+// their internal name is different (longer) than their displayed name.
 // This function is not allowed to change DynaBuf because that's where the
 // symbol name is stored!
-static void get_symbol_value(zone_t zone)
+static void get_symbol_value(zone_t zone, int prefix, size_t name_length)
 {
 	struct symbol	*symbol;
 
 	// if the symbol gets created now, mark it as unsure
 	symbol = symbol_find(zone, MVALUE_UNSURE);
+	// if needed, remember name for "undefined" error output
+	check_for_def(symbol->result.flags, prefix, GLOBALDYNABUF_CURRENT, name_length);
 	// in first pass, count usage
 	if (pass_count == 0)
 		symbol->usage++;
@@ -550,6 +575,8 @@ static void parse_program_counter(void)	// Now GotByte = "*"
 
 	GetByte();
 	vcpu_read_pc(&pc);
+	// if needed, remember name for "undefined" error output
+	check_for_def(pc.flags, 0, "*", 1);
 	PUSH_INTOPERAND(pc.val.intval, pc.flags | MVALUE_EXISTS, pc.addr_refs);
 }
 
@@ -573,6 +600,7 @@ static void parse_function_call(void)
 static void expect_operand_or_monadic_operator(void)
 {
 	struct operator	*operator;
+	int		ugly_length_kluge;
 	int		perform_negation;
 
 	SKIPSPACE();
@@ -583,8 +611,9 @@ static void expect_operand_or_monadic_operator(void)
 		do
 			DYNABUF_APPEND(GlobalDynaBuf, '+');
 		while (GetByte() == '+');
+		ugly_length_kluge = GlobalDynaBuf->size;	// FIXME - get rid of this!
 		symbol_fix_forward_anon_name(FALSE);	// FALSE: do not increment counter
-		get_symbol_value(Section_now->zone);
+		get_symbol_value(Section_now->zone, 0, ugly_length_kluge);
 		goto now_expect_dyadic;
 
 	case '-':	// NEGATION operator or anonymous backward label
@@ -598,7 +627,7 @@ static void expect_operand_or_monadic_operator(void)
 		SKIPSPACE();
 		if (BYTEFLAGS(GotByte) & FOLLOWS_ANON) {
 			DynaBuf_append(GlobalDynaBuf, '\0');
-			get_symbol_value(Section_now->zone);
+			get_symbol_value(Section_now->zone, 0, GlobalDynaBuf->size - 1);	// -1 to not count terminator
 			goto now_expect_dyadic;
 		}
 
@@ -671,7 +700,7 @@ static void expect_operand_or_monadic_operator(void)
 
 		if (Input_read_keyword()) {
 			// Now GotByte = illegal char
-			get_symbol_value(Section_now->zone);
+			get_symbol_value(Section_now->zone, 1, GlobalDynaBuf->size - 1);	// -1 to not count terminator
 			goto now_expect_dyadic;
 		}
 
@@ -709,7 +738,7 @@ static void expect_operand_or_monadic_operator(void)
 // however, apart from that check above, function calls have nothing to do with
 // parentheses: "sin(x+y)" gets parsed just like "not(x+y)".
 				} else {
-					get_symbol_value(ZONE_GLOBAL);
+					get_symbol_value(ZONE_GLOBAL, 0, GlobalDynaBuf->size - 1);	// -1 to not count terminator
 					goto now_expect_dyadic;
 				}
 
@@ -1439,56 +1468,23 @@ static int parse_expression(struct result *result)
 }
 
 
-// return int value (if result is undefined, returns zero)
-// If the result's "exists" flag is clear (=empty expression), it throws an
-// error.
-// If the result's "defined" flag is clear, result_is_undefined() is called.
-intval_t ALU_any_int(void)
-{
-	struct result	result;
-
-	if (parse_expression(&result))
-		Throw_error(exception_paren_open);
-	if ((result.flags & MVALUE_EXISTS) == 0)
-		Throw_error(exception_no_value);
-	else if ((result.flags & MVALUE_DEFINED) == 0)
-		result_is_undefined();
-	if (result.flags & MVALUE_IS_FP)
-		return result.val.fpval;
-	else
-		return result.val.intval;
-}
-
-
-// return int value (if result is undefined, serious error is thrown)
-intval_t ALU_defined_int(void)
-{
-	struct result	result;
-
-	if (parse_expression(&result))
-		Throw_error(exception_paren_open);
-	if ((result.flags & MVALUE_DEFINED) == 0)
-		Throw_serious_error(exception_undefined);
-	if (result.flags & MVALUE_IS_FP)
-		return result.val.fpval;
-	else
-		return result.val.intval;
-}
-
-
 // Store int value if given. Returns whether stored. Throws error if undefined.
 // This function needs either a defined value or no expression at all. So
 // empty expressions are accepted, but undefined ones are not.
 // If the result's "defined" flag is clear and the "exists" flag is set, it
 // throws a serious error and therefore stops assembly.
-int ALU_optional_defined_int(intval_t *target)
+// OPEN_PARENTHESIS: complain
+// EMPTY: allow
+// UNDEFINED: complain _seriously_
+// FLOAT: convert to int
+int ALU_optional_defined_int(intval_t *target)	// ACCEPT_EMPTY
 {
 	struct result	result;
 
 	if (parse_expression(&result))
 		Throw_error(exception_paren_open);
 	if ((result.flags & MVALUE_GIVEN) == MVALUE_EXISTS)
-		Throw_serious_error(exception_undefined);
+		Throw_serious_error(value_not_defined());
 	if ((result.flags & MVALUE_EXISTS) == 0)
 		return 0;
 	// something was given, so store
@@ -1504,7 +1500,11 @@ int ALU_optional_defined_int(intval_t *target)
 // It the result's "exists" flag is clear (=empty expression), it throws an
 // error.
 // If the result's "defined" flag is clear, result_is_undefined() is called.
-void ALU_int_result(struct result *intresult)
+// OPEN_PARENTHESIS: complain
+// EMPTY: complain
+// UNDEFINED: allow
+// FLOAT: convert to int
+void ALU_int_result(struct result *intresult)	// ACCEPT_UNDEFINED
 {
 	if (parse_expression(intresult))
 		Throw_error(exception_paren_open);
@@ -1520,11 +1520,60 @@ void ALU_int_result(struct result *intresult)
 }
 
 
+// return int value (if result is undefined, returns zero)
+// If the result's "exists" flag is clear (=empty expression), it throws an
+// error.
+// If the result's "defined" flag is clear, result_is_undefined() is called.
+// OPEN_PARENTHESIS: complain
+// EMPTY: complain
+// UNDEFINED: allow
+// FLOAT: convert to int
+intval_t ALU_any_int(void)	// ACCEPT_UNDEFINED
+{
+	// FIXME - replace this fn with a call to ALU_int_result() above!
+	struct result	result;
+
+	if (parse_expression(&result))
+		Throw_error(exception_paren_open);
+	if ((result.flags & MVALUE_EXISTS) == 0)
+		Throw_error(exception_no_value);
+	else if ((result.flags & MVALUE_DEFINED) == 0)
+		result_is_undefined();
+	if (result.flags & MVALUE_IS_FP)
+		return result.val.fpval;
+	else
+		return result.val.intval;
+}
+
+
+// stores int value and flags (floats are transformed to int)
+// if result was undefined, serious error is thrown
+// OPEN_PARENTHESIS: complain
+// EMPTY: treat as UNDEFINED		<= this is a problem - maybe use a wrapper fn for this use case?
+// UNDEFINED: complain _seriously_
+// FLOAT: convert to int
+extern void ALU_defined_int(struct result *intresult)	// no ACCEPT constants?
+{
+	if (parse_expression(intresult))
+		Throw_error(exception_paren_open);
+	if ((intresult->flags & MVALUE_DEFINED) == 0)
+		Throw_serious_error(value_not_defined());
+	if (intresult->flags & MVALUE_IS_FP) {
+		intresult->val.intval = intresult->val.fpval;
+		intresult->flags &= ~MVALUE_IS_FP;
+	}
+}
+
+
 // Store int value and flags.
 // This function allows for one '(' too many. Needed when parsing indirect
 // addressing modes where internal indices have to be possible. Returns number
 // of parentheses still open (either 0 or 1).
-int ALU_liberal_int(struct result *intresult)
+// OPEN_PARENTHESIS: allow
+// UNDEFINED: allow
+// EMPTY: allow
+// FLOAT: convert to int
+int ALU_liberal_int(struct result *intresult)	// ACCEPT_EMPTY | ACCEPT_UNDEFINED | ACCEPT_OPENPARENTHESIS
 {
 	int	parentheses_still_open;
 
@@ -1549,7 +1598,11 @@ int ALU_liberal_int(struct result *intresult)
 // It the result's "exists" flag is clear (=empty expression), it throws an
 // error.
 // If the result's "defined" flag is clear, result_is_undefined() is called.
-void ALU_any_result(struct result *result)
+// OPEN_PARENTHESIS: complain
+// EMPTY: complain
+// UNDEFINED: allow
+// FLOAT: keep
+void ALU_any_result(struct result *result)	// ACCEPT_UNDEFINED | ACCEPT_FLOAT
 {
 	if (parse_expression(result))
 		Throw_error(exception_paren_open);
