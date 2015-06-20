@@ -641,7 +641,11 @@ static enum eos po_source(void)	// now GotByte = illegal char
 
 	// if file could be opened, parse it. otherwise, complain
 	if ((fd = fopen(GLOBALDYNABUF_CURRENT, FILE_READBINARY))) {
-		char	filename[GlobalDynaBuf->size];
+#ifdef __GNUC__
+		char	filename[GlobalDynaBuf->size];	// GCC can do this
+#else
+		char	*filename	= safe_malloc(GlobalDynaBuf->size);	// VS can not
+#endif
 
 		strcpy(filename, GLOBALDYNABUF_CURRENT);
 		outer_input = Input_now;	// remember old input
@@ -650,6 +654,9 @@ static enum eos po_source(void)	// now GotByte = illegal char
 		flow_parse_and_close_file(fd, filename);
 		Input_now = outer_input;	// restore previous input
 		GotByte = local_gotbyte;	// CAUTION - ugly kluge
+#ifndef __GNUC__
+		free(filename);	// GCC auto-frees
+#endif
 	} else {
 		Throw_error(exception_cannot_open_input_file);
 	}
