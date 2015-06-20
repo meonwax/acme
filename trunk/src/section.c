@@ -34,6 +34,7 @@ void Section_new_zone(struct section *section, const char *type, char *title, in
 	section->allocated = allocated;
 	// activate new section
 	Section_now = section;
+	//printf("[new zone %d: %s, %s]\n", section->zone, section->type, section->title);
 }
 
 // Tidy up: If necessary, release section title.

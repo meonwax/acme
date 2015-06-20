@@ -221,6 +221,7 @@ static void parse_forward_anon_def(int *statement_flags)
 	}
 	symbol_fix_forward_anon_name(TRUE);	// TRUE: increment counter
 	DynaBuf_append(GlobalDynaBuf, '\0');
+	//printf("[%d, %s]\n", Section_now->zone, GlobalDynaBuf->buffer);
 	symbol_set_label(Section_now->zone, *statement_flags, 0, FALSE);
 }
 
