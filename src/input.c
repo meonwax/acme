@@ -55,12 +55,13 @@ void Input_new_file(const char *filename, FILE *fd)
 
 
 // remember source code character for report generator
+#define HEXBUFSIZE	9	// actually, 4+1 is enough, but for systems without snprintf(), let's be extra-safe.
 #define IF_WANTED_REPORT_SRCCHAR(c)	do { if (report->fd) report_srcchar(c); } while(0)
 static void report_srcchar(char new_char)
 {
 	static char	prev_char	= '\0';
 	int		ii;
-	char		hex_address[5];
+	char		hex_address[HEXBUFSIZE];
 	char		hexdump[2 * REPORT_BINBUFSIZE + 2];	// +2 for '.' and terminator
 
 	// if input has changed, insert explanation
@@ -77,7 +78,11 @@ static void report_srcchar(char new_char)
 		fprintf(report->fd, "%6d  ", Input_now->line_number - 1);
 		// prepare outbytes' start address
 		if (report->bin_used)
-			snprintf(hex_address, 5, "%04x", report->bin_address);
+#if _BSD_SOURCE || _XOPEN_SOURCE >= 500 || _ISOC99_SOURCE || _POSIX_C_SOURCE >= 200112L
+			snprintf(hex_address, HEXBUFSIZE, "%04x", report->bin_address);
+#else
+			sprintf(hex_address, "%04x", report->bin_address);
+#endif
 		else
 			hex_address[0] = '\0';
 		// prepare outbytes
