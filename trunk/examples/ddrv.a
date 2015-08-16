@@ -76,10 +76,12 @@
 	Sprite_HotspotX	= 1
 	Sprite_HotspotY	= 1
 
+; address definitions
+!addr {
+
 ; Locations to store button states, $ff = pressed, $00 = not pressed.
 ; Mouse uses both buttons, joystick only uses "LeftButton".
 ; Location to store pointer's current character coordinates.
-!addr {
 !if SYSTEM = 64 {
 	LeftButton	= $a4
 	RightButton	= $a5
@@ -111,6 +113,10 @@
 	cia1_prb	= $dc01
 	cia1_ddrb	= $dc03
 	mmu_cr		= $ff00	; c128 only
+
+; dummy value for self mod
+	MODIFIED16	= $ffff
+
 };addr
 
 ; --- Label definitions
@@ -422,7 +428,7 @@ StoreOF		sta Sprites_OF	; set x overflow
 
 ; The initialisation routine sets the argument to the address of the
 ; previous IRQ routine.
-mod16 = * + 1:	jmp addr($ffff)	; (self-modifying)
+mod16 = * + 1:	jmp MODIFIED16	; (self-modifying)
 
 ; This table is for part 8.
 ;OrTable	!byte 0, 32, 64	; VDC only

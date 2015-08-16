@@ -169,4 +169,4 @@ I admit that this algorithm sounds complicated, but it hasn't failed
 yet. :) And in everyday usage, it does exactly what one expects.
 
 If you want to take a closer look at the algorithm, examine the
-"calc_arg_size" function in the "sources/mnemo.c" file.
+"calc_arg_size" function in the "src/mnemo.c" file.
