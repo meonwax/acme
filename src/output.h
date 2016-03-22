@@ -1,8 +1,8 @@
 // ACME - a crossassembler for producing 6502/65c02/65816 code.
-// Copyright (C) 1998-2014 Marco Baye
+// Copyright (C) 1998-2016 Marco Baye
 // Have a look at "acme.c" for further info
 //
-// Output stuff
+// Output stuff (FIXME - split into outbuf, outfile/format and vcpu parts)
 #ifndef output_H
 #define output_H
 
@@ -19,7 +19,7 @@
 
 
 // current CPU state
-// FIXME - move struct definition to .c file and change other .c files' accesses to fn calls
+// FIXME - move vcpu struct definition to .c file and change other .c files' accesses to fn calls
 struct vcpu {
 	const struct cpu_type	*type;		// current CPU type (default 6502)	(FIXME - move out of struct again?)
 	struct result		pc;		// current program counter (pseudo value)
@@ -30,8 +30,7 @@ struct vcpu {
 
 
 // variables
-// FIXME - restrict visibility to .c file
-extern struct vcpu	CPU_state;	// current CPU state
+extern struct vcpu	CPU_state;	// current CPU state	FIXME - restrict visibility to .c file
 
 
 // Prototypes
@@ -46,22 +45,29 @@ extern void Output_fake(int size);
 extern void (*Output_byte)(intval_t);
 // Output 8-bit value with range check
 extern void output_8(intval_t);
-// Output 16-bit value with range check
+// Output 16-bit value with range check big-endian
+extern void output_be16(intval_t);
+// Output 16-bit value with range check little-endian
 extern void output_le16(intval_t);
-// Output 24-bit value with range check
+// Output 24-bit value with range check big-endian
+extern void output_be24(intval_t);
+// Output 24-bit value with range check little-endian
 extern void output_le24(intval_t);
-// Output 32-bit value (without range check)
+// Output 32-bit value (without range check) big-endian
+extern void output_be32(intval_t);
+// Output 32-bit value (without range check) little-endian
 extern void output_le32(intval_t);
 // define default value for empty memory ("!initmem" pseudo opcode)
 // returns zero if ok, nonzero if already set
 extern int output_initmem(char content);
 // try to set output format held in DynaBuf. Returns zero on success.
-extern int output_set_output_format(void);
+extern int outputfile_set_format(void);
+extern const char	outputfile_formats[];	// string to show if outputfile_set_format() returns nonzero
 // if file format was already chosen, returns zero.
 // if file format isn't set, chooses CBM and returns 1.
-extern int output_prefer_cbm_file_format(void);
+extern int outputfile_prefer_cbm_format(void);
 // try to set output file name held in DynaBuf. Returns zero on success.
-extern int output_set_output_filename(void);
+extern int outputfile_set_filename(void);
 // write smallest-possible part of memory buffer to file
 extern void Output_save_file(FILE *fd);
 // change output pointer and enable output
@@ -69,7 +75,7 @@ extern void Output_start_segment(intval_t address_change, int segment_flags);
 // Show start and end of current segment
 extern void Output_end_segment(void);
 
-// set program counter to defined value (FIXME - allow undefined!)
+// set program counter to defined value (TODO - allow undefined!)
 extern void vcpu_set_pc(intval_t new_pc, int flags);
 // get program counter
 extern void vcpu_read_pc(struct result *target);

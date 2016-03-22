@@ -1,5 +1,5 @@
 // ACME - a crossassembler for producing 6502/65c02/65816 code.
-// Copyright (C) 1998-2014 Marco Baye
+// Copyright (C) 1998-2016 Marco Baye
 // Have a look at "acme.c" for further info
 //
 // Global stuff - things that are needed by several modules
@@ -21,7 +21,6 @@
 
 #define SF_FOUND_BLANK		(1u << 0)	// statement had space or tab
 #define SF_IMPLIED_LABEL	(1u << 1)	// statement had implied label def
-extern const char	s_65816[];
 extern const char	s_and[];
 extern const char	s_asl[];
 extern const char	s_asr[];

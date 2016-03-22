@@ -1,5 +1,5 @@
 // ACME - a crossassembler for producing 6502/65c02/65816 code.
-// Copyright (C) 1998-2014 Marco Baye
+// Copyright (C) 1998-2016 Marco Baye
 // Have a look at "acme.c" for further info
 //
 // pseudo opcode stuff
@@ -34,7 +34,6 @@ enum eos {
 // constants
 static const char	s_08[]	= "08";
 #define s_8	(s_08 + 1)	// Yes, I know I'm sick
-#define s_16	(s_65816 + 3)	// Yes, I know I'm sick
 #define s_sl	(s_asl + 1)	// Yes, I know I'm sick
 #define s_rl	(s_brl + 1)	// Yes, I know I'm sick
 
@@ -107,13 +106,13 @@ static enum eos po_to(void)
 	if (pass_count)
 		return SKIP_REMAINDER;
 
-	if (output_set_output_filename())
+	if (outputfile_set_filename())
 		return SKIP_REMAINDER;
 
 	// select output format
 	// if no comma found, use default file format
 	if (Input_accept_comma() == FALSE) {
-		if (output_prefer_cbm_file_format()) {
+		if (outputfile_prefer_cbm_format()) {
 			// output deprecation warning
 			Throw_warning("Used \"!to\" without file format indicator. Defaulting to \"cbm\".");
 		}
@@ -125,7 +124,7 @@ static enum eos po_to(void)
 	if (Input_read_and_lower_keyword() == 0)
 		return SKIP_REMAINDER;
 
-	if (output_set_output_format()) {
+	if (outputfile_set_format()) {
 		// error occurred
 		Throw_error("Unknown output format.");
 		return SKIP_REMAINDER;
@@ -152,7 +151,17 @@ static enum eos po_byte(void)
 
 
 // Insert 16-bit values ("!16" / "!wo" / "!word" pseudo opcode)
-static enum eos po_word(void)
+static enum eos po_16(void)
+{
+	return iterate((CPU_state.type->flags & CPUFLAG_ISBIGENDIAN) ? output_be16 : output_le16);
+}
+// Insert 16-bit values big-endian ("!be16" pseudo opcode)
+static enum eos po_be16(void)
+{
+	return iterate(output_be16);
+}
+// Insert 16-bit values little-endian ("!le16" pseudo opcode)
+static enum eos po_le16(void)
 {
 	return iterate(output_le16);
 }
@@ -161,12 +170,32 @@ static enum eos po_word(void)
 // Insert 24-bit values ("!24" pseudo opcode)
 static enum eos po_24(void)
 {
+	return iterate((CPU_state.type->flags & CPUFLAG_ISBIGENDIAN) ? output_be24 : output_le24);
+}
+// Insert 24-bit values big-endian ("!be24" pseudo opcode)
+static enum eos po_be24(void)
+{
+	return iterate(output_be24);
+}
+// Insert 24-bit values little-endian ("!le24" pseudo opcode)
+static enum eos po_le24(void)
+{
 	return iterate(output_le24);
 }
 
 
 // Insert 32-bit values ("!32" pseudo opcode)
 static enum eos po_32(void)
+{
+	return iterate((CPU_state.type->flags & CPUFLAG_ISBIGENDIAN) ? output_be32 : output_le32);
+}
+// Insert 32-bit values big-endian ("!be32" pseudo opcode)
+static enum eos po_be32(void)
+{
+	return iterate(output_be32);
+}
+// Insert 32-bit values little-endian ("!le32" pseudo opcode)
+static enum eos po_le32(void)
 {
 	return iterate(output_le32);
 }
@@ -948,11 +977,17 @@ static struct ronode	pseudo_opcode_list[]	= {
 	PREDEFNODE(s_08,		po_byte),
 	PREDEFNODE("by",		po_byte),
 	PREDEFNODE("byte",		po_byte),
-	PREDEFNODE(s_16,		po_word),
-	PREDEFNODE("wo",		po_word),
-	PREDEFNODE("word",		po_word),
+	PREDEFNODE("wo",		po_16),
+	PREDEFNODE("word",		po_16),
+	PREDEFNODE("16",		po_16),
+	PREDEFNODE("be16",		po_be16),
+	PREDEFNODE("le16",		po_le16),
 	PREDEFNODE("24",		po_24),
+	PREDEFNODE("be24",		po_be24),
+	PREDEFNODE("le24",		po_le24),
 	PREDEFNODE("32",		po_32),
+	PREDEFNODE("be32",		po_be32),
+	PREDEFNODE("le32",		po_le32),
 	PREDEFNODE(s_cbm,		obsolete_po_cbm),
 	PREDEFNODE("ct",		po_convtab),
 	PREDEFNODE("convtab",		po_convtab),
@@ -969,8 +1004,6 @@ static struct ronode	pseudo_opcode_list[]	= {
 	PREDEFNODE("align",		po_align),
 	PREDEFNODE("pseudopc",		po_pseudopc),
 	PREDEFNODE("realpc",		obsolete_po_realpc),
-	PREDEFNODE("pc",		notreallypo_setpc),
-	PREDEFNODE("org",		notreallypo_setpc),
 	PREDEFNODE("cpu",		po_cpu),
 	PREDEFNODE("al",		po_al),
 	PREDEFNODE("as",		po_as),

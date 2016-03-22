@@ -4,12 +4,12 @@
 //
 // Version
 
-#define RELEASE_NUMBER	"0.12"		// change before release (FIXME)
-#define CHANGE_DATE	"4 Feb"		// change before release
-#define CHANGE_YEAR	"2015"		// change before release
+#define RELEASE_NUMBER	"0.13"		// change before release (FIXME)
+#define CHANGE_DATE	"16 Feb"		// change before release
+#define CHANGE_YEAR	"2016"		// change before release
 #define HOME_PAGE	"http://sourceforge.net/projects/acme-crossass/"
 //			"http://home.pages.de/~mac_bacon/smorbrod/acme/"
-#define FILE_TAG	";ACME 0.95.4"	// check before release
+#define FILE_TAG	";ACME 0.95.6"	// check before release
 
 #include <stdio.h>
 #include <string.h>
@@ -33,6 +33,7 @@ PLATFORM_VERSION "\n"
 "Thanks to Stefan Hübner for fixing the AssBlaster macro conversion code.\n"
 "Thanks to Andreas Paul for helping with the Giga-Assembler mode.\n"
 "Thanks to Arndt Dettke for helping with the Hypra-Assembler mode.\n"
+"Thanks to Hoogo for helping with the Professional Assembler mode.\n"
 "\n"
 "The newest version can be found at the ACME homepage:\n"
 HOME_PAGE "\n"
@@ -51,6 +52,7 @@ HOME_PAGE "\n"
 "vis         C64: VisAss                   untested\n"
 "ab3         C64: AssBlaster 3.0 to 3.2        good\n"
 "f8ab        C64: Flash8-AssBlaster              ok\n"
+"prof        C64: Professional Assembler       poor (work in progress)\n"
 "\n"
 	, program_name);
 }
@@ -62,6 +64,7 @@ extern void f8ab_main(void);
 extern void giga_main(void);
 extern void hypra_main(void);
 extern void obj_main(void);
+extern void prof_main(void);
 
 
 // check id string. returns whether illegal.
@@ -79,6 +82,8 @@ int version_parse_id(const char id[])
 		client_main = hypra_main;
 	else if (strcmp(id, "object") == 0)
 		client_main = obj_main;
+	else if (strcmp(id, "prof") == 0)
+		client_main = prof_main;
 	return client_main ? 0 : 1;
 }
 

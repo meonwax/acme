@@ -27,28 +27,84 @@ Examples:	!08 127, symbol, -128	; output some values
 
 
 Call:		!16 EXPRESSION [, EXPRESSION]*
-Purpose:	Insert 16-bit values.
+Purpose:	Insert 16-bit values in chosen CPU's byte order.
 Parameters:	EXPRESSION: Any formula the value parser accepts.
-Aliases:	"!wo", "!word"
+Aliases:	"!wo", "!word" (and because all currently supported CPUs are
+		little-endian, "!le16" is in fact another alias)
 Examples:	!16 65535, symbol, -32768	; output some values
 		!wo 14, $4f35, %100101010010110, &36304, *, "c"
 		!word 3000 - 4, a1 AND a2, 2 ^ tz, (3+4)*70, l1 & .j2
 
+Call:		!le16 EXPRESSION [, EXPRESSION]*
+Purpose:	Insert 16-bit values in little-endian byte order.
+Parameters:	EXPRESSION: Any formula the value parser accepts.
+Aliases:	None (but because all currently supported CPUs are
+		little-endian, "!16/!wo/!word" are in fact aliases)
+Examples:	!le16 65535, symbol, -32768	; output some values
+		!le16 14, $4f35, %100101010010110, &36304, *, "c"
+		!le16 3000 - 4, a1 AND a2, 2 ^ tz, (3+4)*70, l1 & .j2
+
+Call:		!be16 EXPRESSION [, EXPRESSION]*
+Purpose:	Insert 16-bit values in big-endian byte order.
+Parameters:	EXPRESSION: Any formula the value parser accepts.
+Aliases:	None
+Examples:	!be16 65535, symbol, -32768	; output some values
+		!be16 14, $4f35, %100101010010110, &36304, *, "c"
+		!be16 3000 - 4, a1 AND a2, 2 ^ tz, (3+4)*70, l1 & .j2
+
 
 Call:		!24 EXPRESSION [, EXPRESSION]*
-Purpose:	Insert 24-bit values.
+Purpose:	Insert 24-bit values in chosen CPU's byte order.
 Parameters:	EXPRESSION: Any formula the value parser accepts.
+Aliases:	None (but because all currently supported CPUs are
+		little-endian, "!le24" is in fact an alias)
 Examples:	!24 16777215, symbol, -8388608, 14, $6a4f35
 		!24 %10010110100101010010110, &47336304, *, "c"
 		!24 300000 - 4, a1 AND a2, 2 ^ tz, (3+4)*70, l1 & .j2
 
+Call:		!le24 EXPRESSION [, EXPRESSION]*
+Purpose:	Insert 24-bit values in little-endian byte order.
+Parameters:	EXPRESSION: Any formula the value parser accepts.
+Aliases:	None (but because all currently supported CPUs are
+		little-endian, "!24" is in fact an alias)
+Examples:	!le24 16777215, symbol, -8388608, 14, $6a4f35
+		!le24 %10010110100101010010110, &47336304, *, "c"
+		!le24 300000 - 4, a1 AND a2, 2 ^ tz, (3+4)*70, l1 & .j2
+
+Call:		!be24 EXPRESSION [, EXPRESSION]*
+Purpose:	Insert 24-bit values in big-endian byte order.
+Parameters:	EXPRESSION: Any formula the value parser accepts.
+Aliases:	None
+Examples:	!be24 16777215, symbol, -8388608, 14, $6a4f35
+		!be24 %10010110100101010010110, &47336304, *, "c"
+		!be24 300000 - 4, a1 AND a2, 2 ^ tz, (3+4)*70, l1 & .j2
+
 
 Call:		!32 EXPRESSION [, EXPRESSION]*
-Purpose:	Insert 32-bit values.
+Purpose:	Insert 32-bit values in chosen CPU's byte order.
 Parameters:	EXPRESSION: Any formula the value parser accepts.
+Aliases:	None (but because all currently supported CPUs are
+		little-endian, "!le32" is in fact an alias)
 Examples:	!32 $7fffffff, symbol, -$80000000, 14, $46a4f35
 		!32 %1001011010010101001011010010, &4733630435, *, "c"
 		!32 300000 - 4, a AND a2, 2 ^ tz, (3+4)*70, l1 & .j2
+
+Call:		!le32 EXPRESSION [, EXPRESSION]*
+Purpose:	Insert 32-bit values in little-endian byte order.
+Parameters:	EXPRESSION: Any formula the value parser accepts.
+Aliases:	None (but because all currently supported CPUs are
+		little-endian, "!32" is in fact an alias)
+Examples:	!le32 $7fffffff, symbol, -$80000000, 14, $46a4f35
+		!le32 %1001011010010101001011010010, &4733630435, *, "c"
+		!le32 300000 - 4, a AND a2, 2 ^ tz, (3+4)*70, l1 & .j2
+
+Call:		!be32 EXPRESSION [, EXPRESSION]*
+Purpose:	Insert 32-bit values in big-endian byte order.
+Parameters:	EXPRESSION: Any formula the value parser accepts.
+Aliases:	None
+Examples:	!be32 $7fffffff, symbol, -$80000000, 14, $46a4f35
+		!be32 %1001011010010101001011010010, &4733630435, *, "c"
+		!be32 300000 - 4, a AND a2, 2 ^ tz, (3+4)*70, l1 & .j2
 
 
 Call:		!fill AMOUNT [, VALUE]

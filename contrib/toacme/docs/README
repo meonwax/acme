@@ -9,7 +9,7 @@ Copyright
 ---------
 
 ToACME - a source code converter for the ACME crossassembler
-Copyright (C) 1998-2015 Marco Baye
+Copyright (C) 1998-2016 Marco Baye
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -71,7 +71,7 @@ giga        C64: Giga-Assembler                 ok
 vis         C64: VisAss                   untested
 ab3         C64: AssBlaster 3.0 to 3.2        good
 f8ab        C64: Flash8-AssBlaster              ok
-
+prof        C64: Professional Assembler       poor (work in progress)
 
 
 Contacting the author
@@ -90,3 +90,4 @@ Credits
 Thanks to Stefan Hübner for fixing the AssBlaster macro conversion code.
 Thanks to Andreas Paul for helping with the Giga-Assembler mode.
 Thanks to Arndt Dettke for helping with the Hypra-Assembler mode.
+Thanks to Hoogo for helping with the Professional Assembler mode.

@@ -1,5 +1,5 @@
 // ACME - a crossassembler for producing 6502/65c02/65816 code.
-// Copyright (C) 1998-2014 Marco Baye
+// Copyright (C) 1998-2016 Marco Baye
 // Have a look at "acme.c" for further info
 //
 // symbol stuff
@@ -235,6 +235,7 @@ void symbols_list(FILE *fd)
 
 void symbols_vicelabels(FILE *fd)
 {
+	// FIXME - if type checking is enabled, maybe only output addresses?
 	// the order of dumped labels is important because VICE will prefer later defined labels
 	// dump unused labels
 	Tree_dump_forest(symbols_forest, ZONE_GLOBAL, dump_vice_unusednonaddress, fd);

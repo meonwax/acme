@@ -1,5 +1,5 @@
 // ACME - a crossassembler for producing 6502/65c02/65816 code.
-// Copyright (C) 1998-2015 Marco Baye
+// Copyright (C) 1998-2016 Marco Baye
 // Have a look at "acme.c" for further info
 //
 // Arithmetic/logic unit
@@ -150,7 +150,7 @@ static struct operator ops_arctan	= {OPHANDLE_ARCTAN,	32};	// function
 // variables
 static struct dynabuf	*errormsg_dyna_buf;	// dynamic buffer for "value not defined" error
 static struct dynabuf	*function_dyna_buf;	// dynamic buffer for fn names
-static struct dynabuf	*undefsym_dyna_buf;	// dynamic buffer for name of undefined symbol
+static struct dynabuf	*undefsym_dyna_buf;	// dynamic buffer for name of undefined symbol	TODO - get rid of this intermediate kluge and report errors immediately
 static struct operator	**operator_stack	= NULL;
 static int		operator_stk_size	= HALF_INITIAL_STACK_SIZE;
 static int		operator_sp;		// operator stack pointer
@@ -199,14 +199,14 @@ static struct ronode	function_list[]	= {
 	//    ^^^^ this marks the last element
 };
 
-#define LEFT_FLAGS	(operand_stack[operand_sp-2].flags)
-#define RIGHT_FLAGS	(operand_stack[operand_sp-1].flags)
-#define LEFT_INTVAL	(operand_stack[operand_sp-2].val.intval)
-#define RIGHT_INTVAL	(operand_stack[operand_sp-1].val.intval)
-#define LEFT_FPVAL	(operand_stack[operand_sp-2].val.fpval)
-#define RIGHT_FPVAL	(operand_stack[operand_sp-1].val.fpval)
-#define LEFT_ADDRREFS	(operand_stack[operand_sp-2].addr_refs)
-#define RIGHT_ADDRREFS	(operand_stack[operand_sp-1].addr_refs)
+#define LEFT_FLAGS	(operand_stack[operand_sp - 2].flags)
+#define RIGHT_FLAGS	(operand_stack[operand_sp - 1].flags)
+#define LEFT_INTVAL	(operand_stack[operand_sp - 2].val.intval)
+#define RIGHT_INTVAL	(operand_stack[operand_sp - 1].val.intval)
+#define LEFT_FPVAL	(operand_stack[operand_sp - 2].val.fpval)
+#define RIGHT_FPVAL	(operand_stack[operand_sp - 1].val.fpval)
+#define LEFT_ADDRREFS	(operand_stack[operand_sp - 2].addr_refs)
+#define RIGHT_ADDRREFS	(operand_stack[operand_sp - 1].addr_refs)
 
 #define PUSH_OPERATOR(x)	operator_stack[operator_sp++] = (x)
 
@@ -381,14 +381,15 @@ static void parse_quoted_character(char closing_quote)
 	// parse character
 	value = (intval_t) encoding_encode_char(GotByte);
 	// Read closing quote (hopefully)
-	if (GetQuotedByte() == closing_quote)
+	if (GetQuotedByte() == closing_quote) {
 		GetByte();	// if length == 1, proceed with next byte
-	else
+	} else {
 		if (GotByte) {
 			// if longer than one character
 			Throw_error("There's more than one character.");
 			Input_skip_remainder();
 		}
+	}
 	PUSH_INTOPERAND(value, MVALUE_GIVEN | MVALUE_ISBYTE, 0);
 	// Now GotByte = char following closing quote (or CHAR_EOS on error)
 }
@@ -496,10 +497,13 @@ static void parse_frac_part(int integer_part)	// Now GotByte = first digit after
 
 
 // Parse a decimal value. As decimal values don't use any prefixes, this
-// function expects the first digit to be read already. If the first two
-// digits are "0x", this function branches to the one for parsing hexadecimal
-// values. If a decimal point is read, this function branches to the one for
-// parsing floating-point values.
+// function expects the first digit to be read already.
+// If the first two digits are "0x", this function branches to the one for
+// parsing hexadecimal values.
+// If the first two digits are "0b", this function branches to the one for
+// parsing binary values.
+// If a decimal point is read, this function branches to the one for parsing
+// floating-point values.
 // This function accepts '0' through '9' and one dot ('.') as the decimal
 // point. The current value is stored as soon as a character is read that is
 // none of those given above. Float usage is only activated when a decimal
@@ -716,6 +720,7 @@ static void expect_operand_or_monadic_operator(void)
 
 		if (BYTEFLAGS(GotByte) & STARTS_KEYWORD) {
 			register int	length;
+
 			// Read global label (or "NOT")
 			length = Input_read_keyword();
 			// Now GotByte = illegal char
@@ -741,13 +746,12 @@ static void expect_operand_or_monadic_operator(void)
 					get_symbol_value(ZONE_GLOBAL, 0, GlobalDynaBuf->size - 1);	// -1 to not count terminator
 					goto now_expect_dyadic;
 				}
-
 			}
 		} else {
 			// illegal character read - so don't go on
 			PUSH_INTOPERAND(0, 0, 0);	// push dummy operand so stack is ok
 			// push pseudo value, EXISTS flag is clear
-			if (operator_stack[operator_sp-1] == &ops_return) {
+			if (operator_stack[operator_sp - 1] == &ops_return) {
 				PUSH_OPERATOR(&ops_end);
 				alu_state = STATE_TRY_TO_REDUCE_STACKS;
 			} else {
@@ -1367,8 +1371,7 @@ static void try_to_reduce_stacks(int *open_parentheses)
 handle_flags_and_dec_stacks:
 	// Handle flags and decrement value stack pointer
 	// "OR" EXISTS, UNSURE and FORCEBIT flags
-	LEFT_FLAGS |= RIGHT_FLAGS &
-		(MVALUE_EXISTS|MVALUE_UNSURE|MVALUE_FORCEBITS);
+	LEFT_FLAGS |= RIGHT_FLAGS & (MVALUE_EXISTS | MVALUE_UNSURE | MVALUE_FORCEBITS);
 	// "AND" DEFINED flag
 	LEFT_FLAGS &= (RIGHT_FLAGS | ~MVALUE_DEFINED);
 	LEFT_FLAGS &= ~MVALUE_ISBYTE;	// clear ISBYTE flag
@@ -1380,7 +1383,7 @@ remove_next_to_last_operator:
 // entry point for '(' operator (has set indirect_flag, so don't clear now)
 RNTLObutDontTouchIndirectFlag:
 	// Remove operator and shift down next one
-	operator_stack[operator_sp-2] = operator_stack[operator_sp-1];
+	operator_stack[operator_sp - 2] = operator_stack[operator_sp - 1];
 	--operator_sp;	// decrement operator stack pointer
 }
 
@@ -1487,6 +1490,7 @@ int ALU_optional_defined_int(intval_t *target)	// ACCEPT_EMPTY
 		Throw_serious_error(value_not_defined());
 	if ((result.flags & MVALUE_EXISTS) == 0)
 		return 0;
+
 	// something was given, so store
 	if (result.flags & MVALUE_IS_FP)
 		*target = result.val.fpval;

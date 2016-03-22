@@ -37,12 +37,14 @@ pet2iso.o: config.h pet2iso.h pet2iso.c
 
 platform.o: config.h platform.h platform.c
 
+prof.o: config.h prof.c
+
 scr2iso.o: config.h scr2iso.h scr2iso.c
 
 version.o: config.h version.c
 
-toacme: vis.o ab.o ab3.o acme.o f8ab.o giga.o gighyp.o hypra.o io.o main.o mnemo.o obj.o pet2iso.o platform.o scr2iso.o version.o
-	$(CC) $(LIBS) $(CFLAGS) -o toacme vis.o ab.o ab3.o acme.o f8ab.o giga.o gighyp.o hypra.o io.o main.o mnemo.o obj.o pet2iso.o platform.o scr2iso.o version.o
+toacme: vis.o ab.o ab3.o acme.o f8ab.o giga.o gighyp.o hypra.o io.o main.o mnemo.o obj.o pet2iso.o platform.o prof.o scr2iso.o version.o
+	$(CC) $(LIBS) $(CFLAGS) -o toacme vis.o ab.o ab3.o acme.o f8ab.o giga.o gighyp.o hypra.o io.o main.o mnemo.o obj.o pet2iso.o platform.o prof.o scr2iso.o version.o
 	strip toacme
 
 clean:

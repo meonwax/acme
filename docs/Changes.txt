@@ -13,6 +13,18 @@ outlining the platform specific changes.
 
 
 ----------------------------------------------------------------------
+Section:   New in release 0.95.7
+----------------------------------------------------------------------
+
+New pseudo opcodes:
+    "!be16", "!be24" and "!be32" for big-endian byte order output.
+    "!le16", "!le24" and "!le32" for little-endian byte order output.
+    The old pseudo opcodes ("!16", "!24", "!32") will now use the correct
+    byte order for the chosen CPU (which is always little-endian, because
+    there is no support for any big-endian CPU yet. ;))
+
+
+----------------------------------------------------------------------
 Section:   New in release 0.95.6
 ----------------------------------------------------------------------
 

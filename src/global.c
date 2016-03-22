@@ -1,5 +1,5 @@
 // ACME - a crossassembler for producing 6502/65c02/65816 code.
-// Copyright (C) 1998-2014 Marco Baye
+// Copyright (C) 1998-2016 Marco Baye
 // Have a look at "acme.c" for further info
 //
 // Global stuff - things that are needed by several modules
@@ -26,7 +26,6 @@
 
 // constants
 
-const char	s_65816[]	= "65816";
 const char	s_and[]		= "and";
 const char	s_asl[]		= "asl";
 const char	s_asr[]		= "asr";

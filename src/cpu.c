@@ -1,5 +1,5 @@
 // ACME - a crossassembler for producing 6502/65c02/65816 code.
-// Copyright (C) 1998-2014 Marco Baye
+// Copyright (C) 1998-2016 Marco Baye
 // Have a look at "acme.c" for further info
 //
 // CPU type stuff
@@ -59,6 +59,7 @@ static struct cpu_type	cpu_type_65816	= {
 // predefined stuff
 static struct ronode	*cputype_tree	= NULL;
 static struct ronode	cputype_list[]	= {
+#define KNOWN_TYPES	"'6502', '6510', 'c64dtv2', '65c02', '65816'"	// shown in CLI error message for unknown types
 //	PREDEFNODE("z80",		&cpu_type_Z80),
 	PREDEFNODE("6502",		&cpu_type_6502),
 	PREDEFNODE("6510",		&cpu_type_6510),
@@ -66,10 +67,10 @@ static struct ronode	cputype_list[]	= {
 	PREDEFNODE("65c02",		&cpu_type_65c02),
 //	PREDEFNODE("Rockwell65c02",	&cpu_type_Rockwell65c02),
 //	PREDEFNODE("WDC65c02",		&cpu_type_WDC65c02),
-	PREDEFLAST(s_65816,		&cpu_type_65816),
+	PREDEFLAST("65816",		&cpu_type_65816),
 	//    ^^^^ this marks the last element
 };
-
+const char	cputype_names[]	= KNOWN_TYPES;	// string to show if cputype_find() returns NULL
 
 // lookup cpu type held in DynaBuf and return its struct pointer (or NULL on failure)
 const struct cpu_type *cputype_find(void)

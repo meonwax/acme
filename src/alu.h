@@ -1,5 +1,5 @@
 // ACME - a crossassembler for producing 6502/65c02/65816 code.
-// Copyright (C) 1998-2014 Marco Baye
+// Copyright (C) 1998-2016 Marco Baye
 // Have a look at "acme.c" for further info
 //
 // ALU stuff (the expression parser)
@@ -12,10 +12,10 @@
 
 // constants
 
-// meaning of bits in "flags" of struct result:
+// meaning of bits in "flags" of struct result:	TODO - this is only for future "number" result type!
 #define MVALUE_IS_FP	(1u << 8)	// floating point value
 #define MVALUE_INDIRECT	(1u << 7)	// needless parentheses indicate use of indirect addressing modes
-#define MVALUE_EXISTS	(1u << 6)	// 0: expression was empty. 1: there was *something* to parse.
+#define MVALUE_EXISTS	(1u << 6)	// 0: expression was empty. 1: there was *something* to parse.	TODO - get rid of this, make "nothing" its own result type instead!
 #define MVALUE_UNSURE	(1u << 5)	// value once was related to undefined
 // expression. Needed for producing the same addresses in all passes; because in
 // the first pass there will almost for sure be labels that are undefined, you
@@ -38,7 +38,16 @@ extern void (*ALU_optional_notdef_handler)(const char *);
 
 
 // FIXME - replace all the functions below with a single one using a "flags" arg!
-
+/* its return value would then be:
+enum expression_result {
+	EXRE_ERROR,	// error (has been reported, so skip remainder of statement)
+	EXRE_NOTHING,	// next char after space was comma or end-of-statement
+	EXRE_NUMBER,	// int or float (what is returned by the current functions)
+	EXRE_STRING,	// TODO
+	EXRE_RESERVED,	// reserved cpu constant (register names), TODO
+	EXRE_LIST	// TODO
+};
+// input flags:
 #define ACCEPT_EMPTY		(1u << 0)	// if not given, throws error
 #define ACCEPT_UNDEFINED	(1u << 1)	// if not given, undefined throws serious error
 //#define ACCEPT_INT		(1u << )	needed when strings come along!
@@ -46,6 +55,7 @@ extern void (*ALU_optional_notdef_handler)(const char *);
 #define ACCEPT_OPENPARENTHESIS	(1u << 3)	// if not given, throws syntax error
 //#define ACCEPT_STRING
 // do I need ACCEPT_INT and/or ACCEPT_ADDRESS?
+*/
 
 // stores int value if given. Returns whether stored. Throws error if undefined.
 extern int ALU_optional_defined_int(intval_t *target);
