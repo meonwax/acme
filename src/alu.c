@@ -339,17 +339,17 @@ static void check_for_def(int flags, int prefix, char *name, size_t length)
 }
 
 // Lookup (and create, if necessary) symbol tree item and return its value.
-// DynaBuf holds the symbol's name and "zone" its zone.
+// DynaBuf holds the symbol's name and "scope" its scope.
 // The name length must be given explicitly because of anonymous forward labels;
 // their internal name is different (longer) than their displayed name.
 // This function is not allowed to change DynaBuf because that's where the
 // symbol name is stored!
-static void get_symbol_value(zone_t zone, int prefix, size_t name_length)
+static void get_symbol_value(scope_t scope, int prefix, size_t name_length)
 {
 	struct symbol	*symbol;
 
 	// if the symbol gets created now, mark it as unsure
-	symbol = symbol_find(zone, MVALUE_UNSURE);
+	symbol = symbol_find(scope, MVALUE_UNSURE);
 	// if needed, remember name for "undefined" error output
 	check_for_def(symbol->result.flags, prefix, GLOBALDYNABUF_CURRENT, name_length);
 	// in first pass, count usage
@@ -617,7 +617,7 @@ static void expect_operand_or_monadic_operator(void)
 		while (GetByte() == '+');
 		ugly_length_kluge = GlobalDynaBuf->size;	// FIXME - get rid of this!
 		symbol_fix_forward_anon_name(FALSE);	// FALSE: do not increment counter
-		get_symbol_value(Section_now->zone, 0, ugly_length_kluge);
+		get_symbol_value(section_now->scope, 0, ugly_length_kluge);
 		goto now_expect_dyadic;
 
 	case '-':	// NEGATION operator or anonymous backward label
@@ -631,7 +631,7 @@ static void expect_operand_or_monadic_operator(void)
 		SKIPSPACE();
 		if (BYTEFLAGS(GotByte) & FOLLOWS_ANON) {
 			DynaBuf_append(GlobalDynaBuf, '\0');
-			get_symbol_value(Section_now->zone, 0, GlobalDynaBuf->size - 1);	// -1 to not count terminator
+			get_symbol_value(section_now->scope, 0, GlobalDynaBuf->size - 1);	// -1 to not count terminator
 			goto now_expect_dyadic;
 		}
 
@@ -704,7 +704,7 @@ static void expect_operand_or_monadic_operator(void)
 
 		if (Input_read_keyword()) {
 			// Now GotByte = illegal char
-			get_symbol_value(Section_now->zone, 1, GlobalDynaBuf->size - 1);	// -1 to not count terminator
+			get_symbol_value(section_now->scope, 1, GlobalDynaBuf->size - 1);	// -1 to not count terminator
 			goto now_expect_dyadic;
 		}
 
@@ -743,7 +743,7 @@ static void expect_operand_or_monadic_operator(void)
 // however, apart from that check above, function calls have nothing to do with
 // parentheses: "sin(x+y)" gets parsed just like "not(x+y)".
 				} else {
-					get_symbol_value(ZONE_GLOBAL, 0, GlobalDynaBuf->size - 1);	// -1 to not count terminator
+					get_symbol_value(SCOPE_GLOBAL, 0, GlobalDynaBuf->size - 1);	// -1 to not count terminator
 					goto now_expect_dyadic;
 				}
 			}

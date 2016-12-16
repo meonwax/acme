@@ -100,14 +100,14 @@ static void dump_vice_unusednonaddress(struct rwnode *node, FILE *fd)
 
 // search for symbol. create if nonexistant. if created, give it flags "flags".
 // the symbol name must be held in GlobalDynaBuf.
-struct symbol *symbol_find(zone_t zone, int flags)
+struct symbol *symbol_find(scope_t scope, int flags)
 {
 	struct rwnode	*node;
 	struct symbol	*symbol;
 	int		node_created,
 			force_bits	= flags & MVALUE_FORCEBITS;
 
-	node_created = Tree_hard_scan(&node, symbols_forest, zone, TRUE);
+	node_created = Tree_hard_scan(&node, symbols_forest, scope, TRUE);
 	// if node has just been created, create symbol as well
 	if (node_created) {
 		// create new symbol structure
@@ -168,13 +168,13 @@ void symbol_set_value(struct symbol *symbol, struct result *new_value, int chang
 
 // parse label definition (can be either global or local).
 // name must be held in GlobalDynaBuf.
-void symbol_set_label(zone_t zone, int stat_flags, int force_bit, int change_allowed)
+void symbol_set_label(scope_t scope, int stat_flags, int force_bit, int change_allowed)
 {
 	struct result	pc,
 			result;
 	struct symbol	*symbol;
 
-	symbol = symbol_find(zone, force_bit);
+	symbol = symbol_find(scope, force_bit);
 	// label definition
 	if ((stat_flags & SF_FOUND_BLANK) && warn_on_indented_labels)
 		Throw_first_pass_warning("Label name not in leftmost column.");
@@ -188,7 +188,7 @@ void symbol_set_label(zone_t zone, int stat_flags, int force_bit, int change_all
 
 // parse symbol definition (can be either global or local, may turn out to be a label).
 // name must be held in GlobalDynaBuf.
-void symbol_parse_definition(zone_t zone, int stat_flags)
+void symbol_parse_definition(scope_t scope, int stat_flags)
 {
 	struct result	result;
 	struct symbol	*symbol;
@@ -197,7 +197,7 @@ void symbol_parse_definition(zone_t zone, int stat_flags)
 
 	if (GotByte == '=') {
 		// explicit symbol definition (symbol = <something>)
-		symbol = symbol_find(zone, force_bit);
+		symbol = symbol_find(scope, force_bit);
 		// symbol = parsed value
 		GetByte();	// skip '='
 		ALU_any_result(&result);
@@ -207,7 +207,7 @@ void symbol_parse_definition(zone_t zone, int stat_flags)
 		symbol_set_value(symbol, &result, FALSE);
 		Input_ensure_EOS();
 	} else {
-		symbol_set_label(zone, stat_flags, force_bit, FALSE);
+		symbol_set_label(scope, stat_flags, force_bit, FALSE);
 	}
 }
 
@@ -221,7 +221,7 @@ void symbol_define(intval_t value)
 
 	result.flags = MVALUE_GIVEN;
 	result.val.intval = value;
-	symbol = symbol_find(ZONE_GLOBAL, 0);
+	symbol = symbol_find(SCOPE_GLOBAL, 0);
 	symbol_set_value(symbol, &result, TRUE);
 }
 
@@ -229,7 +229,7 @@ void symbol_define(intval_t value)
 // dump global symbols to file
 void symbols_list(FILE *fd)
 {
-	Tree_dump_forest(symbols_forest, ZONE_GLOBAL, dump_one_symbol, fd);
+	Tree_dump_forest(symbols_forest, SCOPE_GLOBAL, dump_one_symbol, fd);
 }
 
 
@@ -238,13 +238,13 @@ void symbols_vicelabels(FILE *fd)
 	// FIXME - if type checking is enabled, maybe only output addresses?
 	// the order of dumped labels is important because VICE will prefer later defined labels
 	// dump unused labels
-	Tree_dump_forest(symbols_forest, ZONE_GLOBAL, dump_vice_unusednonaddress, fd);
+	Tree_dump_forest(symbols_forest, SCOPE_GLOBAL, dump_vice_unusednonaddress, fd);
 	fputc('\n', fd);
 	// dump other used labels
-	Tree_dump_forest(symbols_forest, ZONE_GLOBAL, dump_vice_usednonaddress, fd);
+	Tree_dump_forest(symbols_forest, SCOPE_GLOBAL, dump_vice_usednonaddress, fd);
 	fputc('\n', fd);
 	// dump address symbols
-	Tree_dump_forest(symbols_forest, ZONE_GLOBAL, dump_vice_address, fd);
+	Tree_dump_forest(symbols_forest, SCOPE_GLOBAL, dump_vice_address, fd);
 }
 
 
@@ -259,7 +259,7 @@ void symbol_fix_forward_anon_name(int increment)
 
 	// terminate name, find "counter" symbol and read value
 	DynaBuf_append(GlobalDynaBuf, '\0');
-	counter_symbol = symbol_find(Section_now->zone, 0);
+	counter_symbol = symbol_find(section_now->scope, 0);
 	// make sure it gets reset to zero in each new pass
 	if (counter_symbol->pass != pass_count) {
 		counter_symbol->pass = pass_count;

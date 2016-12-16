@@ -1,5 +1,5 @@
 // ACME - a crossassembler for producing 6502/65c02/65816 code.
-// Copyright (C) 1998-2014 Marco Baye
+// Copyright (C) 1998-2016 Marco Baye
 // Have a look at "acme.c" for further info
 //
 // Input stuff
@@ -11,6 +11,7 @@
 #include "global.h"	// FIXME - remove when no longer needed
 #include "platform.h"
 #include "section.h"
+#include "symbol.h"
 #include "tree.h"
 
 
@@ -421,17 +422,20 @@ int Input_append_keyword_to_global_dynabuf(void)
 }
 
 // Check whether GotByte is LOCAL_PREFIX (default '.').
-// If not, store global zone value.
-// If yes, store current zone value and read next byte.
+// If not, store global scope value.
+// If yes, store current local scope value and read next byte.
 // Then jump to Input_read_keyword(), which returns length of keyword.
-int Input_read_zone_and_keyword(zone_t *zone)
+int Input_read_scope_and_keyword(scope_t *scope)
 {
 	SKIPSPACE();
 	if (GotByte == LOCAL_PREFIX) {
 		GetByte();
-		*zone = Section_now->zone;
+		*scope = section_now->scope;
+/* TODO	} else if (GotByte == CHEAP_PREFIX) {
+		GetByte();
+		*scope = symbol_cheap_scope;	*/
 	} else {
-		*zone = ZONE_GLOBAL;
+		*scope = SCOPE_GLOBAL;
 	}
 	return Input_read_keyword();
 }

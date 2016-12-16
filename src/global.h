@@ -112,6 +112,8 @@ extern void Parse_until_eob_or_eof(void);
 // Otherwise (if there is no block), return FALSE.
 // Don't forget to call EnsureEOL() afterwards.
 extern int Parse_optional_block(void);
+// error/warning counter so macro calls can find out whether to show a call stack
+extern int Throw_get_counter(void);
 // Output a warning.
 // This means the produced code looks as expected. But there has been a
 // situation that should be reported to the user, for example ACME may have

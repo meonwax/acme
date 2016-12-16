@@ -25,26 +25,29 @@ token_DIR	= $ee	; was called DIRECTORY in basic v7
 ;!macro b_DMA	{!by $fe, $23}
 
 ; new instructions:
-!macro b_TYPE		{!by $fe, $27}
+!macro b_TYPE		{!by $fe, $27}	; display sequential disk file
 !macro b_BVERIFY	{!by $fe, $28}
 !macro b_ECTORY		{!by $fe, $29}	; no-op in case someone types "DIRECTORY"?
-!macro b_ERASE		{!by $fe, $2a}
-!macro b_FIND		{!by $fe, $2b}
-!macro b_CHANGE		{!by $fe, $2c}
-!macro b_SET		{!by $fe, $2d}
+!macro b_ERASE		{!by $fe, $2a}	; delete file
+!macro b_FIND		{!by $fe, $2b}	; search in basic program
+!macro b_CHANGE		{!by $fe, $2c}	; edit program
+!macro b_SET		{!by $fe, $2d}	; set system parameter
 !macro b_SCREEN		{!by $fe, $2e}
 !macro b_POLYGON	{!by $fe, $2f}
 !macro b_ELLIPSE	{!by $fe, $30}
-!macro b_VIEWPORT	{!by $fe, $31}
-!macro b_GCOPY		{!by $fe, $32}
-!macro b_PEN		{!by $fe, $33}
-!macro b_PALETTE	{!by $fe, $34}
-!macro b_DMODE		{!by $fe, $35}
-!macro b_DPAT		{!by $fe, $36}
+!macro b_VIEWPORT	{!by $fe, $31}	; unimplemented?
+!macro b_GCOPY		{!by $fe, $32}	; copy graphics
+!macro b_PEN		{!by $fe, $33}	; set pen color
+!macro b_PALETTE	{!by $fe, $34}	; set palette color
+!macro b_DMODE		{!by $fe, $35}	; set draw mode
+!macro b_DPAT		{!by $fe, $36}	; set draw pattern
 !macro b_PIC		{!by $fe, $37}
 !macro b_GENLOCK	{!by $fe, $38}
-!macro b_FOREGROUND	{!by $fe, $39}
+!macro b_FOREGROUND	{!by $fe, $39}	; set foreground color
 ; extended token $fe $3a isn't used ($3a is ':')
-!macro b_BACKGROUND	{!by $fe, $3b}
-!macro b_BORDER		{!by $fe, $3c}
-!macro b_HIGHLIGHT	{!by $fe, $3d}
+!macro b_BACKGROUND	{!by $fe, $3b}	; set background color
+!macro b_BORDER		{!by $fe, $3c}	; set border color
+!macro b_HIGHLIGHT	{!by $fe, $3d}	; set highlight color
+!macro b_MOUSE		{!by $fe, $3e}	; set mouse parameters
+!macro b_RMOUSE		{!by $fe, $3f}	; read mouse position
+!macro b_DISK		{!by $fe, $40}	; send disc command

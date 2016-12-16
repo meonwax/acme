@@ -1,7 +1,7 @@
 ;ACME 0.95
 
 !ifdef lib_cbm_c128_mmu_a !eof
-lib_cbm_c128_mmu_a = 1
+lib_cbm_c128_mmu_a = 2
 
 ; Memory Management Unit (MMU) 8722
 
@@ -108,11 +108,13 @@ mmu_RCR_SHARESIZE_8K	= %......#.
 mmu_RCR_SHARESIZE_16K	= %......##
 
 !address {
-	; page pointers. writes to "high" register will be latched (reading gives old value) until "low" register is written to
-	mmu_p0low	= $d507	; page 0 pointer low (a8..a15), default $00
-	mmu_p0high	= $d508	; page 0 pointer high (a16..a19), default $00 (on an unmodified c128, only bit0 is meaningful)
-	mmu_p1low	= $d509	; page 1 pointer low (a8..a15), default $01
-	mmu_p1high	= $d50a	; page 1 pointer high (a16..a19), default $00 (on an unmodified c128, only bit0 is meaningful)
+	; page pointers for zero page and stack:
+	; write to "bank" register will be latched (reading gives old value)
+	; until "page" register is written to as well.
+	mmu_zp_page	= $d507	; address bits a8..a15, default $00
+	mmu_zp_bank	= $d508	; address bits a16..a19, default $0 (on an unmodified c128, only bit0 is meaningful)
+	mmu_stack_page	= $d509	; address bits a8..a15, default $01
+	mmu_stack_bank	= $d50a	; address bits a16..a19, default $0 (on an unmodified c128, only bit0 is meaningful)
 }
 mmu_PxH_UNUSED		= %####....	; always set
 

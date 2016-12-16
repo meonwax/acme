@@ -1,5 +1,5 @@
 // ACME - a crossassembler for producing 6502/65c02/65816 code.
-// Copyright (C) 1998-2014 Marco Baye
+// Copyright (C) 1998-2016 Marco Baye
 // Have a look at "acme.c" for further info
 //
 // tree stuff
@@ -28,14 +28,14 @@ struct ronode {
 	void		*body;		// bytes, handles or handler function
 };
 
-// tree node structure type definition for "read/write" items, i.e. macros/labels
+// tree node structure type definition for "read/write" items, i.e. macros/symbols
 struct rwnode {
 	struct rwnode	*greater_than;	// pointer to sub-tree
 	struct rwnode	*less_than_or_equal;	// pointer to sub-tree
 	hash_t		hash_value;
 	char		*id_string;	// name, zero-terminated
-	void		*body;		// macro/label body
-	unsigned int	id_number;	// zone number
+	void		*body;		// macro/symbol body
+	unsigned int	id_number;	// scope number
 };
 
 

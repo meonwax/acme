@@ -13,15 +13,23 @@ outlining the platform specific changes.
 
 
 ----------------------------------------------------------------------
+Section:   New in release 0.95.8
+----------------------------------------------------------------------
+
+Warnings and errors inside macros now cause the call stack to be
+    displayed as well (does not yet work for serious errors, though).
+
+
+----------------------------------------------------------------------
 Section:   New in release 0.95.7
 ----------------------------------------------------------------------
 
 New pseudo opcodes:
     "!be16", "!be24" and "!be32" for big-endian byte order output.
     "!le16", "!le24" and "!le32" for little-endian byte order output.
-    The old pseudo opcodes ("!16", "!24", "!32") will now use the correct
-    byte order for the chosen CPU (which is always little-endian, because
-    there is no support for any big-endian CPU yet. ;))
+    The old pseudo opcodes ("!16", "!24", "!32") will now use the
+    correct byte order for the chosen CPU (which is always little-
+    endian, because there is no support for any big-endian CPU yet.;))
 
 
 ----------------------------------------------------------------------
@@ -214,8 +222,8 @@ Added "apple" output format.
 Section:   New in release 0.94.3
 ----------------------------------------------------------------------
 
-"Target out of range" error now includes info on how much the range was
-exceeded. Thanks to Bitbreaker/VOZ for the suggestion.
+"Target out of range" error now includes info on how much the range
+    was exceeded. Thanks to Bitbreaker/VOZ for the suggestion.
 
 
 ----------------------------------------------------------------------
@@ -223,12 +231,12 @@ Section:   New in release 0.94.2
 ----------------------------------------------------------------------
 
 Added missing newline after "no output file specified" message.
-Fixed bug in "!to" and "!sl" (colon in filename is interpreted as command
-    separator in later passes).
+Fixed bug in "!to" and "!sl" (colon in filename is interpreted as
+    command separator in later passes).
 Changed verbose output hex prefix from $ to 0x.
 Changed --help output
-Changed EOR to XOR in docs and comments (the ACME operator, not the 6502
-    opcode)
+Changed EOR to XOR in docs and comments (the ACME operator, not the
+    6502 opcode)
 
 
 ----------------------------------------------------------------------

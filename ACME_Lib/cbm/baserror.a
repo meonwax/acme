@@ -36,13 +36,14 @@ baserror_UNDEFINED_FUNCTION	= 27
 baserror_VERIFY			= 28
 baserror_LOAD			= 29
 baserror_BREAK			= 30
-; from here on, basic 7 only:
+; basic 3.5 and higher:
 baserror_CANT_RESUME		= 31
 baserror_LOOP_NOT_FOUND		= 32
 baserror_LOOP_WITHOUT_DO	= 33
 baserror_DIRECT_MODE_ONLY	= 34
 baserror_NO_GRAPHICS_AREA	= 35
 baserror_BAD_DISK		= 36
+; basic 7 and higher:
 baserror_BEND_NOT_FOUND		= 37
 baserror_LINE_NUMBER_TOO_LARGE	= 38	; for RENUMBER
 baserror_UNRESOLVED_REFERENCE	= 39	; for RENUMBER

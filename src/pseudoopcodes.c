@@ -544,14 +544,14 @@ static enum eos po_set(void)	// now GotByte = illegal char
 	struct result	result;
 	int		force_bit;
 	struct symbol	*symbol;
-	zone_t		zone;
+	scope_t		scope;
 
-	if (Input_read_zone_and_keyword(&zone) == 0)	// skips spaces before
+	if (Input_read_scope_and_keyword(&scope) == 0)	// skips spaces before
 		// now GotByte = illegal char
 		return SKIP_REMAINDER;
 
 	force_bit = Input_get_force_bit();	// skips spaces after
-	symbol = symbol_find(zone, force_bit);
+	symbol = symbol_find(scope, force_bit);
 	if (GotByte != '=') {
 		Throw_error(exception_syntax);
 		return SKIP_REMAINDER;
@@ -616,7 +616,7 @@ static enum eos po_zone(void)
 	int		allocated;
 
 	// remember everything about current structure
-	entry_values = *Section_now;
+	entry_values = *section_now;
 	// set default values in case there is no valid title
 	new_title = s_untitled;
 	allocated = FALSE;
@@ -631,15 +631,15 @@ static enum eos po_zone(void)
 	}
 	// setup new section
 	// section type is "subzone", just in case a block follows
-	Section_new_zone(Section_now, "Subzone", new_title, allocated);
+	section_new(section_now, "Subzone", new_title, allocated);
 	if (Parse_optional_block()) {
 		// Block has been parsed, so it was a SUBzone.
-		Section_finalize(Section_now);	// end inner zone
-		*Section_now = entry_values;	// restore entry values
+		section_finalize(section_now);	// end inner zone
+		*section_now = entry_values;	// restore entry values
 	} else {
 		// no block found, so it's a normal zone change
-		Section_finalize(&entry_values);	// end outer zone
-		Section_now->type = s_Zone;	// change type to "Zone"
+		section_finalize(&entry_values);	// end outer zone
+		section_now->type = s_Zone;	// change type to "Zone"
 	}
 	return ENSURE_EOS;
 }
@@ -713,13 +713,13 @@ static enum eos ifdef_ifndef(int is_ifndef)	// now GotByte = illegal char
 {
 	struct rwnode	*node;
 	struct symbol	*symbol;
-	zone_t		zone;
+	scope_t		scope;
 	int		defined	= FALSE;
 
-	if (Input_read_zone_and_keyword(&zone) == 0)	// skips spaces before
+	if (Input_read_scope_and_keyword(&scope) == 0)	// skips spaces before
 		return SKIP_REMAINDER;
 
-	Tree_hard_scan(&node, symbols_forest, zone, FALSE);
+	Tree_hard_scan(&node, symbols_forest, scope, FALSE);
 	if (node) {
 		symbol = (struct symbol *) node->body;
 		// in first pass, count usage
@@ -759,17 +759,17 @@ static enum eos po_ifndef(void)	// now GotByte = illegal char
 // new syntax: !for VAR, START, END { BLOCK }	VAR counts from START to END
 static enum eos po_for(void)	// now GotByte = illegal char
 {
-	zone_t		zone;
+	scope_t		scope;
 	int		force_bit;
 	struct result	intresult;
 	struct for_loop	loop;
 
-	if (Input_read_zone_and_keyword(&zone) == 0)	// skips spaces before
+	if (Input_read_scope_and_keyword(&scope) == 0)	// skips spaces before
 		return SKIP_REMAINDER;
 
 	// now GotByte = illegal char
 	force_bit = Input_get_force_bit();	// skips spaces after
-	loop.symbol = symbol_find(zone, force_bit);
+	loop.symbol = symbol_find(scope, force_bit);
 	if (!Input_accept_comma()) {
 		Throw_error(exception_syntax);
 		return SKIP_REMAINDER;

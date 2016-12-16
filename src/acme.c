@@ -14,14 +14,6 @@
 // You should have received a copy of the GNU General Public License
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
-
-#define RELEASE		"0.95.7"	// update before release (FIXME)
-#define CODENAME	"Fenchurch"	// update before release
-#define CHANGE_DATE	"22 Feb"	// update before release
-#define CHANGE_YEAR	"2016"		// update before release
-//#define HOME_PAGE	"http://home.pages.de/~mac_bacon/smorbrod/acme/"	// FIXME
-#define HOME_PAGE	"http://sourceforge.net/p/acme-crossass/"	// FIXME
-
 #include "acme.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -42,6 +34,7 @@
 #include "pseudoopcodes.h"
 #include "section.h"
 #include "symbol.h"
+#include "version.h"
 
 
 // constants
@@ -247,7 +240,7 @@ static int perform_pass(void)
 	if (start_address != ILLEGAL_START_ADDRESS)
 		vcpu_set_pc(start_address, 0);
 	encoding_passinit();	// set default encoding
-	Section_passinit();	// set initial zone (untitled)
+	section_passinit();	// set initial zone (untitled)
 	// init variables
 	pass_undefined_count = 0;	// no "NeedValue" errors yet
 	pass_real_errors = 0;	// no real errors yet

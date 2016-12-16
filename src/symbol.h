@@ -1,5 +1,5 @@
 // ACME - a crossassembler for producing 6502/65c02/65816 code.
-// Copyright (C) 1998-2014 Marco Baye
+// Copyright (C) 1998-2016 Marco Baye
 // Have a look at "acme.c" for further info
 //
 // symbol stuff
@@ -20,6 +20,11 @@ struct symbol {
 };
 
 
+// Constants
+// TODO: add cheap locals (so there's SCOPE_GLOBAL, scope_zone and scope_cheap)
+#define SCOPE_GLOBAL	0	// number of "global zone"
+
+
 // variables
 extern struct rwnode	*symbols_forest[];	// trees (because of 8-bit hash)
 
@@ -28,13 +33,13 @@ extern struct rwnode	*symbols_forest[];	// trees (because of 8-bit hash)
 extern void symbol_set_value(struct symbol *symbol, struct result *new_value, int change_allowed);
 // parse label definition (can be either global or local).
 // name must be held in GlobalDynaBuf.
-extern void symbol_set_label(zone_t zone, int stat_flags, int force_bit, int change_allowed);
+extern void symbol_set_label(scope_t scope, int stat_flags, int force_bit, int change_allowed);
 // parse symbol definition (can be either global or local, may turn out to be a label).
 // name must be held in GlobalDynaBuf.
-extern void symbol_parse_definition(zone_t zone, int stat_flags);
+extern void symbol_parse_definition(scope_t scope, int stat_flags);
 // search for symbol. create if nonexistant. if created, assign flags.
 // name must be held in GlobalDynaBuf.
-extern struct symbol *symbol_find(zone_t, int flags);
+extern struct symbol *symbol_find(scope_t, int flags);
 // set global symbol to value, no questions asked (for "-D" switch)
 // name must be held in GlobalDynaBuf.
 extern void symbol_define(intval_t value);

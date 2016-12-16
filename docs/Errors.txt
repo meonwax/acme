@@ -149,6 +149,11 @@ Wrong type for loop's END value - must match type of START value.
     In "!for" loops, START and END must have the same type, which then
     gets used for the loop counter.
 
+...called from here.
+    If warnings and/or errors are output during a macro call, messages
+    with this text are added to display the call stack (because you
+    might need to fix the call instead of the macro itself).
+
 
 ----------------------------------------------------------------------
 Section:   Errors during assembly

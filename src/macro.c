@@ -1,5 +1,5 @@
 // ACME - a crossassembler for producing 6502/65c02/65816 code.
-// Copyright (C) 1998-2014 Marco Baye
+// Copyright (C) 1998-2016 Marco Baye
 // Have a look at "acme.c" for further info
 //
 // Macro stuff
@@ -75,27 +75,27 @@ void Macro_init(void)
 	enlarge_arg_table();
 }
 
-// Read macro zone and title. Title is read to GlobalDynaBuf and then copied
+// Read macro scope and title. Title is read to GlobalDynaBuf and then copied
 // over to internal_name DynaBuf, where ARG_SEPARATOR is added.
 // In user_macro_name DynaBuf, the original name is reconstructed (even with
 // LOCAL_PREFIX) so a copy can be linked to the resulting macro struct.
-static zone_t get_zone_and_title(void)
+static scope_t get_scope_and_title(void)
 {
-	zone_t	macro_zone;
+	scope_t	macro_scope;
 
-	Input_read_zone_and_keyword(&macro_zone);	// skips spaces before
+	Input_read_scope_and_keyword(&macro_scope);	// skips spaces before
 	// now GotByte = illegal character after title
 	// copy macro title to private dynabuf and add separator character
 	DYNABUF_CLEAR(user_macro_name);
 	DYNABUF_CLEAR(internal_name);
-	if (macro_zone != ZONE_GLOBAL)
+	if (macro_scope != SCOPE_GLOBAL)
 		DynaBuf_append(user_macro_name, LOCAL_PREFIX);
 	DynaBuf_add_string(user_macro_name, GLOBALDYNABUF_CURRENT);
 	DynaBuf_add_string(internal_name, GLOBALDYNABUF_CURRENT);
 	DynaBuf_append(user_macro_name, '\0');
 	DynaBuf_append(internal_name, ARG_SEPARATOR);
 	SKIPSPACE();	// done here once so it's not necessary at two callers
-	return macro_zone;
+	return macro_scope;
 }
 
 // Check for comma. If there, append to GlobalDynaBuf.
@@ -125,14 +125,14 @@ static char *get_string_copy(const char *original)
 // Terminate macro name and copy from internal_name to GlobalDynaBuf
 // (because that's where Tree_hard_scan() looks for the search string).
 // Then try to find macro and return whether it was created.
-static int search_for_macro(struct rwnode **result, zone_t zone, int create)
+static int search_for_macro(struct rwnode **result, scope_t scope, int create)
 {
 	DynaBuf_append(internal_name, '\0');	// terminate macro name
 	// now internal_name = macro_title SPC argument_specifiers NUL
 	DYNABUF_CLEAR(GlobalDynaBuf);
 	DynaBuf_add_string(GlobalDynaBuf, internal_name->buffer);
 	DynaBuf_append(GlobalDynaBuf, '\0');
-	return Tree_hard_scan(result, macro_forest, zone, create);
+	return Tree_hard_scan(result, macro_forest, scope, create);
 }
 
 // This function is called when an already existing macro is re-defined.
@@ -145,12 +145,12 @@ static void report_redefinition(struct rwnode *macro_node)
 
 	// show warning with location of current definition
 	Throw_warning(exception_macro_twice);
-	// CAUTION, ugly kluge: fiddle with Input_now and Section_now
+	// CAUTION, ugly kluge: fiddle with Input_now and section_now
 	// data to generate helpful error messages
 	Input_now->original_filename = original_macro->def_filename;
 	Input_now->line_number = original_macro->def_line_number;
-	Section_now->type = "original";
-	Section_now->title = "definition";
+	section_now->type = "original";
+	section_now->title = "definition";
 	// show serious error with location of original definition
 	Throw_serious_error(exception_macro_twice);
 }
@@ -163,7 +163,7 @@ void Macro_parse_definition(void)	// Now GotByte = illegal char after "!macro"
 	char		*formal_parameters;
 	struct rwnode	*macro_node;
 	struct macro	*new_macro;
-	zone_t		macro_zone	= get_zone_and_title();
+	scope_t		macro_scope	= get_scope_and_title();
 
 	// now GotByte = first non-space after title
 	DYNABUF_CLEAR(GlobalDynaBuf);	// prepare to hold formal parameters
@@ -208,7 +208,7 @@ void Macro_parse_definition(void)	// Now GotByte = illegal char after "!macro"
 	// error messages, we're checking for "macro twice" *now*.
 	// Search for macro. Create if not found.
 	// But if found, complain (macro twice).
-	if (search_for_macro(&macro_node, macro_zone, TRUE) == FALSE)
+	if (search_for_macro(&macro_node, macro_scope, TRUE) == FALSE)
 		report_redefinition(macro_node);	// quits with serious error
 	// Create new macro struct and set it up. Finally we'll read the body.
 	new_macro = safe_malloc(sizeof(*new_macro));
@@ -233,15 +233,16 @@ void Macro_parse_call(void)	// Now GotByte = dot or first char of macro name
 	struct macro	*actual_macro;
 	struct rwnode	*macro_node,
 			*symbol_node;
-	zone_t		macro_zone,
-			symbol_zone;
+	scope_t		macro_scope,
+			symbol_scope;
 	int		arg_count	= 0;
+	int		outer_err_count;
 
 	// Enter deeper nesting level
 	// Quit program if recursion too deep.
 	if (--macro_recursions_left < 0)
 		Throw_serious_error("Too deeply nested. Recursive macro calls?");
-	macro_zone = get_zone_and_title();
+	macro_scope = get_scope_and_title();
 	// now GotByte = first non-space after title
 	// internal_name = MacroTitle ARG_SEPARATOR (grows to signature)
 	// Accept n>=0 comma-separated arguments before CHAR_EOS.
@@ -261,9 +262,9 @@ void Macro_parse_call(void)	// Now GotByte = dot or first char of macro name
 				// read call-by-reference arg
 				DynaBuf_append(internal_name, ARGTYPE_NUM_REF);
 				GetByte();	// skip '~' character
-				Input_read_zone_and_keyword(&symbol_zone);
+				Input_read_scope_and_keyword(&symbol_scope);
 				// GotByte = illegal char
-				arg_table[arg_count].symbol = symbol_find(symbol_zone, 0);
+				arg_table[arg_count].symbol = symbol_find(symbol_scope, 0);
 			} else {
 				// read call-by-value arg
 				DynaBuf_append(internal_name, ARGTYPE_NUM_VAL);
@@ -276,7 +277,7 @@ void Macro_parse_call(void)	// Now GotByte = dot or first char of macro name
 	// now GlobalDynaBuf = unused
 	// check for "unknown macro"
 	// Search for macro. Do not create if not found.
-	search_for_macro(&macro_node, macro_zone, FALSE);
+	search_for_macro(&macro_node, macro_scope, FALSE);
 	if (macro_node == NULL) {
 		Throw_error("Macro not defined (or wrong signature).");
 		Input_skip_remainder();
@@ -284,6 +285,7 @@ void Macro_parse_call(void)	// Now GotByte = dot or first char of macro name
 		// make macro_node point to the macro struct
 		actual_macro = macro_node->body;
 		local_gotbyte = GotByte;	// CAUTION - ugly kluge
+
 		// set up new input
 		new_input.original_filename = actual_macro->def_filename;
 		new_input.line_number = actual_macro->def_line_number;
@@ -294,11 +296,14 @@ void Macro_parse_call(void)	// Now GotByte = dot or first char of macro name
 		outer_input = Input_now;
 		// activate new input
 		Input_now = &new_input;
+
+		outer_err_count = Throw_get_counter();	// remember error count (for call stack decision)
+
 		// remember old section
-		outer_section = Section_now;
-		// start new section (with new zone)
+		outer_section = section_now;
+		// start new section (with new scope)
 		// FALSE = title mustn't be freed
-		Section_new_zone(&new_section, "Macro", actual_macro->original_name, FALSE);
+		section_new(&new_section, "Macro", actual_macro->original_name, FALSE);
 		GetByte();	// fetch first byte of parameter list
 		// assign arguments
 		if (GotByte != CHAR_EOS) {	// any at all?
@@ -310,15 +315,15 @@ void Macro_parse_call(void)	// Now GotByte = dot or first char of macro name
 				if (GotByte == REFERENCE_CHAR) {
 					// assign call-by-reference arg
 					GetByte();	// skip '~' character
-					Input_read_zone_and_keyword(&symbol_zone);
-					if ((Tree_hard_scan(&symbol_node, symbols_forest, symbol_zone, TRUE) == FALSE)
+					Input_read_scope_and_keyword(&symbol_scope);
+					if ((Tree_hard_scan(&symbol_node, symbols_forest, symbol_scope, TRUE) == FALSE)
 					&& (pass_count == 0))
 						Throw_error("Macro parameter twice.");
 					symbol_node->body = arg_table[arg_count].symbol;
 				} else {
 					// assign call-by-value arg
-					Input_read_zone_and_keyword(&symbol_zone);
-					symbol = symbol_find(symbol_zone, 0);
+					Input_read_scope_and_keyword(&symbol_scope);
+					symbol = symbol_find(symbol_scope, 0);
 // FIXME - add a possibility to symbol_find to make it possible to find out
 // whether symbol was just created. Then check for the same error message here
 // as above ("Macro parameter twice.").
@@ -335,13 +340,18 @@ void Macro_parse_call(void)	// Now GotByte = dot or first char of macro name
 		if (GotByte != CHAR_EOB)
 			Bug_found("IllegalBlockTerminator", GotByte);
 		// end section (free title memory, if needed)
-		Section_finalize(&new_section);
+		section_finalize(&new_section);
 		// restore previous section
-		Section_now = outer_section;
+		section_now = outer_section;
 		// restore previous input:
 		Input_now = outer_input;
 		// restore old Gotbyte context
 		GotByte = local_gotbyte;	// CAUTION - ugly kluge
+
+		// if needed, output call stack
+		if (Throw_get_counter() != outer_err_count)
+			Throw_warning("...called from here.");
+
 		Input_ensure_EOS();
 	}
 	++macro_recursions_left;	// leave this nesting level

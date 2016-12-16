@@ -21,7 +21,7 @@ acme.exe: acme.o alu.o cliargs.o cpu.o dynabuf.o encoding.o flow.o global.o inpu
 
 
 
-acme.o: config.h platform.h acme.h alu.h cpu.h dynabuf.h encoding.h flow.h global.h input.h macro.h mnemo.h output.h pseudoopcodes.h section.h symbol.h acme.h _dos.h acme.c
+acme.o: config.h platform.h acme.h alu.h cpu.h dynabuf.h encoding.h flow.h global.h input.h macro.h mnemo.h output.h pseudoopcodes.h section.h symbol.h version.h acme.h _dos.h acme.c
 
 alu.o: config.h platform.h cpu.h dynabuf.h encoding.h global.h input.h section.h symbol.h tree.h alu.h alu.c
 
@@ -37,7 +37,7 @@ flow.o: config.h acme.h alu.h dynabuf.h global.h input.h mnemo.h symbol.h tree.h
 
 global.o: config.h platform.h acme.h cpu.h input.h macro.h pseudoopcodes.h section.h symbol.h global.h global.c
 
-input.o: config.h alu.h dynabuf.h global.h section.h tree.h input.h input.c
+input.o: config.h alu.h dynabuf.h global.h section.h symbol.h tree.h input.h input.c
 
 macro.o: config.h acme.h alu.h dynabuf.h global.h input.h section.h symbol.h tree.h macro.h macro.c
 
@@ -49,7 +49,7 @@ platform.o: config.h platform.h platform.c
 
 pseudoopcodes.o: acme.h alu.h input.h macro.h output.h pseudoopcodes.h pseudoopcodes.c
 
-section.o: config.h dynabuf.h global.h section.h tree.h section.h section.c
+section.o: config.h dynabuf.h global.h symbol.h tree.h section.h section.c
 
 symbol.o: config.h acme.h alu.h cpu.h dynabuf.h global.h input.h section.h tree.h symbol.h symbol.c
 

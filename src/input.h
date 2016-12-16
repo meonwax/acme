@@ -1,5 +1,5 @@
 // ACME - a crossassembler for producing 6502/65c02/65816 code.
-// Copyright (C) 1998-2014 Marco Baye
+// Copyright (C) 1998-2016 Marco Baye
 // Have a look at "acme.c" for further info
 //
 // Input stuff
@@ -8,7 +8,7 @@
 
 
 #include <stdio.h>	// for FILE
-#include "config.h"	// for zone_t
+#include "config.h"	// for scope_t
 
 
 // type definitions
@@ -84,10 +84,10 @@ extern void Input_until_terminator(char terminator);
 // Throws "missing string" error if none. Returns number of characters added.
 extern int Input_append_keyword_to_global_dynabuf(void);
 // Check whether GotByte is a dot.
-// If not, store global zone value.
-// If yes, store current zone value and read next byte.
+// If not, store global scope value.
+// If yes, store current scope value and read next byte.
 // Then jump to Input_read_keyword(), which returns length of keyword.
-extern int Input_read_zone_and_keyword(zone_t *);
+extern int Input_read_scope_and_keyword(scope_t *scope);
 // Clear dynamic buffer, then append to it until an illegal (for a keyword)
 // character is read. Zero-terminate the string. Return its length (without
 // terminator).
