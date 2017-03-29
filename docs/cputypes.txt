@@ -1,0 +1,144 @@
+
+
+                                 ACME
+
+         ...the ACME Crossassembler for Multiple Environments
+
+                          --- cpu types ---
+
+
+ACME supports the following cpu types:
+
+
+
+
+***   6502
+
+This is the instruction set of the original NMOS 6502 designed by MOS
+(later CSG).
+There are 151 documented opcodes.
+ACME does not use "A" to indicate "accumulator addressing"; just write
+the mnemonic without any argument: "LSR" will work, "LSR A" won't.
+
+
+
+***   6510
+
+This is the 6502 variant used in the C64 computer. It uses the same
+instruction set as the 6502, but in addition to that, ACME supports
+most of the undocumented opcodes as well.
+See "docs/Illegals.txt" for more info.
+
+
+
+
+***   65c02
+
+This is the CMOS re-design of the 6502. It seems to have also been
+available from Rockwell, GTE/CMD and others. Features:
+- new instructions:
+	BRA near_target		branch always
+	PHX/PHY/PLX/PLY		push/pull X/Y register
+	STZ $12			store zero in zp
+	STZ $12, x		store zero in zp, x-indexed
+	STZ $1234		store zero absolute
+	STZ $1234, x		store zero absolute, x-indexed
+	TRB $12			test and reset bits in zp
+	TRB $1234		test and reset bits absolute
+	TSB $12			test and set bits in zp
+	TSB $1234		test and set bits absolute
+- new addressing modes for existing instructions:
+	LDA/STA/ADC/SBC ($12)	zp indirect
+	AND/ORA/EOR/CMP ($12)	zp indirect
+	BIT #$12		immediate
+	BIT $12, x		zp, x-indexed
+	BIT $1234, x		absolute, x-indexed
+	INC			increment accumulator
+	DEC			decrement accumulator
+	JMP ($1234, x)		x-indexed indirect
+- bugfix for flags in decimal mode
+- bugfix for JMP($xxff) instruction
+- undocumented opcodes are NOPs (although of different lengths)
+There are 178 documented opcodes.
+
+
+
+***   r65c02
+
+This is a superset of 65c02, probably originally by Rockwell. It adds
+bit manipulation instructions:
+	BBR0 $12, near_target	branch on bit reset in zp
+	BBS0 $12, near_target	branch on bit set in zp
+	RMB0 $12		reset memory bit in zp
+	SMB0 $12		set memory bit in zp
+The digit in the mnemonic is the bit number, therefore it must be in
+the 0..7 range.
+Chips with this instruction set seem to have been available from
+Rockwell, GTE/CMD and others.
+There are 210 documented opcodes.
+
+
+
+***   w65c02
+
+This is a superset of r65c02, originating at WDC. It adds two new
+instructions:
+	STP			stop (wait for reset)
+	WAI			wait for interrupt
+There are 212 documented opcodes.
+
+
+
+***   65816
+
+This is a superset of 65c02, originally designed by WDC (it seems to
+have been available from GTE/CMD as well). Features:
+- register sizes can be changed to 16-bit
+- 24-bit address space
+- several new instructions (including block transfers)
+- several new addressing modes for existing instructions
+There are 256 documented opcodes, but one of them ("WDM") is reserved
+for future expansion.
+See "docs/65816.txt" for more info.
+
+
+
+***   65ce02
+
+This is a superset of r65c02, originating at CSG. Features:
+- Z register
+- 16-bit stack pointer
+- 16-bit branches
+- new instructions (including a few 16-bit operations)
+- new addressing modes for existing instructions
+There is a known bug: SBC does not work correctly in decimal mode.
+There are 256 documented opcodes, but one of them ("AUG") is reserved
+for future expansion.
+ACME uses different mnemonics for old and new (long) branch
+instructions:
+	BEQ near_target		old, 8-bit offset
+	LBEQ far_target		new, 16-bit offset
+The original datasheet called BRA ("branch always") BRU ("branch
+unconditional") instead. ACME accepts both mnemonics.
+
+
+
+***   4502
+
+This is basically the same as 65ce02, but
+- MAP replaces AUG
+- EOM is synonymous to NOP
+This cpu core can be found in the CSG4510 chip in the C65.
+There are 256 documented opcodes.
+
+
+
+***   c64dtv2
+
+This is the cpu in version 2 of the C64DTV. It uses a superset of the
+6502 instruction set. Features:
+- new instructions:
+	BRA near_target		branch always
+	SAC #$12		set accumulator mapping
+	SIR #$12		set index register mapping
+- support for some of the undocumented opcodes.

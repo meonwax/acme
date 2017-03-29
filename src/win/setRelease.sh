@@ -11,12 +11,12 @@ function pause()
     read -p "Weiter mit Eingabe" $a
 }
 FILE="resource.rc"
-RELEASE=`grep "define RELEASE"  ../acme.c  | cut -f3`
+RELEASE=`grep "define RELEASE"  ../version.h  | cut -f3`
 RELEASE=${RELEASE//\"/}
 DEBUG echo $RELEASE
 VERSION=${RELEASE//./,},0
 DEBUG echo $VERSION
-CODENAME=`grep "define CODENAME"  ../acme.c  | cut -f2`
+CODENAME=`grep "define CODENAME"  ../vesion.h  | cut -f2`
 DEBUG echo $CODENAME
 FILEVERSION=\""$RELEASE ${CODENAME//\"/}"\"
 DEBUG echo $FILEVERSION
@@ -43,7 +43,7 @@ BEGIN
       VALUE "FileDescription", "Acme crossassembler"
       VALUE "FileVersion", $FILEVERSION
       VALUE "InternalName", "ACME crossassembler"
-      VALUE "LegalCopyright", "Copyright © 2013 Marco Baye"
+      VALUE "LegalCopyright", "Copyright © 2015 Marco Baye"
       VALUE "OriginalFilename", "acme.exe"
       VALUE "ProductName", "ACME Crossassembler"
       VALUE "ProductVersion", $FILEVERSION

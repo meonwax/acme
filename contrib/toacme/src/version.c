@@ -4,12 +4,12 @@
 //
 // Version
 
-#define RELEASE_NUMBER	"0.13"		// change before release (FIXME)
-#define CHANGE_DATE	"16 Feb"		// change before release
-#define CHANGE_YEAR	"2016"		// change before release
+#define RELEASE_NUMBER	"0.14"		// change before release (FIXME)
+#define CHANGE_DATE	"19 Feb"		// change before release
+#define CHANGE_YEAR	"2017"		// change before release
 #define HOME_PAGE	"http://sourceforge.net/projects/acme-crossass/"
 //			"http://home.pages.de/~mac_bacon/smorbrod/acme/"
-#define FILE_TAG	";ACME 0.95.6"	// check before release
+#define FILE_TAG	";ACME 0.96.1"	// check before release
 
 #include <stdio.h>
 #include <string.h>

@@ -1,4 +1,4 @@
-// ACME - a crossassembler for producing 6502/65c02/65816 code.
+// ACME - a crossassembler for producing 6502/65c02/65816/65ce02 code.
 // Copyright (C) 1998-2016 Marco Baye
 // Have a look at "acme.c" for further info
 //
@@ -118,6 +118,7 @@ int		pass_real_errors;	// Errors yet
 signed long	max_errors		= MAXERRORS;	// errors before giving up
 FILE		*msg_stream		= NULL;	// set to stdout by --use-stdout
 int		format_msvc		= FALSE;	// actually bool, enabled by --msvc
+int		format_color		= FALSE;	// actually bool, enabled by --color
 struct report 	*report			= NULL;
 
 
@@ -341,7 +342,10 @@ static void throw_message(const char *message, const char *type)
 void Throw_warning(const char *message)
 {
 	PLATFORM_WARNING(message);
-	throw_message(message, "Warning");
+	if (format_color)
+		throw_message(message, "\033[33mWarning\033[0m");
+	else
+		throw_message(message, "Warning");
 }
 // Output a warning if in first pass. See above.
 void Throw_first_pass_warning(const char *message)
@@ -359,7 +363,10 @@ void Throw_first_pass_warning(const char *message)
 void Throw_error(const char *message)
 {
 	PLATFORM_ERROR(message);
-	throw_message(message, "Error");
+	if (format_color)
+		throw_message(message, "\033[31mError\033[0m");
+	else
+		throw_message(message, "Error");
 	++pass_real_errors;
 	if (pass_real_errors >= max_errors)
 		exit(ACME_finalize(EXIT_FAILURE));
@@ -373,7 +380,10 @@ void Throw_error(const char *message)
 void Throw_serious_error(const char *message)
 {
 	PLATFORM_SERIOUS(message);
-	throw_message(message, "Serious error");
+	if (format_color)
+		throw_message(message, "\033[1m\033[31mSerious error\033[0m");
+	else
+		throw_message(message, "Serious error");
 	// FIXME - exiting immediately inhibits output of macro call stack!
 	exit(ACME_finalize(EXIT_FAILURE));
 }

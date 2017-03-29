@@ -817,13 +817,17 @@ Purpose:	Select the processor to produce code for. If this PO
 		the previously chosen CPU value is restored
 		afterwards.
 Parameters:	KEYWORD: Currently valid keywords are:
-		6502	mnemonics and addressing modes of 6502 cpu
-		65c02	superset of 6502, adds 65c02 extensions
-		65816	superset of 65c02, adds 65816 extensions
-		6510	superset of 6502, adds mnemonics for
-			undocumented opcodes
-		c64dtv2	superset of 6510, adds mnemonics for DTV2
-			extensions (BRA/SAC/SIR)
+			6502	for the original MOS 6502
+			6510	6502 plus undocumented opcodes
+			65c02	6502 plus BRA,PHX/Y,PLX/Y,STZ,TRB/TSB
+			r65c02	65c02 plus BBRx, BBSx, RMBx, SMBx
+			w65c02	r65c02 plus STP/WAI
+			65816	65c02 plus 16/24-bit extensions
+			65ce02	r65c02 plus Z reg, long branches, ...
+			4502	65ce02 with MAP instead of AUG
+			c64dtv2	6502 plus BRA/SAC/SIR plus some of the
+				undocumented opcodes
+			See "docs/cputypes.txt" for more info.
 		BLOCK: A block of assembler statements.
 Examples:	!if cputype = $65c02 {
 			!cpu 65c02 {	; temporarily allow 65c02 stuff

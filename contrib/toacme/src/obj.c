@@ -54,7 +54,7 @@ const char	*mnemo_of_code[]	= {
 	MnemonicBCC,	MnemonicSTA,	" JAM;0x92",	NULL,		// $90-$93
 	MnemonicSTY,	MnemonicSTA,	MnemonicSTX,	MnemonicSAX,	// $94-$97
 	MnemonicTYA,	MnemonicSTA,	MnemonicTXS,	NULL,		// $98-$9b
-	NULL,		MnemonicSTA,	NULL,		NULL,		// $9c-$9f
+	NULL,		MnemonicSTA,	MnemonicSHX,	NULL,		// $9c-$9f
 	MnemonicLDY,	MnemonicLDA,	MnemonicLDX,	MnemonicLAX,	// $a0-$a3
 	MnemonicLDY,	MnemonicLDA,	MnemonicLDX,	MnemonicLAX,	// $a4-$a7
 	MnemonicTAY,	MnemonicLDA,	MnemonicTAX,	NULL,		// $a8-$ab
@@ -217,7 +217,7 @@ int (*addressing_mode_of_code[])(void)	= {
 	am_relative,	am_indirect_y,	am_implied,	am_implied,	// $90-$93
 	am_abs_x8,	am_abs_x8,	am_abs_y8,	am_abs_y8,	// $94-$97
 	am_implied,	am_abs_y16,	am_implied,	am_implied,	// $98-$9b
-	am_implied,	am_abs_x16,	am_implied,	am_implied,	// $9c-$9f
+	am_implied,	am_abs_x16,	am_abs_y16,	am_implied,	// $9c-$9f
 	am_immediate,	am_indirect_x,	am_immediate,	am_indirect_x,	// $a0-$a3
 	am_absolute8,	am_absolute8,	am_absolute8,	am_absolute8,	// $a4-$a7
 	am_implied,	am_immediate,	am_implied,	am_implied,	// $a8-$ab

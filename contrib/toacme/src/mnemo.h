@@ -38,6 +38,7 @@ extern const char	MnemonicDCP[], MnemonicDOP[], MnemonicISC[];
 extern const char	MnemonicJAM[], MnemonicLAX[], MnemonicRLA[];
 extern const char	MnemonicRRA[], MnemonicSAX[], MnemonicSBX[];
 extern const char	MnemonicSLO[], MnemonicSRE[], MnemonicTOP[];
+extern const char	MnemonicSHX[];
 
 // mnemonics of 65c02 instructions
 extern const char	MnemonicBRA[];

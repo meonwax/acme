@@ -71,6 +71,12 @@ Found new "!for" syntax.
     When using the "-Wno-old-for" switch to disable the warning about
     the older syntax, the new syntax will trigger this warning.
 
+Found SED instruction for CPU with known decimal SBC bug.
+    This warning is only ever given for CPU types 65ce02 and 4502,
+    because they are known to be buggy in decimal mode.
+    Pavel Zima and Eric Smith found an example where $41 minus $08
+    gave $39 instead of $33.
+
 Label name not in leftmost column.
     A label definition has blanks before the label name.
     Imagine this source code:
@@ -407,6 +413,10 @@ IllegalBlockTerminator
 
 IllegalOperatorHandle
     The expression parser found an operator that does not exist.
+
+IllegalImmediateMode
+    The mnemonic tree contains invalid info about the size of immediate
+    arguments.
 
 OperandStackNotEmpty
     The expression parser has finished though there are still operands

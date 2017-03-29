@@ -1,4 +1,4 @@
-// ACME - a crossassembler for producing 6502/65c02/65816 code.
+// ACME - a crossassembler for producing 6502/65c02/65816/65ce02 code.
 // Copyright (C) 1998-2016 Marco Baye
 // Have a look at "acme.c" for further info
 //
@@ -22,6 +22,7 @@ struct cpu_type {
 #define CPUFLAG_SUPPORTSLONGREGS	(1u << 1)	// allow "!al" and "!rl" pseudo opcodes
 #define CPUFLAG_8B_AND_AB_NEED_0_ARG	(1u << 2)	// warn if "ane/lxa #$xx" uses non-zero arg
 #define CPUFLAG_ISBIGENDIAN		(1u << 3)	// for 16/24/32-bit values, output msb first
+#define CPUFLAG_DECIMALSUBTRACTBUGGY	(1u << 4)	// warn if "sed" is assembled
 
 
 // if cpu type and value match, set register length variable to value.

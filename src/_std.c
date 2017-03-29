@@ -1,5 +1,5 @@
-// ACME - a crossassembler for producing 6502/65c02/65816 code.
-// Copyright (C) 1998-2009 Marco Baye
+// ACME - a crossassembler for producing 6502/65c02/65816/65ce02 code.
+// Copyright (C) 1998-2016 Marco Baye
 // Have a look at "acme.c" for further info
 //
 // Platform specific stuff (in this case, for unknown OSes)

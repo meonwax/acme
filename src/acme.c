@@ -1,4 +1,4 @@
-// ACME - a crossassembler for producing 6502/65c02/65816 code.
+// ACME - a crossassembler for producing 6502/65c02/65816/65ce02 code.
 // Copyright (C) 1998-2016 Marco Baye
 //
 // This program is free software; you can redistribute it and/or modify
@@ -61,6 +61,7 @@ static const char	arg_vicelabels[]	= "VICE labels filename";
 #define OPTION_USE_STDOUT	"use-stdout"
 #define OPTION_VERSION		"version"
 #define OPTION_MSVC		"msvc"
+#define OPTION_COLOR		"color"
 // options for "-W"
 #define OPTIONWNO_LABEL_INDENT	"no-label-indent"
 #define OPTIONWNO_OLD_FOR	"no-old-for"
@@ -138,6 +139,7 @@ static void show_help_and_exit(void)
 //"  -W                     show warning level options\n"
 "      --" OPTION_USE_STDOUT "       fix for 'Relaunch64' IDE (see docs)\n"
 "      --" OPTION_MSVC "             set output error message format to that of MS Visual Studio\n"
+"      --" OPTION_COLOR "            enable colored error output using ANSI escape codes\n"
 PLATFORM_OPTION_HELP
 "  -V, --" OPTION_VERSION "          show version and exit\n");
 	exit(EXIT_SUCCESS);
@@ -464,6 +466,8 @@ static const char *long_option(const char *string)
 	else if (strcmp(string, OPTION_MSVC) == 0)
 		format_msvc = TRUE;
 	PLATFORM_LONGOPTION_CODE
+	else if (strcmp(string, OPTION_COLOR) == 0)
+		format_color = TRUE;
 	else if (strcmp(string, OPTION_VERSION) == 0)
 		show_version(TRUE);
 	else

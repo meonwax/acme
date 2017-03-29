@@ -16,7 +16,7 @@ macedit.o: macedit.a
 	$(ASSEMBLER6502) $(AS_FLAGS) --outfile macedit.o --format cbm macedit.a
 
 trigono.o: trigono.a
-	$(ASSEMBLER6502) $(AS_FLAGS) --outfile trigono.o --format cbm trigono.a
+	$(ASSEMBLER6502) $(AS_FLAGS) --outfile trigono.o --format plain trigono.a
 
 clean:
 	-$(RM) -f *.o *.tmp $(PROGS) *~ core

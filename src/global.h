@@ -1,4 +1,4 @@
-// ACME - a crossassembler for producing 6502/65c02/65816 code.
+// ACME - a crossassembler for producing 6502/65c02/65816/65ce02 code.
 // Copyright (C) 1998-2016 Marco Baye
 // Have a look at "acme.c" for further info
 //
@@ -72,6 +72,7 @@ extern int	pass_real_errors;	// Errors yet
 extern signed long	max_errors;	// errors before giving up
 extern FILE	*msg_stream;		// set to stdout by --errors_to_stdout
 extern int	format_msvc;		// actually bool, enabled by --msvc
+extern int	format_color;		// actually bool, enabled by --color
 
 // report stuff
 #define REPORT_ASCBUFSIZE	1024

@@ -78,6 +78,7 @@ const char	MnemonicSLO[]	= " SLO",
 		MnemonicSBX[]	= " SBX",
 		MnemonicDOP[]	= " DOP",
 		MnemonicTOP[]	= " TOP",
+		MnemonicSHX[]	= " SHX",
 		MnemonicJAM[]	= " JAM";
 
 // mnemonics of 65c02 instructions
