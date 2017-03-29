@@ -1004,6 +1004,8 @@ static struct ronode	pseudo_opcode_list[]	= {
 	PREDEFNODE("align",		po_align),
 	PREDEFNODE("pseudopc",		po_pseudopc),
 	PREDEFNODE("realpc",		obsolete_po_realpc),
+	PREDEFNODE("pc",		notreallypo_setpc),
+	PREDEFNODE("org",		notreallypo_setpc),
 	PREDEFNODE("cpu",		po_cpu),
 	PREDEFNODE("al",		po_al),
 	PREDEFNODE("as",		po_as),
