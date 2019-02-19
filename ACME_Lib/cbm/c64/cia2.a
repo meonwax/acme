@@ -5,6 +5,13 @@ lib_cbm_c64_cia2_a = 1
 
 !address {
 	cia2_pra	= $dd00
+	; %7.......	DATA in (0 means GND)
+	; %.6......	CLK in (0 means GND)
+	; %..5.....	DATA out (inverted, 1 means GND)
+	; %...4....	CLK out	(inverted, 1 means GND)
+	; %....3...	ATN out (inverted, 1 means GND)
+	; %.....2..	PA2 (pin M at user port, 0 means GND)
+	; %......10	VIC bank (inverted, so value $3 means address $0000)
 	cia2_prb	= $dd01
 	cia2_ddra	= $dd02
 	cia2_ddrb	= $dd03

@@ -41,47 +41,47 @@ lib_cbm_mflpt_a = 1
 
 ; this is ugly, but it gets the job done
 ; (if it's stupid, but it works, then it's not stupid)
-!macro mflpt .value {
-	!set .float = float(.value)	; make sure to do passes until value is defined
-	!ifndef .float {
+!macro mflpt @value {
+	!set @float = float(@value)	; make sure to do passes until value is defined
+	!ifndef @float {
 		!by $ff, $ff, $ff, $ff, $ff	; five place holder bytes
 	} else {
 		; value is defined, so split up into sign and non-negative value
-		!if .float < 0 {
-			!set .sign = $80
-			!set .float = -.float
+		!if @float < 0 {
+			!set @sign = $80
+			!set @float = -@float
 		} else {
-			!set .sign = $00
+			!set @sign = $00
 		}
-		!if .float = 0 {
+		!if @float = 0 {
 			!by 0, 0, 0, 0, 0	; five zeroes (zero is represented by all bits zero)
 		} else {
 			; split up into exponent and mantissa
-			!set .exponent = 128 + 32	; 128 is cbm's bias, 32 is this algo's bias
+			!set @exponent = 128 + 32	; 128 is cbm's bias, 32 is this algo's bias
 			; if mantissa is too large, shift right and adjust exponent
-			!do while .float >= (2.0 ^ 32.0) {
-				!set .float = .float >> 1
-				!set .exponent = .exponent + 1
+			!do while @float >= (2.0 ^ 32.0) {
+				!set @float = @float >> 1
+				!set @exponent = @exponent + 1
 			}
 			; if mantissa is too small, shift left and adjust exponent
-			!do while .float < (2.0 ^ 31.0) {
-				!set .float = .float << 1
-				!set .exponent = .exponent - 1
+			!do while @float < (2.0 ^ 31.0) {
+				!set @float = @float << 1
+				!set @exponent = @exponent - 1
 			}
-			!if .exponent < 1 {
+			!if @exponent < 1 {
 				!warn "MFLPT underflow, using zero instead"
-				!set .float = 0
-				!set .exponent = 0
-				!set .sign = 0
+				!set @float = 0
+				!set @exponent = 0
+				!set @sign = 0
 			}
-			!if .exponent > 255 {
+			!if @exponent > 255 {
 				!error "MFLPT overflow"
 			}
-			!by .exponent
-			!by (127 & int(.float >> 24)) | .sign
-			!by 255 & int(.float >> 16)
-			!by 255 & int(.float >> 8)
-			!by 255 & int(.float)
+			!by @exponent
+			!by (127 & int(@float >> 24)) | @sign
+			!by 255 & int(@float >> 16)
+			!by 255 & int(@float >> 8)
+			!by 255 & int(@float)
 		}
 	}
 }

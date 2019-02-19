@@ -15,6 +15,9 @@
 // convert UNIX-style pathname to Amiga-style pathname (no change)
 #define PLATFORM_CONVERTPATHCHAR(a)	(a)
 
+// directory separator for include paths
+#define DIRECTORY_SEPARATOR	'\0'	// actually '/', but paths ending on ':' are ok, so auto-adding '/' is bad)
+
 // string containing the prefix for accessing files from the library tree
 #define PLATFORM_LIBPREFIX		"progdir:acme_lib/"
 #define NO_NEED_FOR_ENV_VAR

@@ -1,7 +1,7 @@
-;ACME 0.95
+;ACME 0.96.4
 
 !ifdef lib_cbm_c64_float_a !eof
-lib_cbm_c64_float_a = 1
+lib_cbm_c64_float_a = 2
 
 ; Here are some definitions to help you call the floating-point functions of the
 ; C64's BASIC ROM. They work on "float registers", which are actually just
@@ -18,33 +18,33 @@ lib_cbm_c64_float_a = 1
 
 ; convenience macros:
 
-; some float functions need a memory address in A (low) and Y (high)
-!macro movAY .adr {
-	lda #<.adr
-	ldy #>.adr
+; some float functions need a memory address in YYAA
+!macro movYYAA @addr {
+	lda #<@addr
+	ldy #>@addr
 }
-; ...or in X (low) and Y (high)
-!macro movXY .adr {
-	ldx #<.adr
-	ldy #>.adr
+; ...or in YYXX
+!macro movYYXX @addr {
+	ldx #<@addr
+	ldy #>@addr
 }
-; other float functions expect or output a value in Y (low) and A (high)
-!macro movYA .val {
-	ldy #<.val
-	lda #>.val
+; other float functions expect or output a value in AAYY
+!macro movAAYY @val {
+	ldy #<@val
+	lda #>@val
 }
-!macro ldYA .adr {
-	ldy .adr
-	lda .adr + 1
+!macro ldAAYY @addr {
+	ldy @addr
+	lda @addr + 1
 }
-!macro stYA .adr {
-	sty .adr
-	sta .adr + 1
+!macro stAAYY @addr {
+	sty @addr
+	sta @addr + 1
 }
-; ...or in X (low) and A (high)
-!macro ldXA .adr {
-	ldx .adr
-	lda .adr + 1
+; ...or in AAXX
+!macro ldAAXX @addr {
+	ldx @addr
+	lda @addr + 1
 }
 
 !address {
@@ -69,50 +69,71 @@ lib_cbm_c64_float_a = 1
 
 	; functions - a few points to note:
 	; fac1/2 might get clobbered even if not mentioned in the function's name,
-	;	because stuff like fac1_times_memAY will load the value from memory
+	;	because stuff like fac1_times_memYYAA will load the value from memory
 	;	into fac2 first.
 	; for subtraction and division, the left operand is in fac2, the right operand in fac1.
 	fac1_print			= $aabc	; print string representation of contents of fac1
-	fac1_to_signedYA		= $b1aa	; might throw ILLEGAL QUANTITY
+	fac1_to_signedAAYY		= $b1aa	; might throw ILLEGAL QUANTITY
 	fac1_to_signed16		= $b1bf	; might throw ILLEGAL QUANTITY
-	fac1_read_signedYA		= $b391	; convert 16 bit signed int to float
+	fac1_read_signedAAYY		= $b391	; convert 16 bit signed int to float
 	fac1_read_unsignedY		= $b3a2	; convert 8 bit unsigned int to float
 	fac1_read_string		= $b7b5	; $22/23 must point to string, A must be string length
-	fac1_to_unsignedYA		= $b7f7	; might throw ILLEGAL QUANTITY (result is also in $14/15)
+	fac1_to_unsignedAAYY		= $b7f7	; might throw ILLEGAL QUANTITY (result is also in $14/15)
 	fac1_add_point5			= $b849	; for rounding, call this before fac1_int
-	fac1_memAY_minus_fac1		= $b850	; subtract fac1 from mflpt value
+	fac1_memYYAA_minus_fac1		= $b850	; subtract fac1 from mflpt value
 	fac1_fac2_minus_fac1		= $b853
-	fac1_add_memAY			= $b867	; add mflpt value
+	fac1_add_memYYAA		= $b867	; add mflpt value
 	fac1_add_fac2			= $b86a
 	fac1_log			= $b9ea	; LOG()
-	fac1_times_memAY		= $ba28	; multiply by mflpt value
-	fac2_read_memAY			= $ba8c	; load mflpt value from memory into fac2
+	fac1_times_memYYAA		= $ba28	; multiply by mflpt value
+	fac2_read_memYYAA		= $ba8c	; load mflpt value from memory into fac2
 	fac2_read_mem_via0x22ptr	= $ba90	; load mflpt value from memory into fac2
 	fac1_times_10			= $bae2
 	fac1_divide_by_10		= $bafe	; CAUTION: result is always positive!
-	fac1_divide_memAY_by_fac1	= $bb0f	; divide mflpt value by fac1 value
-	fac1_read_memAY			= $bba2	; load mflpt value from memory into fac1
+	fac1_divide_memYYAA_by_fac1	= $bb0f	; divide mflpt value by fac1 value
+	fac1_read_memYYAA		= $bba2	; load mflpt value from memory into fac1
 	fac1_read_mem_via0x22ptr	= $bba6	; load mflpt value from memory into fac1
-	fac1_to_memXY			= $bbd4	; store fac1 to memory as mflpt
+	fac1_to_memYYXX			= $bbd4	; store fac1 to memory as mflpt
 	fac1_read_fac2			= $bbfc	; copy fac2 to fac1
 	fac2_read_fac1			= $bc0c	; copy fac1 to fac2
 	fac1_sign_to_A			= $bc2b	; $ff, $0, $1 for negative, zero, positive
 	fac1_sgn			= $bc39 ; SGN()
 	fac1_abs			= $bc58 ; ABS()
-	fac1_compare_to_memAY		= $bc5b	; compare to mflpt value in memory
+	fac1_compare_to_memYYAA		= $bc5b	; compare to mflpt value in memory
 	fac1_to_signed32		= $bc9b
 	fac1_int			= $bccc ; INT()
 	fac1_read_string0		= $bcf3	; use b7b5 instead; this only works after calling CHRGET
-	fac1_print_unsignedXA		= $bdcd
-	fac1_to_string			= $bddd	; string is stored at $0100 (address returned in AY)
+	fac1_print_unsignedAAXX		= $bdcd
+	fac1_to_string			= $bddd	; string is stored at $0100 (address returned in YYAA)
 	fac1_sqr			= $bf71	; SQR()
-	fac1_fac2_to_the_power_of_memAY	= $bf78
+	fac1_fac2_to_the_power_of_memYYAA	= $bf78
 	fac1_negate			= $bfb4
 	fac1_exp			= $bfed	; EXP()
-	; end of basic rom jumps to start of kernel rom!
+	; end of basic rom jumps to start of kernal rom!
 	fac1_rnd			= $e097	; RND()
 	fac1_cos			= $e264 ; COS()
 	fac1_sin			= $e26b	; SIN()
 	fac1_tan			= $e2b4	; TAN()
 	fac1_atn			= $e30e	; ATN()
 }
+
+; wrappers for names from older version of this file:
+!macro movAY @addr {	+movYYAA @addr	}
+!macro movXY @addr {	+movYYXX @addr	}
+!macro movYA @val {	+movAAYY @val	}
+!macro ldYA @addr {	+ldAAYY @addr	}
+!macro stYA @addr {	+stAAYY @addr	}
+!macro ldXA @addr {	+ldAAXX @addr	}
+	fac1_to_signedYA		= fac1_to_signedAAYY
+	fac1_read_signedYA		= fac1_read_signedAAYY
+	fac1_to_unsignedYA		= fac1_to_unsignedAAYY
+	fac1_memAY_minus_fac1		= fac1_memYYAA_minus_fac1
+	fac1_add_memAY			= fac1_add_memYYAA
+	fac1_times_memAY		= fac1_times_memYYAA
+	fac2_read_memAY			= fac2_read_memYYAA
+	fac1_divide_memAY_by_fac1	= fac1_divide_memYYAA_by_fac1
+	fac1_read_memAY			= fac1_read_memYYAA
+	fac1_to_memXY			= fac1_to_memYYXX
+	fac1_compare_to_memAY		= fac1_compare_to_memYYAA
+	fac1_print_unsignedXA		= fac1_print_unsignedAAXX
+	fac1_fac2_to_the_power_of_memAY	= fac1_fac2_to_the_power_of_memYYAA

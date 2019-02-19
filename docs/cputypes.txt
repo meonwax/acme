@@ -11,7 +11,6 @@ ACME supports the following cpu types:
 
 
 
-
 ***   6502
 
 This is the instruction set of the original NMOS 6502 designed by MOS
@@ -28,7 +27,6 @@ This is the 6502 variant used in the C64 computer. It uses the same
 instruction set as the 6502, but in addition to that, ACME supports
 most of the undocumented opcodes as well.
 See "docs/Illegals.txt" for more info.
-
 
 
 

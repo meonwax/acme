@@ -13,6 +13,39 @@ outlining the platform specific changes.
 
 
 ----------------------------------------------------------------------
+Section:   New in release 0.96.4
+----------------------------------------------------------------------
+
+Bugfix: Removed warnings about zero page wrap-around for the 65816's
+    24-bit pointers (because wrap-around does not actually happen).
+    Thanks to Johann Klasek for reporting this.
+Added "!xor" pseudo opcode to compensate for the shortcomings of the
+    "!scrxor" pseudo opcode. Thanks to spider-j for the initial bug
+    report.
+Added "-I" CLI switch to add search paths for input files. Thanks to
+    peiselulli for the suggestion.
+
+
+----------------------------------------------------------------------
+Section:   New in release 0.96.3
+----------------------------------------------------------------------
+
+Added "!h"/"!hex" pseudo opcode: Now external source code generator
+    tools can easily put data in sources with minimal syntax overhead.
+Added "!skip" pseudo opcode: "!skip N" works like "*=*+N" without
+    starting a new segment.
+Added "cheap locals": Labels with '@' prefix have automatic scoping,
+    bounded by the preceding and the following global labels.
+Added "--fullstop" CLI switch to change pseudo opcode prefix from '!'
+    to '.' (so other assemblers' sources need less conversion work)
+Fixed a bug where expressions like "1)+1" crashed ACME. Thanks to
+    Bitbreaker for reporting this.
+Added warning when using zp-indirect addressing modes where argument
+    is $ff because pointer wraps around to $00. Thanks to Gerrit for
+    the suggestion.
+
+
+----------------------------------------------------------------------
 Section:   New in release 0.96.2
 ----------------------------------------------------------------------
 

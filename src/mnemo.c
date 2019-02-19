@@ -139,7 +139,7 @@ SCS jump_lind[]  = {      0,      0,   0xdc00,      0,      0,        0,   0xdc0
 
 // error message strings
 static const char	exception_illegal_combination[]	= "Illegal combination of command and addressing mode.";
-static const char	exception_highbyte_zero[]	= "Using oversized addressing mode.";
+static const char	exception_oversized_addrmode[]	= "Using oversized addressing mode.";
 
 
 // Variables
@@ -584,11 +584,11 @@ static int check_oversize(int size_bit, struct result *argument)
 	if (size_bit == MVALUE_FORCE16) {
 		// check 16-bit argument for high byte zero
 		if ((argument->val.intval <= 255) && (argument->val.intval >= -128))
-			Throw_warning(exception_highbyte_zero);
+			Throw_warning(exception_oversized_addrmode);
 	} else {
 		// check 24-bit argument for bank byte zero
 		if ((argument->val.intval <= 65535) && (argument->val.intval >= -32768))
-			Throw_warning(exception_highbyte_zero);
+			Throw_warning(exception_oversized_addrmode);
 	}
 	return size_bit;	// pass on result
 }
@@ -827,6 +827,14 @@ static unsigned int imm_ops(int *force_bit, unsigned char opcode, int immediate_
 	return (((unsigned int) opcode) << 8) | opcode;
 }
 
+// helper function to warn if zp pointer wraps around
+static void check_zp_wraparound(struct result *result)
+{
+	if ((result->val.intval == 0xff)
+	&& (result->flags & MVALUE_DEFINED))
+		Throw_warning("Zeropage pointer wraps around from $ff to $00");
+}
+
 // The main accumulator stuff (ADC, AND, CMP, EOR, LDA, ORA, SBC, STA)
 // plus PEI.
 static void group_main(int index, int immediate_mode)
@@ -859,12 +867,15 @@ static void group_main(int index, int immediate_mode)
 		break;
 	case INDIRECT_ADDRESSING:	// ($ff)
 		make_command(force_bit, &result, accu_ind8[index]);
+		check_zp_wraparound(&result);
 		break;
 	case INDIRECT_Y_INDEXED_ADDRESSING:	// ($ff),y
 		make_command(force_bit, &result, accu_indy8[index]);
+		check_zp_wraparound(&result);
 		break;
 	case INDIRECT_Z_INDEXED_ADDRESSING:	// ($ff),z
 		make_command(force_bit, &result, accu_indz8[index]);
+		check_zp_wraparound(&result);
 		break;
 	case LONG_INDIRECT_ADDRESSING:	// [$ff]
 		make_command(force_bit, &result, accu_lind8[index]);

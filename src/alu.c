@@ -1,5 +1,5 @@
 // ACME - a crossassembler for producing 6502/65c02/65816/65ce02 code.
-// Copyright (C) 1998-2016 Marco Baye
+// Copyright (C) 1998-2019 Marco Baye
 // Have a look at "acme.c" for further info
 //
 // Arithmetic/logic unit
@@ -12,6 +12,7 @@
 //		give a warning).
 // 31 May 2014	Added "0b" binary number prefix as alternative to "%".
 // 28 Apr 2015	Added symbol name output to "value not defined" error.
+//  1 Feb 2019	Prepared to make "honor leading zeroes" optionally later on.
 #include "alu.h"
 #include <stdlib.h>
 #include <math.h>	// only for fp support
@@ -24,6 +25,8 @@
 #include "section.h"
 #include "symbol.h"
 #include "tree.h"
+
+#define honor_leading_zeroes	1	// FIXME - make a CLI argument for this
 
 
 // constants
@@ -47,8 +50,8 @@ static const char	s_arctan[]	= "arctan";
 // operator handles (FIXME - use function pointers instead? or too slow?)
 enum operator_handle {
 //	special values (pseudo operators)
-	OPHANDLE_END,		//		"reached end of expression"
-	OPHANDLE_RETURN,	//		"return value to caller"
+	OPHANDLE_EXPRSTART,	//		"start of expression"
+	OPHANDLE_EXPREND,	//		"end of expression"
 //	functions
 	OPHANDLE_ADDR,		//	addr(v)
 	OPHANDLE_INT,		//	int(v)
@@ -96,8 +99,8 @@ struct operator {
 #define IS_RIGHT_ASSOCIATIVE(p)	((p) & 1)	// lsb of priority value signals right-associtivity
 
 // operator structs (only hold handle and priority/associativity value)
-static struct operator ops_end		= {OPHANDLE_END,	0};	// special
-static struct operator ops_return	= {OPHANDLE_RETURN,	2};	// special
+static struct operator ops_exprend	= {OPHANDLE_EXPREND,	0};	// special
+static struct operator ops_exprstart	= {OPHANDLE_EXPRSTART,	2};	// special
 static struct operator ops_closing	= {OPHANDLE_CLOSING,	4};	// dyadic
 static struct operator ops_opening	= {OPHANDLE_OPENING,	6};	// monadic
 static struct operator ops_or		= {OPHANDLE_OR,		8};	// dyadic
@@ -320,12 +323,12 @@ static intval_t my_asr(intval_t left, intval_t right)
 }
 
 // if undefined, remember name for error output
-static void check_for_def(int flags, int prefix, char *name, size_t length)
+static void check_for_def(int flags, char optional_prefix_char, char *name, size_t length)
 {
 	if ((flags & MVALUE_DEFINED) == 0) {
 		DYNABUF_CLEAR(undefsym_dyna_buf);
-		if (prefix) {
-			DynaBuf_append(undefsym_dyna_buf, LOCAL_PREFIX);
+		if (optional_prefix_char) {
+			DynaBuf_append(undefsym_dyna_buf, optional_prefix_char);
 			length++;
 		}
 		DynaBuf_add_string(undefsym_dyna_buf, name);
@@ -344,14 +347,14 @@ static void check_for_def(int flags, int prefix, char *name, size_t length)
 // their internal name is different (longer) than their displayed name.
 // This function is not allowed to change DynaBuf because that's where the
 // symbol name is stored!
-static void get_symbol_value(scope_t scope, int prefix, size_t name_length)
+static void get_symbol_value(scope_t scope, char optional_prefix_char, size_t name_length)
 {
 	struct symbol	*symbol;
 
 	// if the symbol gets created now, mark it as unsure
 	symbol = symbol_find(scope, MVALUE_UNSURE);
 	// if needed, remember name for "undefined" error output
-	check_for_def(symbol->result.flags, prefix, GLOBALDYNABUF_CURRENT, name_length);
+	check_for_def(symbol->result.flags, optional_prefix_char, GLOBALDYNABUF_CURRENT, name_length);
 	// in first pass, count usage
 	if (pass_count == 0)
 		symbol->usage++;
@@ -374,7 +377,7 @@ static void parse_quoted_character(char closing_quote)
 	// on empty string, complain
 	if (GotByte == closing_quote) {
 		Throw_error(exception_missing_string);
-		Input_skip_remainder();
+		alu_state = STATE_ERROR;
 		return;
 	}
 
@@ -387,7 +390,7 @@ static void parse_quoted_character(char closing_quote)
 		if (GotByte) {
 			// if longer than one character
 			Throw_error("There's more than one character.");
-			Input_skip_remainder();
+			alu_state = STATE_ERROR;
 		}
 	}
 	PUSH_INTOPERAND(value, MVALUE_GIVEN | MVALUE_ISBYTE, 0);
@@ -421,13 +424,15 @@ static void parse_binary_value(void)	// Now GotByte = "%" or "b"
 		}
 	} while (go_on);
 	// set force bits
-	if (digits > 8) {
-		if (digits > 16) {
-			if (value < 65536)
-				flags |= MVALUE_FORCE24;
-		} else {
-			if (value < 256)
-				flags |= MVALUE_FORCE16;
+	if (honor_leading_zeroes) {
+		if (digits > 8) {
+			if (digits > 16) {
+				if (value < 65536)
+					flags |= MVALUE_FORCE24;
+			} else {
+				if (value < 256)
+					flags |= MVALUE_FORCE16;
+			}
 		}
 	}
 	PUSH_INTOPERAND(value, flags, 0);
@@ -465,13 +470,15 @@ static void parse_hexadecimal_value(void)	// Now GotByte = "$" or "x"
 		}
 	} while (go_on);
 	// set force bits
-	if (digits > 2) {
-		if (digits > 4) {
-			if (value < 65536)
-				flags |= MVALUE_FORCE24;
-		} else {
-			if (value < 256)
-				flags |= MVALUE_FORCE16;
+	if (honor_leading_zeroes) {
+		if (digits > 2) {
+			if (digits > 4) {
+				if (value < 65536)
+					flags |= MVALUE_FORCE24;
+			} else {
+				if (value < 256)
+					flags |= MVALUE_FORCE16;
+			}
 		}
 	}
 	PUSH_INTOPERAND(value, flags, 0);
@@ -558,13 +565,15 @@ static void parse_octal_value(void)	// Now GotByte = "&"
 		GetByte();
 	}
 	// set force bits
-	if (digits > 3) {
-		if (digits > 6) {
-			if (value < 65536)
-				flags |= MVALUE_FORCE24;
-		} else {
-			if (value < 256)
-				flags |= MVALUE_FORCE16;
+	if (honor_leading_zeroes) {
+		if (digits > 3) {
+			if (digits > 6) {
+				if (value < 65536)
+					flags |= MVALUE_FORCE24;
+			} else {
+				if (value < 256)
+					flags |= MVALUE_FORCE16;
+			}
 		}
 	}
 	PUSH_INTOPERAND(value, flags, 0);
@@ -593,10 +602,12 @@ static void parse_function_call(void)
 	// make lower case version of name in local dynamic buffer
 	DynaBuf_to_lower(function_dyna_buf, GlobalDynaBuf);
 	// search for tree item
-	if (Tree_easy_scan(function_tree, &node_body, function_dyna_buf))
+	if (Tree_easy_scan(function_tree, &node_body, function_dyna_buf)) {
 		PUSH_OPERATOR((struct operator *) node_body);
-	else
+	} else {
 		Throw_error("Unknown function.");
+		alu_state = STATE_ERROR;
+	}
 }
 
 
@@ -617,7 +628,7 @@ static void expect_operand_or_monadic_operator(void)
 		while (GetByte() == '+');
 		ugly_length_kluge = GlobalDynaBuf->size;	// FIXME - get rid of this!
 		symbol_fix_forward_anon_name(FALSE);	// FALSE: do not increment counter
-		get_symbol_value(section_now->scope, 0, ugly_length_kluge);
+		get_symbol_value(section_now->local_scope, 0, ugly_length_kluge);
 		goto now_expect_dyadic;
 
 	case '-':	// NEGATION operator or anonymous backward label
@@ -631,7 +642,7 @@ static void expect_operand_or_monadic_operator(void)
 		SKIPSPACE();
 		if (BYTEFLAGS(GotByte) & FOLLOWS_ANON) {
 			DynaBuf_append(GlobalDynaBuf, '\0');
-			get_symbol_value(section_now->scope, 0, GlobalDynaBuf->size - 1);	// -1 to not count terminator
+			get_symbol_value(section_now->local_scope, 0, GlobalDynaBuf->size - 1);	// -1 to not count terminator
 			goto now_expect_dyadic;
 		}
 
@@ -704,10 +715,23 @@ static void expect_operand_or_monadic_operator(void)
 
 		if (Input_read_keyword()) {
 			// Now GotByte = illegal char
-			get_symbol_value(section_now->scope, 1, GlobalDynaBuf->size - 1);	// -1 to not count terminator
+			get_symbol_value(section_now->local_scope, LOCAL_PREFIX, GlobalDynaBuf->size - 1);	// -1 to not count terminator
 			goto now_expect_dyadic;
 		}
 
+		// if we're here, Input_read_keyword() will have thrown an error (like "no string given"):
+		alu_state = STATE_ERROR;
+		break;
+	case CHEAP_PREFIX:	// cheap local symbol
+		//printf("looking in cheap scope %d\n", section_now->cheap_scope);
+		GetByte();	// start after '@'
+		if (Input_read_keyword()) {
+			// Now GotByte = illegal char
+			get_symbol_value(section_now->cheap_scope, CHEAP_PREFIX, GlobalDynaBuf->size - 1);	// -1 to not count terminator
+			goto now_expect_dyadic;
+		}
+
+		// if we're here, Input_read_keyword() will have thrown an error (like "no string given"):
 		alu_state = STATE_ERROR;
 		break;
 	// decimal values and global symbols
@@ -749,10 +773,12 @@ static void expect_operand_or_monadic_operator(void)
 			}
 		} else {
 			// illegal character read - so don't go on
+			// we found end-of-expression instead of an operand,
+			// that's either an empty expression or an erroneous one!
 			PUSH_INTOPERAND(0, 0, 0);	// push dummy operand so stack is ok
 			// push pseudo value, EXISTS flag is clear
-			if (operator_stack[operator_sp - 1] == &ops_return) {
-				PUSH_OPERATOR(&ops_end);
+			if (operator_stack[operator_sp - 1] == &ops_exprstart) {
+				PUSH_OPERATOR(&ops_exprend);
 				alu_state = STATE_TRY_TO_REDUCE_STACKS;
 			} else {
 				Throw_error(exception_syntax);
@@ -770,7 +796,9 @@ get_byte_and_push_monadic:
 		break;
 
 now_expect_dyadic:
-		alu_state = STATE_EXPECT_DYADIC_OPERATOR;
+		// bugfix: if in error state, do not change state back to valid one
+		if (alu_state < STATE_MAX_GO_ON)
+			alu_state = STATE_EXPECT_DYADIC_OPERATOR;
 		break;
 	}
 }
@@ -905,7 +933,8 @@ static void expect_dyadic_operator(void)
 			Throw_error("Unknown operator.");
 			alu_state = STATE_ERROR;
 		} else {
-			operator = &ops_end;
+			// we found end-of-expression when expecting an operator, that's ok.
+			operator = &ops_exprend;
 			goto push_dyadic;
 		}
 
@@ -999,6 +1028,7 @@ static void ensure_int_from_fp(void)
 
 
 // Try to reduce stacks by performing high-priority operations
+// (if the previous operator has a higher priority than the current one, do it)
 static void try_to_reduce_stacks(int *open_parentheses)
 {
 	if (operator_sp < 2) {
@@ -1019,9 +1049,13 @@ static void try_to_reduce_stacks(int *open_parentheses)
 		return;
 	}
 
+	// process previous operator
 	switch (operator_stack[operator_sp - 2]->handle) {
 // special (pseudo) operators
-	case OPHANDLE_RETURN:
+	case OPHANDLE_EXPRSTART:
+		// the only operator with a lower priority than this
+		// "start-of-expression" operator is "end-of-expression",
+		// therefore we know we are done.
 		// don't touch indirect_flag; needed for INDIRECT flag
 		--operator_sp;	// decrement operator stack pointer
 		alu_state = STATE_END;
@@ -1033,7 +1067,7 @@ static void try_to_reduce_stacks(int *open_parentheses)
 			operator_sp -= 2;	// remove both of them
 			alu_state = STATE_EXPECT_DYADIC_OPERATOR;
 			break;
-		case OPHANDLE_END:	// unmatched parenthesis
+		case OPHANDLE_EXPREND:	// unmatched parenthesis
 			++(*open_parentheses);	// count
 			goto RNTLObutDontTouchIndirectFlag;
 
@@ -1043,7 +1077,8 @@ static void try_to_reduce_stacks(int *open_parentheses)
 		break;
 	case OPHANDLE_CLOSING:
 		Throw_error("Too many ')'.");
-		goto remove_next_to_last_operator;
+		alu_state = STATE_ERROR;
+		return;
 
 // functions
 	case OPHANDLE_ADDR:
@@ -1399,7 +1434,7 @@ static int parse_expression(struct result *result)
 	// begin by reading value (or monadic operator)
 	alu_state = STATE_EXPECT_OPERAND_OR_MONADIC_OPERATOR;
 	indirect_flag = 0;	// Contains either 0 or MVALUE_INDIRECT
-	PUSH_OPERATOR(&ops_return);
+	PUSH_OPERATOR(&ops_exprstart);
 	do {
 		// check stack sizes. enlarge if needed
 		if (operator_sp >= operator_stk_size)
@@ -1463,8 +1498,16 @@ static int parse_expression(struct result *result)
 				result->flags |= MVALUE_ISBYTE;
 		}
 	} else {
-		// State is STATE_ERROR. But actually, nobody cares.
-		// ...errors have already been reported anyway. :)
+		// State is STATE_ERROR. Errors have already been reported,
+		// but we must make sure not to pass bogus data to caller.
+		result->flags = 0;	// maybe set DEFINED flag to suppress follow-up errors?
+		result->val.intval = 0;
+		result->addr_refs = 0;
+		// make sure no additional (spurious) errors are reported:
+		Input_skip_remainder();
+		// FIXME - remove this when new function interface gets used:
+		// callers must decide for themselves what to do when expression parser returns error
+		// (currently LDA'' results in both "no string given" AND "illegal combination of command and addressing mode"!)
 	}
 	// return number of open (unmatched) parentheses
 	return open_parentheses;

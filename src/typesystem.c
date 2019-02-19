@@ -1,5 +1,5 @@
 // ACME - a crossassembler for producing 6502/65c02/65816/65ce02 code.
-// Copyright (C) 1998-2016 Marco Baye
+// Copyright (C) 1998-2017 Marco Baye
 // Have a look at "acme.c" for further info
 //
 // type system stuff
@@ -35,7 +35,7 @@ void typesystem_force_address_statement(int value)
 
 void typesystem_want_imm(struct result *result)
 {
-	if (!warn_on_type_mismatch)
+	if (!config.warn_on_type_mismatch)
 		return;
 	if (!(result->flags & MVALUE_DEFINED))
 		return;
@@ -46,7 +46,7 @@ void typesystem_want_imm(struct result *result)
 }
 void typesystem_want_addr(struct result *result)
 {
-	if (!warn_on_type_mismatch)
+	if (!config.warn_on_type_mismatch)
 		return;
 	if (!(result->flags & MVALUE_DEFINED))
 		return;

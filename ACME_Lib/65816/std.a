@@ -1,7 +1,7 @@
-;ACME 0.95
+;ACME 0.96.4
 
 !ifdef lib_65816_std_a !eof
-lib_65816_std_a = 1
+lib_65816_std_a = 2
 
 ; Labels and macros for Western Digital's 65c816 processor
 
@@ -12,11 +12,12 @@ lib_65816_std_a = 1
 	cpu_e_reset = $fffc
 	cpu_e_irq   = $fffe
 
-	cpu_n_cop   = $fff4
-	cpu_n_brk   = $fff6
-	cpu_n_abort = $fff8
-	cpu_n_nmi   = $fffa
-	cpu_n_irq   = $fffe
+	cpu_n_cop   = $ffe4
+	cpu_n_brk   = $ffe6
+	cpu_n_abort = $ffe8
+	cpu_n_nmi   = $ffea
+	; no reset vector for native mode because reset always enters emulation mode
+	cpu_n_irq   = $ffee
 }
 
 !macro cpu_emu {; switch to emulation mode
@@ -71,11 +72,11 @@ lib_65816_std_a = 1
 	+i8
 }
 
-!macro inc24 .t {; increase 24-bit counter
-	inc .t
+!macro inc24 @t {; increase 24-bit counter
+	inc @t
 	bne +
-	inc .t + 1
+	inc @t + 1
 	bne +
-	inc .t + 2
+	inc @t + 2
 +
 }

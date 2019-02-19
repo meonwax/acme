@@ -12,10 +12,10 @@ lib_cbm_c128_mmu_a = 2
 	; configuration register
 	mmu_cr_d500	= $d500	; same as "mmu_cr" at $ff00. Use "mmu_cr" instead, as that is *always* available.
 	; preconfiguration registers (internal format just like mmu_cr)
-	mmu_pcr_a	= $d501	; c128 kernel default is $3f (BANK 0)
-	mmu_pcr_b	= $d502	; c128 kernel default is $7f (BANK 1)
-	mmu_pcr_c	= $d503	; c128 kernel default is $01 (BANK 14)
-	mmu_pcr_d	= $d504	; c128 kernel default is $41 (all system roms, with ram 1)
+	mmu_pcr_a	= $d501	; c128 kernal default is $3f (BANK 0)
+	mmu_pcr_b	= $d502	; c128 kernal default is $7f (BANK 1)
+	mmu_pcr_c	= $d503	; c128 kernal default is $01 (BANK 14)
+	mmu_pcr_d	= $d504	; c128 kernal default is $41 (all system roms, with ram 1)
 }
 ; contents of cr and all four pcr:
 mmu_CR_RAMBANK_MASK	= %##......	; this controls which RAM bank is used in areas where RAM is enabled
@@ -25,7 +25,7 @@ mmu_CR_RAMBANK_2	= %#.......	; on an unmodified c128, there is no ram bank 2 (0 
 mmu_CR_RAMBANK_3	= %##......	; on an unmodified c128, there is no ram bank 3 (1 will be used instead)
 
 mmu_CR_HIGH_MASK	= %..##....	; this controls the "high area" (c000..ffff), but i/o (d000..dfff) is separate
-;mmu_CR_HIGH_SYSROM	= %........	; editor, charset (or i/o, see below), kernel
+;mmu_CR_HIGH_SYSROM	= %........	; editor, charset (or i/o, see below), kernal
 mmu_CR_HIGH_INTFUNCROM	= %...#....
 mmu_CR_HIGH_EXTFUNCROM	= %..#.....
 mmu_CR_HIGH_RAM		= %..##....
@@ -57,10 +57,10 @@ mmu_CR_BANK8	= $2a	; 32 KiB bank 0; 32 KiB EFROM with i/o overlay
 mmu_CR_BANK9	= $6a	; 32 KiB bank 1; 32 KiB EFROM with i/o overlay
 mmu_CR_BANK10	= $aa	; 32 KiB bank 2; 32 KiB EFROM with i/o overlay
 mmu_CR_BANK11	= $ea	; 32 KiB bank 3; 32 KiB EFROM with i/o overlay
-mmu_CR_BANK12	= $06	; 32 KiB bank 0; 16 KiB IFROM; 16 KiB kernel with i/o overlay
-mmu_CR_BANK13	= $0a	; 32 KiB bank 0; 16 KiB EFROM; 16 KiB kernel with i/o overlay
-mmu_CR_BANK14	= $01	; 16 KiB bank 0; 32 KiB basic; 16 KiB kernel with font overlay
-mmu_CR_BANK15	= $00	; 16 KiB bank 0; 32 KiB basic; 16 KiB kernel with i/o overlay
+mmu_CR_BANK12	= $06	; 32 KiB bank 0; 16 KiB IFROM; 16 KiB kernal with i/o overlay
+mmu_CR_BANK13	= $0a	; 32 KiB bank 0; 16 KiB EFROM; 16 KiB kernal with i/o overlay
+mmu_CR_BANK14	= $01	; 16 KiB bank 0; 32 KiB basic; 16 KiB kernal with font overlay
+mmu_CR_BANK15	= $00	; 16 KiB bank 0; 32 KiB basic; 16 KiB kernal with i/o overlay
 ; An unmodified C128 does not have a "ram bank 2" or "ram bank 3".
 ; Whenever one of these is activated, ram banks 0 and 1 will be used instead.
 ; IFROM means internal function ROM (socket U36)
@@ -71,13 +71,13 @@ mmu_CR_BANK15	= $00	; 16 KiB bank 0; 32 KiB basic; 16 KiB kernel with i/o overla
 	mmu_mcr		= $d505
 }
 ; contents:
-mmu_MCR_40COLUMNS	= %#.......	; 40/80 key: 0 means pressed, 1 means released (writable! if cleared, will always read as 0!)
-mmu_MCR_C64MODE		= %.#......	; setting this bit makes the MMU disappear from the memory map :)
-mmu_MCR_EXROM		= %..#.....	; if zero on boot, system will enter c64 mode (writable!)
-mmu_MCR_GAME		= %...#....	; if zero on boot, system will enter c64 mode (writable!)
-mmu_MCR_FSDIR_OUTPUT	= %....#...	; direction of fast serial bus
+mmu_MCR_40COLUMNS	= %#.......	; (pin 48) 40/80 key: 0 means pressed, 1 means released (writable! if cleared, will always read as 0!)
+mmu_MCR_C64MODE		= %.#......	; (pin 47) setting this bit makes the MMU disappear from the memory map :)
+mmu_MCR_EXROM		= %..#.....	; (pin 46) if zero on boot, system will enter c64 mode (writable!)
+mmu_MCR_GAME		= %...#....	; (pin 45) if zero on boot, system will enter c64 mode (writable!)
+mmu_MCR_FSDIR_OUTPUT	= %....#...	; (pin 44) direction of fast serial bus
 mmu_MCR_UNUSED		= %.....##.	; always set
-mmu_MCR_8502MODE	= %.......#	; setting this to zero switches to Z80 cpu
+mmu_MCR_8502MODE	= %.......#	; (pin 43 inverted) setting this to zero switches to Z80 cpu
 
 !address {
 	; ram configuration register
@@ -148,10 +148,10 @@ mmu_VR_VERSION_MASK	= %....####	; mmu version 0
 	; load configuration registers:
 	; a read access will return the value of the corresponding preconfiguration register
 	; any write access will copy the value of the corresponding preconfiguration register to mmu_cr
-	mmu_lcr_a	= $ff01	; c128 kernel default is $3f (BANK 0)
-	mmu_lcr_b	= $ff02	; c128 kernel default is $7f (BANK 1)
-	mmu_lcr_c	= $ff03	; c128 kernel default is $01 (BANK 14)
-	mmu_lcr_d	= $ff04	; c128 kernel default is $41 (all system roms, with ram 1)
+	mmu_lcr_a	= $ff01	; c128 kernal default is $3f (BANK 0)
+	mmu_lcr_b	= $ff02	; c128 kernal default is $7f (BANK 1)
+	mmu_lcr_c	= $ff03	; c128 kernal default is $01 (BANK 14)
+	mmu_lcr_d	= $ff04	; c128 kernal default is $41 (all system roms, with ram 1)
 
 	; the c128 ROMs contain a look-up table to convert bank numbers to their
 	; corresponding configuration register values:

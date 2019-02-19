@@ -41,12 +41,14 @@ Assembling buggy JMP($xxff) instruction
     Note that this warning is only given for CPU types 6502 and 6510,
     because 65c02 and 65816 have been fixed in this respect.
 
+Assembling unstable ANE #NONZERO instruction
 Assembling unstable LXA #NONZERO instruction
-    This warning is only ever given for CPU type 6510. LXA is one of
-    the undocumented ("illegal") opcodes of this CPU (opcode 0xab),
-    and it only works reliably if its argument is zero. Therefore ACME
-    issues this warning if you are about to generate this instruction
-    with a non-zero argument.
+    These warnings are only ever given for CPU type 6510. ANE and LXA
+    are undocumented ("illegal") opcodes of this CPU, and they only
+    work reliably if the argument is zero or the accumulator contains
+    0xff.
+    Therefore ACME issues these warnings if it is about to generate
+    these instructions with a non-zero argument.
 
 Bug in ACME, code follows
     A situation has been encountered implying there is a bug in ACME.
@@ -155,6 +157,11 @@ Wrong type for loop's END value - must match type of START value.
     In "!for" loops, START and END must have the same type, which then
     gets used for the loop counter.
 
+Zeropage pointer wraps around from $ff to $00
+    A zeropage-indirect addressing mode uses $ff as the argument. The
+    6502 will then fetch the second pointer byte from $00 instead of
+    $0100, therefore this warning is issued.
+
 ...called from here.
     If warnings and/or errors are output during a macro call, messages
     with this text are added to display the call stack (because you
@@ -212,6 +219,10 @@ Found '}' instead of end-of-file.
 Garbage data at end of statement.
     There are still arguments when there should not be any more.
 
+Hex digits are not given in pairs.
+    The two digits of a hex byte are separated by another character,
+    or there is an odd number of digits.
+
 Illegal combination of command and addressing mode.
     The given command cannot be used with the given addressing mode on
     the CPU you have chosen.
@@ -238,6 +249,10 @@ Macro not defined (or wrong signature).
 Macro parameter twice.
     The same symbol name is used two (or more) times in the same macro
     parameter list.
+
+Negative size argument.
+    The size argument of "!bin" or "!skip" must be zero or positive,
+    but cannot be negative.
 
 Negative value - cannot choose addressing mode.
     Because the argument is a negative value, ACME does not know what

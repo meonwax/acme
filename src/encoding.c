@@ -109,17 +109,10 @@ void encoding_passinit(void)
 }
 
 // try to load encoding table from given file
-void encoding_load(char target[256], const char *filename)
+void encoding_load_from_file(char target[256], FILE *stream)
 {
-	FILE	*fd	= fopen(filename, FILE_READBINARY);
-
-	if (fd) {
-		if (fread(target, sizeof(char), 256, fd) != 256)
-			Throw_error("Conversion table incomplete.");
-		fclose(fd);
-	} else {
-		Throw_error(exception_cannot_open_input_file);
-	}
+	if (fread(target, sizeof(char), 256, stream) != 256)
+		Throw_error("Conversion table incomplete.");
 }
 
 // lookup encoder held in DynaBuf and return its struct pointer (or NULL on failure)

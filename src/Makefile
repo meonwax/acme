@@ -43,7 +43,7 @@ output.o: config.h acme.h alu.h cpu.h dynabuf.h global.h input.h tree.h output.h
 
 platform.o: config.h platform.h platform.c
 
-pseudoopcodes.o: acme.h alu.h input.h macro.h output.h pseudoopcodes.h pseudoopcodes.c
+pseudoopcodes.o: acme.h alu.h global.h input.h macro.h output.h pseudoopcodes.h pseudoopcodes.c
 
 section.o: config.h dynabuf.h global.h symbol.h tree.h section.h section.c
 

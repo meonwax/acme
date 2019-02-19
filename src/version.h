@@ -1,5 +1,5 @@
 // ACME - a crossassembler for producing 6502/65c02/65816/65ce02 code.
-// Copyright (C) 1998-2017 Marco Baye
+// Copyright (C) 1998-2019 Marco Baye
 // Have a look at "acme.c" for further info
 //
 // version info
@@ -7,11 +7,11 @@
 #define version_H
 
 
-#define RELEASE		"0.96.2"	// update before release (FIXME)
+#define RELEASE		"0.96.4"	// update before release	FIXME
 #define CODENAME	"Fenchurch"	// update before release
-#define CHANGE_DATE	"10 Mar"		// update before release
-#define CHANGE_YEAR	"2017"		// update before release
-//#define HOME_PAGE	"http://home.pages.de/~mac_bacon/smorbrod/acme/"	// FIXME
+#define CHANGE_DATE	"1 Feb"	// update before release	FIXME
+#define CHANGE_YEAR	"2019"		// update before release
+//#define HOME_PAGE	"http://home.pages.de/~mac_bacon/smorbrod/acme/"
 #define HOME_PAGE	"http://sourceforge.net/p/acme-crossass/"	// FIXME
 
 

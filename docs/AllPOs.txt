@@ -107,6 +107,23 @@ Examples:	!be32 $7fffffff, symbol, -$80000000, 14, $46a4f35
 		!be32 300000 - 4, a AND a2, 2 ^ tz, (3+4)*70, l1 & .j2
 
 
+Call:		!hex PAIRS_OF_HEX_DIGITS
+Purpose:	Insert byte values with a minimum of additional syntax.
+		This pseudo opcode was added for easier writing of external
+		source code generator tools.
+Parameters:	PAIRS_OF_HEX_DIGITS: Just hexadecimal digits, without any
+		"0x" or "$" prefix. Spaces and TABs are allowed, but not
+		needed to separate the byte values.
+Aliases:	"!h"
+Examples:	!h f0 f1 f2 f3 f4 f5 f6 f7	; insert values 0xf0..0xf7
+		!h f0f1f2f3 f4f5f6f7		; insert values 0xf0..0xf7
+		!h f0f1f2f3f4f5f6f7		; insert values 0xf0..0xf7
+		!h f0f 1f2	; ERROR: space inside pair!
+		!h 0x00, $00	; ERROR: "0x", "," and "$" are forbidden!
+		!h SOME_SYMBOL	; ERROR: symbols are forbidden!
+		!h ABCD	; insert value 0xAB, then 0xCD (CAUTION, big-endian)
+
+
 Call:		!fill AMOUNT [, VALUE]
 Purpose:	Fill amount of memory with value.
 Parameters:	AMOUNT: Any formula the value parser accepts, but it
@@ -116,6 +133,16 @@ Parameters:	AMOUNT: Any formula the value parser accepts, but it
 Aliases:	"!fi"
 Examples:	!fi 256, $ff	; reserve 256 bytes
 		!fill 2		; reserve two bytes
+
+
+Call:		!skip AMOUNT
+Purpose:	Advance in output buffer without starting a new segment.
+Parameters:	AMOUNT: Any formula the value parser accepts, but it
+		must be solvable even in the first pass (this limitation
+		will hopefully be lifted in a future release).
+Aliases:	None
+Examples:	!skip BUFSIZE	; reserve some bytes
+		!skip 5		; reserve five bytes
 
 
 Call:		!align ANDVALUE, EQUALVALUE [, FILLVALUE]
@@ -770,6 +797,24 @@ Examples:	!to "TinyDemo", cbm	; define output file + format
 		!initmem $ff	; Default memory content is now $ff.
 		; Useful if you want to store your code in an EPROM.
 
+
+Call:		!xor EXPRESSION [ { BLOCK } ]
+Purpose:	Change the value to XOR all output bytes with (the
+		value defaults to zero on startup). This "encryption"
+		facility was added to compensate for the shortcomings
+		of the "!scrxor" pseudo opcode, which only XORs
+		strings and characters, but not numbers.
+		When used with block syntax, the previously chosen
+		value is restored afterwards.
+Parameters:	EXPRESSION: Any formula the value parser accepts.
+		BLOCK: A block of assembler statements.
+Examples:	; first as normal screencodes:
+		!scr "Hello everybody...", GROUPLOGOCHAR
+		; and now as inverted screencodes:
+		!xor $80 {
+		!scr "Hello everybody...", GROUPLOGOCHAR
+		}
+		
 
 ----------------------------------------------------------------------
 Section:   Offset assembly

@@ -1,4 +1,4 @@
-;ACME 0.95
+;ACME 0.96.4
 
 !ifdef lib_6502_std_a !eof
 lib_6502_std_a = 1
@@ -22,57 +22,57 @@ lib_6502_std_a = 1
 }
 
 ; increase 16-bit counter
-!macro inc16 .t {
-		inc .t
+!macro inc16 @t {
+		inc @t
 		bne +
-		inc .t + 1
+		inc @t + 1
 +
 }
 
 ; far branches
-!macro bcc .t {
+!macro bcc @t {
 		bcs +
-		jmp .t
+		jmp @t
 +
 }
-!macro bcs .t {
+!macro bcs @t {
 		bcc +
-		jmp .t
+		jmp @t
 +
 }
 
-!macro beq .t {
+!macro beq @t {
 		bne +
-		jmp .t
+		jmp @t
 +
 }
 
-!macro bne .t {
+!macro bne @t {
 		beq +
-		jmp .t
+		jmp @t
 +
 }
 
-!macro bmi .t {
+!macro bmi @t {
 		bpl +
-		jmp .t
+		jmp @t
 +
 }
 
-!macro bpl .t {
+!macro bpl @t {
 		bmi +
-		jmp .t
+		jmp @t
 +
 }
 
-!macro bvc .t {
+!macro bvc @t {
 		bvs +
-		jmp .t
+		jmp @t
 +
 }
 
-!macro bvs .t {
+!macro bvs @t {
 		bvc +
-		jmp .t
+		jmp @t
 +
 }

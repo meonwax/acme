@@ -1,5 +1,5 @@
 // ACME - a crossassembler for producing 6502/65c02/65816/65ce02 code.
-// Copyright (C) 1998-2016 Marco Baye
+// Copyright (C) 1998-2017 Marco Baye
 // Have a look at "acme.c" for further info
 //
 // Global stuff - things that are needed by several modules
@@ -47,6 +47,7 @@ const char	s_scr[]		= "scr";
 // Exception messages during assembly
 const char	exception_cannot_open_input_file[] = "Cannot open input file.";
 const char	exception_missing_string[]	= "No string given.";
+const char	exception_negative_size[]	= "Negative size argument.";
 const char	exception_no_left_brace[]	= "Missing '{'.";
 const char	exception_no_memory_left[]	= "Out of memory.";
 const char	exception_no_right_brace[]	= "Found end-of-file instead of '}'.";
@@ -108,19 +109,27 @@ const char	Byte_flags[256]	= {
 // variables
 int		pass_count;			// number of current pass (starts 0)
 char		GotByte;			// Last byte read (processed)
-int		Process_verbosity	= 0;	// Level of additional output
-int		warn_on_indented_labels	= TRUE;	// warn if indented label is encountered
-int		warn_on_old_for		= TRUE;	// warn if "!for" with old syntax is found
-int		warn_on_type_mismatch	= FALSE;	// use type-checking system
 // global counters
 int		pass_undefined_count;	// "NeedValue" type errors
 int		pass_real_errors;	// Errors yet
-signed long	max_errors		= MAXERRORS;	// errors before giving up
 FILE		*msg_stream		= NULL;	// set to stdout by --use-stdout
-int		format_msvc		= FALSE;	// actually bool, enabled by --msvc
-int		format_color		= FALSE;	// actually bool, enabled by --color
 struct report 	*report			= NULL;
 
+// configuration
+struct config	config;
+
+// set configuration to default values
+void config_default(struct config *conf)
+{
+	conf->pseudoop_prefix		= '!';	// can be changed to '.' by CLI switch
+	conf->process_verbosity		= 0;	// level of additional output
+	conf->warn_on_indented_labels	= TRUE;	// warn if indented label is encountered
+	conf->warn_on_old_for		= TRUE;	// warn if "!for" with old syntax is found
+	conf->warn_on_type_mismatch	= FALSE;	// use type-checking system
+	conf->max_errors		= MAXERRORS;	// errors before giving up
+	conf->format_msvc		= FALSE;	// actually bool, enabled by --msvc
+	conf->format_color		= FALSE;	// actually bool, enabled by --color
+}
 
 // memory allocation stuff
 
@@ -183,14 +192,14 @@ static void parse_mnemo_or_global_symbol_def(int *statement_flags)
 }
 
 
-// parse local symbol definition
-static void parse_local_symbol_def(int *statement_flags)
+// parse (cheap) local symbol definition
+static void parse_local_symbol_def(int *statement_flags, scope_t scope)
 {
 	if (!first_label_of_statement(statement_flags))
 		return;
-	GetByte();	// start after '.'
+	GetByte();	// start after '.'/'@'
 	if (Input_read_keyword())
-		symbol_parse_definition(section_now->scope, *statement_flags);
+		symbol_parse_definition(scope, *statement_flags);
 }
 
 
@@ -204,7 +213,7 @@ static void parse_backward_anon_def(int *statement_flags)
 		DYNABUF_APPEND(GlobalDynaBuf, '-');
 	while (GetByte() == '-');
 	DynaBuf_append(GlobalDynaBuf, '\0');
-	symbol_set_label(section_now->scope, *statement_flags, 0, TRUE);	// this "TRUE" is the whole secret
+	symbol_set_label(section_now->local_scope, *statement_flags, 0, TRUE);	// this "TRUE" is the whole secret
 }
 
 
@@ -221,8 +230,8 @@ static void parse_forward_anon_def(int *statement_flags)
 	}
 	symbol_fix_forward_anon_name(TRUE);	// TRUE: increment counter
 	DynaBuf_append(GlobalDynaBuf, '\0');
-	//printf("[%d, %s]\n", section_now->scope, GlobalDynaBuf->buffer);
-	symbol_set_label(section_now->scope, *statement_flags, 0, FALSE);
+	//printf("[%d, %s]\n", section_now->local_scope, GlobalDynaBuf->buffer);
+	symbol_set_label(section_now->local_scope, *statement_flags, 0, FALSE);
 }
 
 
@@ -244,45 +253,51 @@ void Parse_until_eob_or_eof(void)
 		typesystem_force_address_statement(FALSE);
 		// Parse until end of statement. Only loops if statement
 		// contains "label = pc" definition and something else; or
-		// if "!ifdef" is true, or if "!addr" is used without block.
+		// if "!ifdef/ifndef" is true/false, or if "!addr" is used without block.
 		do {
-			switch (GotByte) {
-			case CHAR_EOS:	// end of statement
-				// Ignore now, act later
-				// (stops from being "default")
-				break;
-			case ' ':	// space
-				statement_flags |= SF_FOUND_BLANK;
-				/*FALLTHROUGH*/
-			case CHAR_SOL:	// start of line
-				GetByte();	// skip
-				break;
-			case '-':
-				parse_backward_anon_def(&statement_flags);
-				break;
-			case '+':
-				GetByte();
-				if ((GotByte == LOCAL_PREFIX)
-				|| (BYTEFLAGS(GotByte) & CONTS_KEYWORD))
-					Macro_parse_call();
-				else
-					parse_forward_anon_def(&statement_flags);
-				break;
-			case PSEUDO_OPCODE_PREFIX:
+			// check for pseudo opcodes was moved out of switch,
+			// because prefix character is now configurable.
+			if (GotByte == config.pseudoop_prefix) {
 				pseudoopcode_parse();
-				break;
-			case '*':
-				parse_pc_def();
-				break;
-			case LOCAL_PREFIX:
-				parse_local_symbol_def(&statement_flags);
-				break;
-			default:
-				if (BYTEFLAGS(GotByte) & STARTS_KEYWORD) {
-					parse_mnemo_or_global_symbol_def(&statement_flags);
-				} else {
-					Throw_error(exception_syntax);
-					Input_skip_remainder();
+			} else {
+				switch (GotByte) {
+				case CHAR_EOS:	// end of statement
+					// Ignore now, act later
+					// (stops from being "default")
+					break;
+				case ' ':	// space
+					statement_flags |= SF_FOUND_BLANK;
+					/*FALLTHROUGH*/
+				case CHAR_SOL:	// start of line
+					GetByte();	// skip
+					break;
+				case '-':
+					parse_backward_anon_def(&statement_flags);
+					break;
+				case '+':
+					GetByte();
+					if ((GotByte == LOCAL_PREFIX)	// TODO - allow "cheap macros"?!
+					|| (BYTEFLAGS(GotByte) & CONTS_KEYWORD))
+						Macro_parse_call();
+					else
+						parse_forward_anon_def(&statement_flags);
+					break;
+				case '*':
+					parse_pc_def();
+					break;
+				case LOCAL_PREFIX:
+					parse_local_symbol_def(&statement_flags, section_now->local_scope);
+					break;
+				case CHEAP_PREFIX:
+					parse_local_symbol_def(&statement_flags, section_now->cheap_scope);
+					break;
+				default:
+					if (BYTEFLAGS(GotByte) & STARTS_KEYWORD) {
+						parse_mnemo_or_global_symbol_def(&statement_flags);
+					} else {
+						Throw_error(exception_syntax);
+						Input_skip_remainder();
+					}
 				}
 			}
 		} while (GotByte != CHAR_EOS);	// until end-of-statement
@@ -321,10 +336,11 @@ int Throw_get_counter(void)
 // This function will do the actual output for warnings, errors and serious
 // errors. It shows the given message string, as well as the current
 // context: file name, line number, source type and source title.
+// TODO: make un-static so !info and !debug can use this.
 static void throw_message(const char *message, const char *type)
 {
 	++throw_counter;
-	if (format_msvc)
+	if (config.format_msvc)
 		fprintf(msg_stream, "%s(%d) : %s (%s %s): %s\n",
 			Input_now->original_filename, Input_now->line_number,
 			type, section_now->type, section_now->title, message);
@@ -342,7 +358,7 @@ static void throw_message(const char *message, const char *type)
 void Throw_warning(const char *message)
 {
 	PLATFORM_WARNING(message);
-	if (format_color)
+	if (config.format_color)
 		throw_message(message, "\033[33mWarning\033[0m");
 	else
 		throw_message(message, "Warning");
@@ -363,12 +379,12 @@ void Throw_first_pass_warning(const char *message)
 void Throw_error(const char *message)
 {
 	PLATFORM_ERROR(message);
-	if (format_color)
+	if (config.format_color)
 		throw_message(message, "\033[31mError\033[0m");
 	else
 		throw_message(message, "Error");
 	++pass_real_errors;
-	if (pass_real_errors >= max_errors)
+	if (pass_real_errors >= config.max_errors)
 		exit(ACME_finalize(EXIT_FAILURE));
 }
 
@@ -380,7 +396,7 @@ void Throw_error(const char *message)
 void Throw_serious_error(const char *message)
 {
 	PLATFORM_SERIOUS(message);
-	if (format_color)
+	if (config.format_color)
 		throw_message(message, "\033[1m\033[31mSerious error\033[0m");
 	else
 		throw_message(message, "Serious error");

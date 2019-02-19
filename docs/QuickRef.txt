@@ -187,23 +187,35 @@ Available options are:
         This is more or less useless, because the help is also shown
         if ACME is run without any arguments at all.
 
-    -f, --format FORMAT    set output file format ("plain", "cbm" or "apple")
+    -f, --format FORMAT    set output file format
+        Use this with a bogus format type to get a list of all
+        supported ones (as of writing: "plain", "cbm" and "apple")
     -o, --outfile FILE     set output file name
         Output file name and format can also be given using the "!to"
         pseudo opcode. If the format is not specified, "!to" defaults
         to "cbm", while the command line option defaults to "plain".
+
+    -r, --report           set report file name
+        This creates a text listing containing the original line
+        number, the resulting memory address, the byte value(s) put
+        there and the original text line from the source file.
 
     -l, --symbollist FILE  set symbol list file name
         This can also be given using the "!symbollist"/"!sl" pseudo
         opcode. The switch was called "--labeldump" in older versions,
         that name still works, too.
 
+    --vicelabels FILE      set file name for label dump in VICE format
+        The resulting file uses a format suited for the VICE emulator.
+
     --setpc NUMBER         set program counter
         This can also be given in the source code using "* = NUMBER".
 
-    --cpu CPU_TYPE         set processor type
+    --cpu CPU_TYPE         set target processor
         This can be changed in the source code using the "!cpu" pseudo
         opcode. Defaults to 6502.
+        Use this with a bogus cpu type to get a list of all supported
+        ones.
 
     --initmem NUMBER       define 'empty' memory
         This can also be given using the "!initmem" pseudo opcode.
@@ -212,8 +224,8 @@ Available options are:
     --maxerrors NUMBER     set number of errors before exiting
         If not given, defaults to 10.
 
-    --maxdepth NUMBER      set recursion depth for macro calls and the
-        "!source" pseudo opcode. If not given, defaults to 64.
+    --maxdepth NUMBER      set recursion depth for macro calls and !src
+        The default value for this is 64.
 
     -vDIGIT                set verbosity level
         Sets how much additional informational output is generated.
@@ -239,6 +251,12 @@ Available options are:
         "-DSYSTEM=128" could build the C128 version of the software
         (using conditional assembly in your source code file).
 
+    -I PATH/TO/DIR         add search path for input files
+        This option allows to add a directory to the search list for
+        input files. If an input file cannot be found in the current
+        working directory, all directories in the search list are
+        tried (the first match is used).
+
     -W                     fine-tune amount and type of warnings
         -Wno-label-indent
             Disables warnings about labels not being in the leftmost
@@ -252,6 +270,19 @@ Available options are:
     --use-stdout           fix for 'Relaunch64' IDE
         With this option, errors are written to the standard output
         stream instead of to the standard error stream.
+
+    --msvc                 output errors in MS VS format
+        This changes the format of the error output to that used by
+        a certain commercial IDE.
+
+    --color                uses ANSI color codes for error output
+        If your terminal emulation supports ANSI escape codes, use
+        this option to have warnings and errors displayed in color.
+
+    --fullstop             use '.' as pseudo opcode prefix
+        This changes the prefix character used to mark pseudo opcodes
+        from '!' to '.' (so sources intended for other assemblers can
+        be converted with less effort).
 
     -V, --version          show version and exit.
 
@@ -353,7 +384,8 @@ $d011           hexadecimal values are indicated by either a
                     current conversion table (none/petscii/screen),
                     chosen using the "!ct" pseudo opcode.
 poll_joy2       a global symbol
-.fail           a local symbol, indicated by leading dot
+.fail           a local symbol, indicated by leading "."
+@loop           a "cheap local", indicated by leading "@"
 *               the current program counter. During offset assembly,
                     "*" gives the value of the "Pseudo PC". Just to
                     make sure: The value of the program counter is
@@ -386,10 +418,14 @@ issued (to spot typing errors - see Errors.txt for more info).
 Every symbol name consists of these characters: "a" to "z", "A" to
 "Z", "0" to "9", the underscore character "_" and all characters with
 values beyond 127. The first character must not be a digit though. But
-it can be a dot ("."), making the symbol a local one. Two other
-possibilities for label names are "all-characters-are-minus" (then it
-is an anonymous backward label) and "all-characters-are-plus" (then it
-is an anonymous forward label).
+it can be '.' or '@', making the symbol a local one.
+Local symbols beginning with '.' are only valid inside the current
+zone (marked using the "!zone" pseudo opcode) or the current macro.
+Local symbols beginning with '@' are only valid between the enclosing
+global labels (or inside the current macro).
+Two other possibilities for label names are "all-characters-are-minus"
+(then it is an anonymous backward label) and "all-characters-are-plus"
+(then it is an anonymous forward label).
 
 Every command is one of the following:
     An assembler opcode

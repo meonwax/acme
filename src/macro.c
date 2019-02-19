@@ -1,5 +1,5 @@
 // ACME - a crossassembler for producing 6502/65c02/65816/65ce02 code.
-// Copyright (C) 1998-2016 Marco Baye
+// Copyright (C) 1998-2017 Marco Baye
 // Have a look at "acme.c" for further info
 //
 // Macro stuff
@@ -88,8 +88,10 @@ static scope_t get_scope_and_title(void)
 	// copy macro title to private dynabuf and add separator character
 	DYNABUF_CLEAR(user_macro_name);
 	DYNABUF_CLEAR(internal_name);
-	if (macro_scope != SCOPE_GLOBAL)
+	if (macro_scope != SCOPE_GLOBAL) {
+		// TODO - allow "cheap macros"?!
 		DynaBuf_append(user_macro_name, LOCAL_PREFIX);
+	}
 	DynaBuf_add_string(user_macro_name, GLOBALDYNABUF_CURRENT);
 	DynaBuf_add_string(internal_name, GLOBALDYNABUF_CURRENT);
 	DynaBuf_append(user_macro_name, '\0');
@@ -174,6 +176,8 @@ void Macro_parse_definition(void)	// Now GotByte = illegal char after "!macro"
 	// Valid argument formats are:
 	// .LOCAL_LABEL_BY_VALUE
 	// ~.LOCAL_LABEL_BY_REFERENCE
+	// @CHEAP_LOCAL_LABEL_BY_VALUE
+	// ~@CHEAP_LOCAL_LABEL_BY_REFERENCE
 	// GLOBAL_LABEL_BY_VALUE	global args are very uncommon,
 	// ~GLOBAL_LABEL_BY_REFERENCE	but not forbidden
 	// now GotByte = non-space
@@ -187,9 +191,10 @@ void Macro_parse_definition(void)	// Now GotByte = illegal char after "!macro"
 				DynaBuf_append(GlobalDynaBuf, REFERENCE_CHAR);
 				GetByte();
 			}
-			// handle prefix for local symbols (LOCAL_PREFIX, normally '.')
-			if (GotByte == LOCAL_PREFIX) {
-				DynaBuf_append(GlobalDynaBuf, LOCAL_PREFIX);
+			// handle prefix for (cheap) local symbols ('.'/'@')
+			if ((GotByte == LOCAL_PREFIX)
+			|| (GotByte == CHEAP_PREFIX)) {
+				DynaBuf_append(GlobalDynaBuf, GotByte);
 				GetByte();
 			}
 			// handle symbol name
@@ -304,6 +309,7 @@ void Macro_parse_call(void)	// Now GotByte = dot or first char of macro name
 		// start new section (with new scope)
 		// FALSE = title mustn't be freed
 		section_new(&new_section, "Macro", actual_macro->original_name, FALSE);
+		section_new_cheap_scope(&new_section);
 		GetByte();	// fetch first byte of parameter list
 		// assign arguments
 		if (GotByte != CHAR_EOS) {	// any at all?

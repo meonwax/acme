@@ -1,5 +1,5 @@
 // ACME - a crossassembler for producing 6502/65c02/65816/65ce02 code.
-// Copyright (C) 1998-2016 Marco Baye
+// Copyright (C) 1998-2017 Marco Baye
 // Have a look at "acme.c" for further info
 //
 // Input stuff
@@ -421,19 +421,20 @@ int Input_append_keyword_to_global_dynabuf(void)
 	return length;
 }
 
-// Check whether GotByte is LOCAL_PREFIX (default '.').
-// If not, store global scope value.
-// If yes, store current local scope value and read next byte.
+// Check GotByte.
+// If LOCAL_PREFIX ('.'), store current local scope value and read next byte.
+// If CHEAP_PREFIX ('@'), store current cheap scope value and read next byte.
+// Otherwise, store global scope value.
 // Then jump to Input_read_keyword(), which returns length of keyword.
 int Input_read_scope_and_keyword(scope_t *scope)
 {
 	SKIPSPACE();
 	if (GotByte == LOCAL_PREFIX) {
 		GetByte();
-		*scope = section_now->scope;
-/* TODO	} else if (GotByte == CHEAP_PREFIX) {
+		*scope = section_now->local_scope;
+	} else if (GotByte == CHEAP_PREFIX) {
 		GetByte();
-		*scope = symbol_cheap_scope;	*/
+		*scope = section_now->cheap_scope;
 	} else {
 		*scope = SCOPE_GLOBAL;
 	}
@@ -471,13 +472,16 @@ int Input_read_and_lower_keyword(void)
 	return length;
 }
 
-// Try to read a file name. If "allow_library" is TRUE, library access by using
-// <...> quoting is possible as well. The file name given in the assembler
-// source code is converted from UNIX style to platform style.
+// Try to read a file name.
+// If "allow_library" is TRUE, library access by using <...> quoting
+// is possible as well. If "uses_lib" is non-NULL, info about library
+// usage is stored there.
+// The file name given in the assembler source code is converted from
+// UNIX style to platform style.
 // Returns whether error occurred (TRUE on error). Filename in GlobalDynaBuf.
 // Errors are handled and reported, but caller should call
 // Input_skip_remainder() then.
-int Input_read_filename(int allow_library)
+int Input_read_filename(int allow_library, int *uses_lib)
 {
 	char	*lib_prefix,
 		end_quote;
@@ -486,6 +490,8 @@ int Input_read_filename(int allow_library)
 	SKIPSPACE();
 	// check for library access
 	if (GotByte == '<') {
+		if (uses_lib)
+			*uses_lib = 1;
 		// if library access forbidden, complain
 		if (allow_library == FALSE) {
 			Throw_error("Writing to library not supported.");
@@ -505,6 +511,8 @@ int Input_read_filename(int allow_library)
 		DynaBuf_add_string(GlobalDynaBuf, lib_prefix);
 		end_quote = '>';
 	} else {
+		if (uses_lib)
+			*uses_lib = 0;
 		if (GotByte == '"') {
 			end_quote = '"';
 		} else {
@@ -567,4 +575,78 @@ int Input_get_force_bit(void)
 	}
 	SKIPSPACE();
 	return force_bit;
+}
+
+
+// include path stuff - should be moved to its own file:
+
+// ring list struct
+struct ipi {
+	struct ipi	*next,
+			*prev;
+	const char	*path;
+};
+static struct ipi	ipi_head;	// head element
+static struct dynabuf	*pathbuf;	// buffer to combine search path and file spec
+
+// init list
+void includepaths_init(void)
+{
+	// init ring list
+	ipi_head.next = &ipi_head;
+	ipi_head.prev = &ipi_head;
+	// init dynabuf
+	pathbuf = DynaBuf_create(256);
+}
+// add entry
+void includepaths_add(const char *path)
+{
+	struct ipi	*ipi;
+
+	ipi = safe_malloc(sizeof(*ipi));
+	ipi->path = path;
+	ipi->next = &ipi_head;
+	ipi->prev = ipi_head.prev;
+	ipi->next->prev = ipi;
+	ipi->prev->next = ipi;
+}
+// open file for reading (trying list entries as prefixes)
+// "uses_lib" tells whether to access library or to make use of include paths
+// file name is expected in GlobalDynaBuf
+FILE *includepaths_open_ro(int uses_lib)
+{
+	FILE		*stream;
+	struct ipi	*ipi;
+
+	// first try directly, regardless of whether lib or not:
+	stream = fopen(GLOBALDYNABUF_CURRENT, FILE_READBINARY);
+	// if failed and not lib, try include paths:
+	if ((stream == NULL) && !uses_lib) {
+		for (ipi = ipi_head.next; ipi != &ipi_head; ipi = ipi->next) {
+			DYNABUF_CLEAR(pathbuf);
+			// add first part
+			DynaBuf_add_string(pathbuf, ipi->path);
+			// if wanted and possible, ensure last char is directory separator
+			if (DIRECTORY_SEPARATOR
+			&& pathbuf->size
+			&& (pathbuf->buffer[pathbuf->size - 1] != DIRECTORY_SEPARATOR))
+				DynaBuf_append(pathbuf, DIRECTORY_SEPARATOR);
+			// add second part
+			DynaBuf_add_string(pathbuf, GLOBALDYNABUF_CURRENT);
+			// terminate
+			DynaBuf_append(pathbuf, '\0');
+			// try
+			stream = fopen(pathbuf->buffer, FILE_READBINARY);
+			//printf("trying <<%s>> - ", pathbuf->buffer);
+			if (stream) {
+				//printf("ok\n");
+				break;
+			} else {
+				//printf("failed\n");
+			}
+		}
+	}
+	if (stream == NULL)
+		Throw_error(exception_cannot_open_input_file);
+	return stream;
 }

@@ -1,5 +1,5 @@
 // ACME - a crossassembler for producing 6502/65c02/65816/65ce02 code.
-// Copyright (C) 1998-2016 Marco Baye
+// Copyright (C) 1998-2017 Marco Baye
 // Have a look at "acme.c" for further info
 //
 // symbol stuff
@@ -31,7 +31,7 @@ static void dump_one_symbol(struct rwnode *node, FILE *fd)
 	struct symbol	*symbol	= node->body;
 
 	// output name
-	if (warn_on_type_mismatch
+	if (config.warn_on_type_mismatch
 	&& symbol->result.addr_refs == 1)
 		fprintf(fd, "!addr");
 	fprintf(fd, "\t%s", node->id_string);
@@ -53,10 +53,10 @@ static void dump_one_symbol(struct rwnode *node, FILE *fd)
 		else
 			fprintf(fd, "$%x", (unsigned) symbol->result.val.intval);
 	} else {
-		fprintf(fd, " ?");
+		fprintf(fd, " ?");	// TODO - maybe write "UNDEFINED" instead? then the file could at least be parsed without errors
 	}
 	if (symbol->result.flags & MVALUE_UNSURE)
-		fprintf(fd, "\t; ?");
+		fprintf(fd, "\t; ?");	// TODO - write "forward" instead?
 	if (symbol->usage == 0)
 		fprintf(fd, "\t; unused");
 	fprintf(fd, "\n");
@@ -176,13 +176,16 @@ void symbol_set_label(scope_t scope, int stat_flags, int force_bit, int change_a
 
 	symbol = symbol_find(scope, force_bit);
 	// label definition
-	if ((stat_flags & SF_FOUND_BLANK) && warn_on_indented_labels)
+	if ((stat_flags & SF_FOUND_BLANK) && config.warn_on_indented_labels)
 		Throw_first_pass_warning("Label name not in leftmost column.");
 	vcpu_read_pc(&pc);
 	result.flags = pc.flags & MVALUE_DEFINED;
 	result.val.intval = pc.val.intval;
 	result.addr_refs = pc.addr_refs;
 	symbol_set_value(symbol, &result, change_allowed);
+	// global labels must open new scope for cheap locals
+	if (scope == SCOPE_GLOBAL)
+		section_new_cheap_scope(section_now);
 }
 
 
@@ -259,7 +262,7 @@ void symbol_fix_forward_anon_name(int increment)
 
 	// terminate name, find "counter" symbol and read value
 	DynaBuf_append(GlobalDynaBuf, '\0');
-	counter_symbol = symbol_find(section_now->scope, 0);
+	counter_symbol = symbol_find(section_now->local_scope, 0);
 	// make sure it gets reset to zero in each new pass
 	if (counter_symbol->pass != pass_count) {
 		counter_symbol->pass = pass_count;

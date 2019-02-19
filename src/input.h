@@ -1,5 +1,5 @@
 // ACME - a crossassembler for producing 6502/65c02/65816/65ce02 code.
-// Copyright (C) 1998-2016 Marco Baye
+// Copyright (C) 1998-2017 Marco Baye
 // Have a look at "acme.c" for further info
 //
 // Input stuff
@@ -83,9 +83,10 @@ extern void Input_until_terminator(char terminator);
 // Append to GlobalDynaBuf while characters are legal for keywords.
 // Throws "missing string" error if none. Returns number of characters added.
 extern int Input_append_keyword_to_global_dynabuf(void);
-// Check whether GotByte is a dot.
-// If not, store global scope value.
-// If yes, store current scope value and read next byte.
+// Check GotByte.
+// If LOCAL_PREFIX ('.'), store current local scope value and read next byte.
+// If CHEAP_PREFIX ('@'), store current cheap scope value and read next byte.
+// Otherwise, store global scope value.
 // Then jump to Input_read_keyword(), which returns length of keyword.
 extern int Input_read_scope_and_keyword(scope_t *scope);
 // Clear dynamic buffer, then append to it until an illegal (for a keyword)
@@ -98,18 +99,33 @@ extern int Input_read_keyword(void);
 // Return its length (without terminator).
 // Zero lengths will produce a "missing string" error.
 extern int Input_read_and_lower_keyword(void);
-// Try to read a file name. If "allow_library" is TRUE, library access by using
-// <...> quoting is possible as well. The file name given in the assembler
-// source code is converted from UNIX style to platform style.
+// Try to read a file name.
+// If "allow_library" is TRUE, library access by using <...> quoting
+// is possible as well. If "uses_lib" is non-NULL, info about library
+// usage is stored there.
+// The file name given in the assembler source code is converted from
+// UNIX style to platform style.
 // Returns whether error occurred (TRUE on error). Filename in GlobalDynaBuf.
 // Errors are handled and reported, but caller should call
 // Input_skip_remainder() then.
-extern int Input_read_filename(int library_allowed);
+extern int Input_read_filename(int library_allowed, int *uses_lib);
 // Try to read a comma, skipping spaces before and after. Return TRUE if comma
 // found, otherwise FALSE.
 extern int Input_accept_comma(void);
 // read optional info about parameter length
 extern int Input_get_force_bit(void);
+
+
+// include path stuff - should be moved to its own file:
+
+// init list
+extern void includepaths_init(void);
+// add entry
+extern void includepaths_add(const char *path);
+// open file for reading (trying list entries as prefixes)
+// "uses_lib" tells whether to access library or to make use of include paths
+// file name is expected in GlobalDynaBuf
+extern FILE *includepaths_open_ro(int uses_lib);
 
 
 #endif

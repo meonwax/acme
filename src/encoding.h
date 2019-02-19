@@ -7,8 +7,11 @@
 #define encoding_H
 
 
+#include <stdio.h>	// for FILE*
+
+
 //struct encoder;
-extern const struct encoder	*encoder_current;	// gets set before each pass
+extern const struct encoder	*encoder_current;	// gets set before each pass	TODO - set for each part
 extern const struct encoder	encoder_raw;
 extern const struct encoder	encoder_pet;
 extern const struct encoder	encoder_scr;
@@ -23,7 +26,7 @@ extern char encoding_encode_char(char byte);
 // set "raw" as default encoding
 extern void encoding_passinit(void);
 // try to load encoding table from given file
-extern void encoding_load(char target[256], const char *filename);
+extern void encoding_load_from_file(char target[256], FILE *stream);
 // lookup encoder held in DynaBuf and return its struct pointer (or NULL on failure)
 extern const struct encoder *encoding_find(void);
 

@@ -15,6 +15,9 @@
 // convert UNIX-style pathname to AnyOS-style pathname (no change)
 #define PLATFORM_CONVERTPATHCHAR(a)	(a)
 
+// directory separator for include paths
+#define DIRECTORY_SEPARATOR	'/'
+
 // string containing the prefix for accessing files from the library tree
 #define PLATFORM_LIBPREFIX	AnyOS_lib_prefix
 

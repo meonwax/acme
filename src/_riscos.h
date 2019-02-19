@@ -17,6 +17,9 @@
 // convert UNIX-style pathname to RISC OS-style pathname
 #define PLATFORM_CONVERTPATHCHAR(a)	RISCOS_convert_path_char(a)
 
+// directory separator for include paths
+#define DIRECTORY_SEPARATOR	'\0'	// actually '.', but paths ending on ':' are ok, so auto-adding '.' is bad)
+
 // string containing the prefix for accessing files from the library tree
 #define PLATFORM_LIBPREFIX	"ACME_Lib:"
 #define NO_NEED_FOR_ENV_VAR

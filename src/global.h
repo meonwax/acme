@@ -1,5 +1,5 @@
 // ACME - a crossassembler for producing 6502/65c02/65816/65ce02 code.
-// Copyright (C) 1998-2016 Marco Baye
+// Copyright (C) 1998-2017 Marco Baye
 // Have a look at "acme.c" for further info
 //
 // Global stuff - things that are needed by several modules
@@ -14,8 +14,8 @@
 #include <string.h>
 #include "config.h"
 
-#define PSEUDO_OPCODE_PREFIX	'!'	// FIXME - this is not yet used consistently!
 #define LOCAL_PREFIX		'.'	// FIXME - this is not yet used consistently!
+#define CHEAP_PREFIX		'@'	// prefix character for cheap locals
 
 // Constants
 
@@ -41,6 +41,7 @@ extern const char	s_scr[];
 // error messages during assembly
 extern const char	exception_cannot_open_input_file[];
 extern const char	exception_missing_string[];
+extern const char	exception_negative_size[];
 extern const char	exception_no_left_brace[];
 extern const char	exception_no_memory_left[];
 extern const char	exception_no_right_brace[];
@@ -59,20 +60,24 @@ extern const char	Byte_flags[];
 #define FOLLOWS_ANON	(1u << 3)	// preceding '-' are backward label
 // bits 2, 1 and 0 are currently unused
 
-
+// TODO - put in runtime struct:
 extern int	pass_count;
-extern int	Process_verbosity;	// Level of additional output
-extern int	warn_on_indented_labels;	// warn if indented label is encountered
-extern int	warn_on_old_for;	// warn if "!for" with old syntax is found
-extern int	warn_on_type_mismatch;	// use type-checking system
 extern char	GotByte;	// Last byte read (processed)
-// global counters
 extern int	pass_undefined_count;	// "NeedValue" type errors in current pass
 extern int	pass_real_errors;	// Errors yet
-extern signed long	max_errors;	// errors before giving up
 extern FILE	*msg_stream;		// set to stdout by --errors_to_stdout
-extern int	format_msvc;		// actually bool, enabled by --msvc
-extern int	format_color;		// actually bool, enabled by --color
+// configuration
+struct config {
+	char		pseudoop_prefix;	// '!' or '.'
+	int		process_verbosity;	// level of additional output
+	int		warn_on_indented_labels;	// warn if indented label is encountered
+	int		warn_on_old_for;	// warn if "!for" with old syntax is found
+	int		warn_on_type_mismatch;	// use type-checking system
+	signed long	max_errors;	// errors before giving up
+	int		format_msvc;		// actually bool, enabled by --msvc
+	int		format_color;		// actually bool, enabled by --color
+};
+extern struct config	config;
 
 // report stuff
 #define REPORT_ASCBUFSIZE	1024
@@ -86,7 +91,7 @@ struct report {
 	char		asc_buf[REPORT_ASCBUFSIZE];	// source bytes
 	char		bin_buf[REPORT_BINBUFSIZE];	// output bytes
 };
-extern struct report	*report;
+extern struct report	*report;	// TODO - put in "part" struct
 
 // Macros for skipping a single space character
 #define SKIPSPACE()		\
@@ -103,6 +108,8 @@ do {				\
 
 // Prototypes
 
+// set configuration to default values
+extern void config_default(struct config *conf);
 // allocate memory and die if not available
 extern void *safe_malloc(size_t);
 // Parse block, beginning with next byte.

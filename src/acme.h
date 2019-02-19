@@ -12,8 +12,8 @@
 
 // Variables
 extern const char	*symbollist_filename;
-extern const char	*output_filename;
-extern const char	*report_filename;
+extern const char	*output_filename;	// TODO - put in "part" struct
+extern const char	*report_filename;	// TODO - put in "part" struct
 // maximum recursion depth for macro calls and "!source"
 extern signed long	macro_recursions_left;
 extern signed long	source_recursions_left;

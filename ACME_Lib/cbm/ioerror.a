@@ -3,7 +3,7 @@
 !ifdef lib_cbm_ioerror_a !eof
 lib_cbm_ioerror_a = 1
 
-; if kernel i/o routine exits with carry set, A holds one of these:
+; if kernal i/o routine exits with carry set, A holds one of these:
 ioerror_BREAK			= 0
 ioerror_TOO_MANY_FILES		= 1
 ioerror_FILE_OPEN		= 2

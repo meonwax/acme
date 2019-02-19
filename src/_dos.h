@@ -18,6 +18,9 @@
 // convert UNIX-style pathname to DOS-style pathname
 #define PLATFORM_CONVERTPATHCHAR(a)	DOS_convert_path_char(a)
 
+// directory separator for include paths
+#define DIRECTORY_SEPARATOR	'\\'
+
 // string containing the prefix for accessing files from the library tree
 #define PLATFORM_LIBPREFIX	DOS_lib_prefix
 
