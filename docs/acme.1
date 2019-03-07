@@ -1,0 +1,73 @@
+.TH acme "1" "November 2018" "User Commands"
+.SH NAME
+acme \- Multi-platform cross assembler for 6502/6510/65816 CPU
+.SH DESCRIPTION
+ACME \- the ACME Crossassembler for Multiple Environments
+.PP
+Usage:
+acme [OPTION...] [FILE]...
+.SH OPTIONS
+.TP
+\fB\-h\fR, \fB\-\-help\fR
+show this help and exit
+.TP
+\fB\-f\fR, \fB\-\-format\fR FORMAT
+set output file format
+.TP
+\fB\-o\fR, \fB\-\-outfile\fR FILE
+set output file name
+.TP
+\fB\-r\fR, \fB\-\-report\fR FILE
+set report file name
+.TP
+\fB\-l\fR, \fB\-\-symbollist\fR FILE
+set symbol list file name
+.TP
+\fB\-\-labeldump\fR
+(old name for \fB\-\-symbollist\fR)
+.TP
+\fB\-\-vicelabels\fR FILE
+set file name for label dump in VICE format
+.TP
+\fB\-\-setpc\fR NUMBER
+set program counter
+.TP
+\fB\-\-cpu\fR CPU
+set target processor
+.TP
+\fB\-\-initmem\fR NUMBER
+define 'empty' memory
+.HP
+\fB\-\-maxerrors\fR NUMBER set number of errors before exiting
+.TP
+\fB\-\-maxdepth\fR NUMBER
+set recursion depth for macro calls and !src
+.TP
+\fB\-vDIGIT\fR
+set verbosity level
+.TP
+\fB\-DSYMBOL\fR=\fI\,VALUE\/\fR
+define global symbol
+.TP
+\fB\-Wno\-label\-indent\fR
+suppress warnings about indented labels
+.TP
+\fB\-Wno\-old\-for\fR
+suppress warnings about old "!for" syntax
+.TP
+\fB\-Wtype\-mismatch\fR
+enable type checking (warn about type mismatch)
+.TP
+\fB\-\-use\-stdout\fR
+fix for 'Relaunch64' IDE (see docs)
+.TP
+\fB\-\-msvc\fR
+set output error message format to that of MS Visual Studio
+.TP
+\fB\-\-color\fR
+enable colored error output using ANSI escape codes
+.TP
+\fB\-V\fR, \fB\-\-version\fR
+show version and exit
+.IP
+Platform independent version.
